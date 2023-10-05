@@ -10,10 +10,10 @@ Contributors / Licensing
 
 Authors:
     
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastname
-* Firstname Lastnmae
+* Riley Zilka
+* James Laildaw
+* Jaskirat Singh Saggu
+* Yevhen Kaznovskyi
+* Abdullah Khadeli
 
-Generally everything is LICENSE'D under the ______________.
+Generally everything is LICENSE'D under the APACHE 2 License.
