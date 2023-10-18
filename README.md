@@ -17,3 +17,13 @@ Authors:
 * Abdullah Khadeli
 
 Generally everything is LICENSE'D under the APACHE 2 License.
+
+
+===================
+
+Venv setup
+```
+virtualenv venv --python=python3
+source venv/bin/activate
+pip install -r requirements.txt
+```
