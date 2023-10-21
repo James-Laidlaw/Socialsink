@@ -1,6 +1,13 @@
 {% extends "main/header.html" %}
 {% block content %}
-    <div class="">
-        <h1>Django Home Page Working!!!</h1>
+    <div class="home-wrapper">
+        <div class="left-bar"></div>
+        <div class="main-area">
+            {% include 'main/includes/createpost.html' %}
+            <div class="feed-post">Some Post</div>
+            <div class="feed-post">Some Post</div>
+            <div class="feed-post">Some Post</div>
+        </div>
+        <div class="right-bar"></div>
     </div>
 {% endblock content %}
