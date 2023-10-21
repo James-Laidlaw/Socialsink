@@ -128,12 +128,6 @@ main {
     border-radius: var(--card-round-border);
 }
 
-.feed-post a {
-    display: block;
-    width: fit-content;
-    height: fit-content;
-}
-
 .feed-post img {
     width: 80px;
     height: 80px;
@@ -143,6 +137,7 @@ main {
 }
 
 .post-content {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -171,7 +166,6 @@ main {
     transition: all 300ms ease;
     letter-spacing: 0.25px;
 }
-
 
 .post-btn-wrap button:hover,
 .post-btn-wrap button:focus {
@@ -217,6 +211,40 @@ main {
 .existing-post .post-btn-wrap button:hover,
 .existing-post .post-btn-wrap button:focus {
     background-color: var(--deep-blue);
+}
+
+.feed-post .dropdown {
+    position: absolute;
+    right: 0;
+}
+
+.feed-post .dropdown-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    min-width: 50px;
+    height: 30px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--light-grey);
+    background: none;
+    border-radius: 5px;
+    border: none;
+    transition: all 300ms ease;
+}
+
+.feed-post .dropdown-toggle:hover,
+.feed-post .dropdown-toggle:focus {
+    color: var(--off-white);
+}
+
+.feed-post .dropdown-toggle::after {
+    display: none;
+}
+
+.feed-post .dropdown-menu {
+    right: 0;
 }
 
 /* Feed Posts Ends ----------------------------- */
