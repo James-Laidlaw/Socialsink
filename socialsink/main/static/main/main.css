@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap');
 
+/* Variables and Colors */
 :root {
     --primary-font: 'Open Sans', sans-serif;
     --secondary-font: 'Lora', serif;
@@ -16,6 +17,7 @@
     --light-grey: #606e7a;
     --button-text: #9ba9b6;
     --design-padding: 60px;
+    --card-round-border: 14px;
 }
 
 html,
@@ -33,6 +35,12 @@ body {
     color: var(--off-white);
     margin: 0;
     display: flex;
+    letter-spacing: 0.5px;
+}
+
+p {
+    margin: 0.125rem 0;
+    letter-spacing: 0.5px;
 }
 
 a {
@@ -46,7 +54,12 @@ a:hover {
     text-decoration: none;
 }
 
-/* NavBar Begins ----------------------- */
+button {
+    font-family: var(--primary-font);
+    cursor: pointer;
+}
+
+/* NavBar Begins -------------------------------------- */
 .site-header {
     display: inline-flex;
     flex-direction: row;
@@ -60,7 +73,9 @@ a:hover {
     padding: 0;
 }
 
-/* NavBar Ends ----------------------- */
+/* NavBar Ends ---------------------------------------- */
+
+/* Main Containers and Bars Begins -------------------  */
 
 main {
     display: flex;
@@ -84,6 +99,7 @@ main {
 
 .main-area {
     flex-grow: 1;
+    flex-basis: 50%;
 }
 
 .left-bar,
@@ -93,16 +109,29 @@ main {
     flex-basis: 25%;
     width: 25%;
     background: var(--dark-gray);
-    border-radius: 14px;
+    border-radius: var(--card-round-border);
 }
 
+/* Main Containers and Bars Ends ------------------- */
+
+/* Feed Posts Begins ------------------------------- */
+
 .feed-post {
-    min-height: 200px;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 16px;
     width: 100%;
+    height: auto;
     margin-bottom: 16px;
     padding: 16px;
     background: var(--dark-gray);
-    border-radius: 14px;
+    border-radius: var(--card-round-border);
+}
+
+.feed-post a {
+    display: block;
+    width: fit-content;
+    height: fit-content;
 }
 
 .feed-post img {
@@ -113,37 +142,25 @@ main {
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
 }
 
-
-/* Create Post Begins ----------------------- */
-
-.feed-post.create-new {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 16px;
-    height: auto;
-    min-height: auto;
-}
-
-.create-post {
+.post-content {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
     gap: 16px;
 }
 
-button {
-    font-family: var(--primary-font);
-    cursor: pointer;
-}
-
-.create-btn-wrap {
+.post-btn-wrap {
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
     gap: 10px;
 }
 
-.create-btn-wrap button {
+.post-btn-wrap button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
     font-size: 1rem;
     color: var(--button-text);
     background: none;
@@ -152,45 +169,71 @@ button {
     min-width: 140px;
     min-height: 50px;
     transition: all 300ms ease;
+    letter-spacing: 0.25px;
 }
 
-.create-btn-wrap button:hover,
-.create-btn-wrap button:focus {
+
+.post-btn-wrap button:hover,
+.post-btn-wrap button:focus {
     color: var(--button-text);
     background-color: var(--medium-grey);
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
 }
 
-.create-btn-wrap button svg {
+.post-btn-wrap button svg {
     font-size: 1.125rem;
 } 
 
-.create-btn-wrap button:nth-child(1) svg {
+.btn-like svg {
+    color: var(--off-white);
+}
+
+.btn-share svg {
+    color: var(--off-white);
+}
+
+.btn-photo svg {
     color: var(--pastel-green);
 }
 
-.create-btn-wrap button:nth-child(2) svg {
+.btn-post svg {
     color: var(--bright-blue);
 }
 
-
-.create-btn-wrap button {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
+.post-content time {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--light-grey);
+    letter-spacing: 0;
 }
 
-.create-post input {
+.existing-post .post-btn-wrap button {
+    color: var(--button-text);
+    background: var(--medium-grey);
+    border-radius: var(--card-round-border);
+    border: none;
+}
+
+.existing-post .post-btn-wrap button:hover,
+.existing-post .post-btn-wrap button:focus {
+    background-color: var(--deep-blue);
+}
+
+/* Feed Posts Ends ----------------------------- */
+
+/* Create Post Begins -------------------------- */
+
+.post-content input {
     color: #fff;
     background: var(--medium-grey);
     min-height: 50px;
     outline: none;
     border: none;
-    border-radius: 14px;
+    border-radius: var(--card-round-border);
+    letter-spacing: 0.5px;
 }
 
-.create-post input::placeholder {
+.post-content input::placeholder {
     color: var(--button-text);
 }
 
