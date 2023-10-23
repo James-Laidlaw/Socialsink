@@ -51,6 +51,10 @@
             },
             error: function (error) {
                 console.error(error);
+                // Instead of having the default html alert, maybe have a custom popup thats styled
+                // and nice that displays detailed errors and potential fixes (the potential fixes will
+                // have to be ironed out by the person who wrote the endpoint / model (RILEY))
+                alert("There was an error making your post, please try again")
             }
         })
     }

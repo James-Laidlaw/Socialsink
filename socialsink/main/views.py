@@ -54,7 +54,19 @@ def makePost(request):
 
     print(user)
     print(user.email)
-    print(user.author.friends)
+    print(user.author.incoming_friends)
+
+    author = Author.objects.get(user=user)
+
+    print(author)
+
+    friends = author.friend_set.all()
+
+    print(friends)
+
+    if not friends.exists():
+        print("WOW")
+
     print(text, publicity)
 
     if publicity == 'public':
@@ -66,7 +78,14 @@ def makePost(request):
     else:
         publicity = -1 #Unknown publicity
 
-    post = Post(author=user, content=text, timestamp=datetime.now(), publicity=publicity, private_to=user.author.friends)
+    author = Author.objects.get(user=user)
+    if publicity == 1:
+        author = Author.objects.get(user=user)
+        friends = author.friend_set.all()
+        post = Post(author=author, content=text, timestamp=datetime.now(), publicity=publicity, private_to=friends)
+    else:
+        post = Post(author=author, content=text, timestamp=datetime.now(), publicity=publicity)
+
     post.save()
 
     return HttpResponse(201)
