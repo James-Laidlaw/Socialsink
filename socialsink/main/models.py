@@ -7,7 +7,7 @@ class Author(models.Model):
     username = models.CharField(max_length=200)
     password = models.CharField(max_length=200) #TODO consider hashing
     follows = models.ManyToManyField('self', symmetrical=False, through='Follow', related_name='followers')
-    friends = models.ManyToManyField('self') #For when there is a mutual following, the author will have a list of friends
+    friends = models.ManyToManyField('self', blank=True) #For when there is a mutual following, the author will have a list of friends
     created_at = models.DateTimeField(auto_now_add=True)
 
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
