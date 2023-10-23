@@ -1,6 +1,7 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from .models import Author
 
 from rest_framework.decorators import api_view
@@ -9,9 +10,10 @@ from rest_framework.response import Response
 # Create your views here.
 @login_required
 def homepage(request):
+    author = request.user.author
     return render(request=request,
                   template_name='main/home.html',
-                  context={})
+                  context={'user': request.user})
 
 def login(request):
     return render(request=request,
@@ -21,15 +23,22 @@ def login(request):
 
 @api_view(['POST'])
 def loginRequest(request):
-    print("Request received")
+    print("Login request received")
 
     username = request.data['username']
     password = request.data['password']
 
-    exists = Author.objects.filter(username=username, password=password).first()
+    user = authenticate(username=username, password=password)
 
-    if exists != None:
-        
+    if user != None:
+        auth_login(request, user)
         return HttpResponse(201)
 
     return HttpResponse(403)
+
+@api_view(['GET'])
+def logoutRequest(request):
+    print("Logout request received")
+    
+    auth_logout(request)
+    return HttpResponse(201)

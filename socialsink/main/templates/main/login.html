@@ -29,14 +29,19 @@
             });
             $.ajax({
                 type: "POST",
-                url: "api/login/",
+                url: "/api/login/",
                 dataType: 'json',
                 data: {
                     'username': document.getElementById('username').value,
                     'password': document.getElementById('password').value
                 },
                 success: function (response) {
-                    console.log(response)
+                    if (response === 201) {
+                        window.location.href = "/"
+                    }
+                    else if (response === 403) {
+                        alert("Incorrect username or password")
+                    }
                 },
                 error: function (error) {
                     console.error(error);
