@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from .models import Author
+from .models import Author, Post
+from datetime import datetime
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -41,4 +42,31 @@ def logoutRequest(request):
     print("Logout request received")
     
     auth_logout(request)
+    return HttpResponse(201)
+
+@api_view(['POST'])
+def makePost(request):
+    print("Make-post request received")
+
+    user = request.user
+    text = request.data['text']
+    publicity = request.data['publicity']
+
+    print(user)
+    print(user.email)
+    print(user.author.friends)
+    print(text, publicity)
+
+    if publicity == 'public':
+        publicity = 2
+    elif publicity == 'friends':
+        publicity = 1
+    elif publicity == 'private':
+        publicity = 0
+    else:
+        publicity = -1 #Unknown publicity
+
+    post = Post(author=user, content=text, timestamp=datetime.now(), publicity=publicity, private_to=user.author.friends)
+    post.save()
+
     return HttpResponse(201)
