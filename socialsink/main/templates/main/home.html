@@ -1,0 +1,14 @@
+{% extends "main/header.html" %}
+{% block content %}
+    {% include 'main/includes/navbar.html' %}
+    <div class="home-wrapper">
+        <div class="left-bar"></div>
+        <div class="main-area">
+            {% include 'main/includes/createpost.html' %}
+            {% include 'main/includes/feedpost.html' %}
+            {% include 'main/includes/feedpost.html' %}
+            {% include 'main/includes/feedpost.html' %}
+        </div>
+        <div class="right-bar"></div>
+    </div>
+{% endblock content %}

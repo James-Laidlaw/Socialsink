@@ -1,0 +1,52 @@
+{% extends "main/header.html" %}
+{% block content %}
+    <div class="home-wrapper">
+        <div class="main-area">
+            <form onsubmit="submitLogin(event)">
+                {% csrf_token %}
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="false">
+                <label for="username">Password</label>
+                <input type="password" id="password" name="password">
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function submitLogin(e) {
+            e.preventDefault()
+            console.log("Sending login request to server")
+
+
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "POST",
+                url: "/api/login/",
+                dataType: 'json',
+                data: {
+                    'username': document.getElementById('username').value,
+                    'password': document.getElementById('password').value
+                },
+                success: function (response) {
+                    if (response === 201) {
+                        window.location.href = "/"
+                    }
+                    else if (response === 403) {
+                        alert("Incorrect username or password")
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+    </script>
+{% endblock content %}
