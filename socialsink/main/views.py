@@ -52,23 +52,6 @@ def makePost(request):
     text = request.data['text']
     publicity = request.data['publicity']
 
-    print(user)
-    print(user.email)
-    print(user.author.incoming_friends)
-
-    author = Author.objects.get(user=user)
-
-    print(author)
-
-    friends = author.friend_set.all()
-
-    print(friends)
-
-    if not friends.exists():
-        print("WOW")
-
-    print(text, publicity)
-
     if publicity == 'public':
         publicity = 2
     elif publicity == 'friends':
