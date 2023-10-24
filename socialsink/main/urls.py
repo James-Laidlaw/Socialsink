@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/login/", views.loginRequest, name="loginRequest"),
     path("api/logout/", views.logoutRequest, name="logoutRequest"),
     path("api/make-post/", views.makePost, name="makePost"),
+    path("api/delete-account/", views.deleteAccount, name="deleteAccount"),
 ]

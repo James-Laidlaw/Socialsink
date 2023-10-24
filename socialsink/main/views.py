@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from .models import Author, Post
 from datetime import datetime
+from django.contrib import messages
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -72,3 +73,22 @@ def makePost(request):
     post.save()
 
     return HttpResponse(201)
+
+@api_view(['DELETE'])
+def deleteAccount(request):
+    # https://stackoverflow.com/questions/33715879/how-to-delete-user-in-django
+    # https://docs.djangoproject.com/en/4.2/ref/contrib/messages/
+    messages.info(request, "Make-post request received.")
+
+    user = request.user
+
+    try:
+        user = Author.objects.get(user=user)
+        user.delete()
+        messages.success(request, "The user is deleted")  
+        return HttpResponse(201)
+    except Author.DoesNotExist:
+        messages.error(request, "User doesnot exist")    
+        return HttpResponse(404)
+    except Exception as e: 
+        return HttpResponse(403)
