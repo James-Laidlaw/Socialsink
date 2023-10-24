@@ -82,17 +82,17 @@ def getOldAvailablePosts(request):
     user = request.user
     author = Author.objects.get(user=user)
     
-    posts = Post.objects.all().order_by('timestamp')[:10]
+    posts = Post.objects.all().order_by('timestamp')[:10] #Change the 10 if we want more possible posts per feed
 
     data = {}
     i = 0
     for post in posts:
         if post.publicity == 0:
-            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}"]
+            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}"]
+                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
                 i += 1
 
     return JsonResponse(data)
@@ -106,17 +106,17 @@ def getNewAvailablePosts(request):
 
     oldDate = datetime.now(pytz.timezone('America/Edmonton')) - timedelta(seconds=5)
     
-    posts = Post.objects.filter(timestamp__gte=oldDate).order_by('timestamp')[:10]
+    posts = Post.objects.filter(timestamp__gte=oldDate).order_by('timestamp')[:10] #Change the 10 if we want more possible posts per feed
 
     data = {}
     i = 0
     for post in posts:
         if post.publicity == 0:
-            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}"]
+            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}"]
+                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
                 i += 1
 
     return JsonResponse(data)
