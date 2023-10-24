@@ -33,7 +33,7 @@ class Post(models.Model):
     author = models.ForeignKey(Author, related_name='posts', on_delete=models.CASCADE)
     content = models.CharField(max_length=600)
     timestamp = models.DateTimeField('date published')
-    publicity = models.IntegerField(default=0) # 0 = private, 1 = friends, 2 = public
+    publicity = models.IntegerField(default=0) # 2 = private, 1 = friends, 0 = public
     private_to = models.ForeignKey(Author, related_name='readable_by', null=True, on_delete=models.SET_NULL) # only used if publicity = 0
 
 class Comment(models.Model):

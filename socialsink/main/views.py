@@ -53,11 +53,11 @@ def makePost(request):
     publicity = request.data['publicity']
 
     if publicity == 'public':
-        publicity = 2
+        publicity = 0
     elif publicity == 'friends':
         publicity = 1
     elif publicity == 'private':
-        publicity = 0
+        publicity = 2
     else:
         publicity = -1 #Unknown publicity
 
