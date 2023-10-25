@@ -6,6 +6,7 @@ from .models import Author, Post
 
 from datetime import datetime, timedelta, date, time
 import pytz
+from django.contrib import messages
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -130,3 +131,40 @@ def htmlServiceFeedPost(request):
         text = f.read()
 
     return FileResponse(file, content_type='text/html')
+
+# delete account functionality, needs to be fine tuned
+@api_view(['DELETE'])
+def deleteAccount(request):
+    # https://stackoverflow.com/questions/33715879/how-to-delete-user-in-django
+    # https://docs.djangoproject.com/en/4.2/ref/contrib/messages/
+    messages.info(request, "Delete-account request received.")
+
+    user = request.user
+    try:
+        author = Author.objects.get(user=user)
+        author.delete()
+        messages.success(request, "The user has been deleted")  
+        return HttpResponse(201)
+    except Author.DoesNotExist:
+        messages.error(request, "User does not exist")    
+        return HttpResponse(404)
+    except Exception as e: 
+        return HttpResponse(403)
+    
+@api_view(['DELETE'])
+def deletePost(request):
+    messages.info(request, "Delete post request received.")
+
+    user = request.user
+    postID = request.data["id"] 
+    
+    try:
+        post = Post(id = postID)
+        post.delete()
+        messages.success(request, "The post has been deleted")  
+        return HttpResponse(201)
+    except Post.DoesNotExist:
+        messages.error(request, "Post does not exist")    
+        return HttpResponse(404)
+    except Exception as e: 
+        return HttpResponse(403)
