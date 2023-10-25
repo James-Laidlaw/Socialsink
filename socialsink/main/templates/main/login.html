@@ -1,15 +1,21 @@
 {% extends "main/header.html" %}
 {% block content %}
-    <div class="home-wrapper">
-        <div class="main-area">
+    <div class="login-wrapper">
+        <div class="login-left">
+            <h1>Sign <span>In</span></h1>
             <form onsubmit="submitLogin(event)">
                 {% csrf_token %}
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" autocomplete="false">
-                <label for="username">Password</label>
-                <input type="password" id="password" name="password">
-                <button type="submit">Login</button>
+                <input type="text" id="username" name="username" autocomplete="false" placeholder="Username">
+                <input type="password" id="password" name="password" placeholder="Password">
+                <a href="/forgot-password/" id="forgot-password">Forgot Password?</a>
+                <button type="submit">Sign In</button>
             </form>
+            <div class="login-sign-up">
+                <p>Not a member yet? <a href="/register/">Sign Up</a></p>
+            </div>
+        </div>
+        <div class="login-right">
+            <img src="../../../static/images/login-image.jpg" />
         </div>
     </div>
 
