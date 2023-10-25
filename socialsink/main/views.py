@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.core.paginator import Paginator
 from .models import Author, Post
+from .serizlizers import AuthorSerializer
+
 from datetime import datetime
 
 from rest_framework.decorators import api_view
@@ -72,3 +75,62 @@ def makePost(request):
     post.save()
 
     return HttpResponse(201)
+
+
+@api_view(['GET'])
+#get list of authors with pagination
+def getAuthors(request):
+    pageNum = request.GET.get('page', 1)
+    pageSize = request.GET.get('size', 50)
+
+    authors = Author.objects.all()
+
+    paginatedAuthors = Paginator(authors, pageSize)
+
+    #paginator crashes if page number is out of range
+    try: 
+        page = paginatedAuthors.page(pageNum)
+    except:
+        return HttpResponse(404)
+
+
+    author_serializer = AuthorSerializer(page, many=True, context={'request': request})
+
+    serialized_authors = author_serializer.data
+
+    return JsonResponse(serialized_authors, safe=False)
+
+@api_view(['GET'])
+def getAuthor(request, author_id):
+
+    if author_id == None:
+        return HttpResponse(400)
+    
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return HttpResponse(404)
+    author_serializer = AuthorSerializer(author, context={'request': request})
+
+    serialized_author = author_serializer.data
+    return JsonResponse(serialized_author, safe=False)
+
+@api_view(["POST"])
+def updateAuthor(request, author_id):
+    if author_id == None:
+        return HttpResponse(400)
+
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return HttpResponse(404)
+
+    author_serializer = AuthorSerializer(author, data=request.data, partial=True)
+
+    if author_serializer.is_valid():
+        author_serializer.save()
+        return HttpResponse(200)
+    else:
+        return HttpResponse(400)
+    
+    

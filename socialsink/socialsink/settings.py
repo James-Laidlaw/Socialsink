@@ -126,3 +126,6 @@ STATIC_URL = '/static/'
 
 SESSION_COOKIE_SECURE = False
 LOGIN_URL = '/login/'
+
+# fix missing trailing slash redirect
+APPEND_SLASH = True

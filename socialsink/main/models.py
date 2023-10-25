@@ -8,13 +8,15 @@ from django.dispatch import receiver
 class Author(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    follows = models.ManyToManyField('self', symmetrical=False, through="Follower", related_name='follower_set')
+    github = models.CharField(max_length=200, null=True)
+    profileImage = models.CharField(max_length=200, null=True) #link to public image
+    follows = models.ManyToManyField('self', symmetrical=False, through="Follow", related_name='follower_set')
     friends = models.ManyToManyField('self', symmetrical=False, through="Friendship", related_name='friend_set')
     created_at = models.DateTimeField(auto_now_add=True)
 
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
 # a friendship is when two authors follow each other
-class Follower(models.Model):
+class Follow(models.Model):
     id = models.AutoField(primary_key=True)
     follower = models.ForeignKey(Author, related_name='following', on_delete=models.CASCADE)
     followee = models.ForeignKey(Author, related_name='followed_by', on_delete=models.CASCADE)
@@ -22,6 +24,7 @@ class Follower(models.Model):
     accepted = models.BooleanField(default=False) # This is a flag for informing the server if their is a mutual following or not
     created_at = models.DateTimeField(auto_now_add=True)
 
+# TODO discuss if we need this. IMO it's redundant because a friendship is just a mutual follow
 class Friendship(models.Model):
     id = models.AutoField(primary_key=True)
     myself = models.ForeignKey(Author, related_name='outgoing_friends', on_delete=models.CASCADE)
