@@ -5,10 +5,172 @@
         <div class="left-bar"></div>
         <div class="main-area">
             {% include 'main/includes/createpost.html' %}
-            {% include 'main/includes/feedpost.html' %}
-            {% include 'main/includes/feedpost.html' %}
-            {% include 'main/includes/feedpost.html' %}
+            <div id="post-container">
+            </div>
         </div>
         <div class="right-bar"></div>
     </div>
+
+    <script>
+        const container = document.getElementById('post-container')
+        var oldPostsRetrieved = false
+        var posts = 10 //Change this value if we want more posts
+
+        function addPost(post) {
+
+            // If there is 10 posts in the feed, remove the last one and create room for the new one
+            if (posts === 0) {
+                container.removeChild(container.lastChild)
+                posts = posts + 1
+            }
+           
+            // Create the main div with class "feed-post existing-post"
+            const mainDiv = document.createElement("div");
+            mainDiv.className = "feed-post existing-post";
+            mainDiv.id = `post-block-${post[3]}`;
+
+            // Create the anchor tag within the main div
+            const anchorTag = document.createElement("a");
+            anchorTag.href = "/";
+            mainDiv.appendChild(anchorTag);
+
+            // Create the image element within the anchor tag
+            const img = document.createElement("img");
+            img.src = "../../../static/images/unknown_user.png";
+            anchorTag.appendChild(img);
+
+            // Create the post-content div within the main div
+            const postContentDiv = document.createElement("div");
+            postContentDiv.className = "post-content";
+            mainDiv.appendChild(postContentDiv);
+
+            // Create the dropdown div within the post-content div
+            const dropdownDiv = document.createElement("div");
+            dropdownDiv.className = "dropdown";
+            postContentDiv.appendChild(dropdownDiv);
+
+            // Create the button for dropdown
+            const dropdownButton = document.createElement("button");
+            dropdownButton.className = "btn btn-secondary dropdown-toggle";
+            dropdownButton.type = "button";
+            dropdownButton.id = "dropdownMenuButton";
+            dropdownButton.setAttribute("data-toggle", "dropdown");
+            dropdownButton.setAttribute("aria-haspopup", "true");
+            dropdownButton.setAttribute("aria-expanded", "false");
+            dropdownDiv.appendChild(dropdownButton);
+
+            // Create the icon for the button
+            const icon = document.createElement("i");
+            icon.className = "fa-solid fa-ellipsis";
+            dropdownButton.appendChild(icon);
+
+            // Create the dropdown menu within the dropdown div
+            const dropdownMenu = document.createElement("div");
+            dropdownMenu.className = "dropdown-menu";
+            dropdownMenu.setAttribute("aria-labelledby", "dropdownMenuButton");
+            dropdownDiv.appendChild(dropdownMenu);
+
+            // Create dropdown menu items
+            const menuItem1 = document.createElement("a");
+            menuItem1.className = "dropdown-item";
+            menuItem1.href = "#";
+            menuItem1.textContent = "Action";
+            dropdownMenu.appendChild(menuItem1);
+
+            const menuItem2 = document.createElement("a");
+            menuItem2.className = "dropdown-item";
+            menuItem2.href = "#";
+            menuItem2.textContent = "Another action";
+            dropdownMenu.appendChild(menuItem2);
+
+            const menuItem3 = document.createElement("a");
+            menuItem3.className = "dropdown-item";
+            menuItem3.href = "#";
+            menuItem3.textContent = "Something else here";
+            dropdownMenu.appendChild(menuItem3);
+
+            // Create the elements for user information and post content
+            const userName = document.createElement("p");
+            userName.textContent = post[0];
+            postContentDiv.appendChild(userName);
+
+            const timestamp = document.createElement("time");
+            timestamp.textContent = post[2];
+            postContentDiv.appendChild(timestamp);
+
+            const postContent = document.createElement("p");
+            postContent.textContent = post[1];
+            postContentDiv.appendChild(postContent);
+
+            // Create the post-btn-wrap div within the main div
+            const postBtnWrapDiv = document.createElement("div");
+            postBtnWrapDiv.className = "post-btn-wrap";
+            mainDiv.appendChild(postBtnWrapDiv);
+
+            // Create the Like button
+            const likeButton = document.createElement("button");
+            likeButton.type = "button";
+            likeButton.className = "btn btn-like";
+            likeButton.innerHTML = '<i class="fa-solid fa-heart"></i>Like';
+            postBtnWrapDiv.appendChild(likeButton);
+
+            // Create the Share button
+            const shareButton = document.createElement("button");
+            shareButton.type = "button";
+            shareButton.className = "btn btn-share";
+            shareButton.innerHTML = '<i class="fa-solid fa-share"></i>Share';
+            postBtnWrapDiv.appendChild(shareButton);
+            
+            if (container.firstChild) {
+                container.insertBefore(mainDiv, container.firstChild);
+            } else {
+                container.appendChild(mainDiv)
+            }
+
+            posts = posts - 1
+            
+        }
+
+        //If the document is freshly loaded
+        $(document).ready(function() {
+            function displayOldPosts() {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/get-old-available-posts/",
+                    success: function (response) {
+                        console.log("Getting the 10 most recent posts", response)
+                        for (const post in response) {
+                            addPost(response[post])
+                        }
+                        oldPostsRetrieved = true
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                })
+            }
+
+            displayOldPosts();
+        })
+
+        function retrievePosts() {
+            if (oldPostsRetrieved) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/get-new-available-posts/",
+                    success: function (response) {
+                        console.log("New posts coming in", response)
+                        for (const post in response) {
+                            addPost(response[post])
+                        }
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                })
+            }
+        }
+
+        setInterval(retrievePosts, 5000)
+    </script>
 {% endblock content %}
