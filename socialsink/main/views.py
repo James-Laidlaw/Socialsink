@@ -89,11 +89,11 @@ def getOldAvailablePosts(request):
     i = 0
     for post in posts:
         if post.publicity == 0:
-            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+            data[i] =[post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
                 i += 1
 
     return JsonResponse(data)
@@ -113,11 +113,11 @@ def getNewAvailablePosts(request):
     i = 0
     for post in posts:
         if post.publicity == 0:
-            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
                 i += 1
 
     return JsonResponse(data)

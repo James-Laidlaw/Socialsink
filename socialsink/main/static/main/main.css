@@ -30,6 +30,29 @@ body {
     box-sizing: border-box;
 }
 
+/* width */
+::-webkit-scrollbar {
+    width: 4px;
+ }
+/* Track */
+ ::-webkit-scrollbar-track {
+   background: var(--deep-blue);
+   border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+   background: var(--button-text);
+   border-radius: 10px;
+}
+
+/* Handle on hover */
+ ::-webkit-scrollbar-thumb:hover {
+    background: var(--button-text);
+}
+
+/* -------------------------------------------------------------------------------------- */
+
 body {
     font-family: var(--primary-font);
     background: var(--light-blue);
@@ -45,6 +68,7 @@ p {
 }
 
 a {
+    cursor: pointer;
     color: var(--off-white);
     text-decoration: none;
     transition: all 300ms ease 0s;
@@ -65,13 +89,27 @@ button {
     display: inline-flex;
     flex-direction: row;
     height: 80px;
-    padding: 0 20px 20px;
+    padding: 20px 25px 0;
     background: none;
     box-sizing: border-box;
+    border-radius: 32px 32px 0 0;
+    background: var(--deep-blue);
 }
 
 .navbar {
+    width: 100%;
     padding: 0;
+}
+
+.navbar .nav-link {
+    padding: 5px;
+}
+
+.navbar .nav-right-options {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
 
 /* NavBar Ends ---------------------------------------- */
@@ -85,6 +123,8 @@ main {
     flex-grow: 1;
     margin: var(--design-padding) var(--design-padding);
     background: none;
+    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    border-radius: 32px;
 }
 
 /* Sign In Page Begins -------------------------------- */
@@ -98,7 +138,7 @@ main {
     background: var(--deep-blue);
     padding: 50px;
     border-radius: 32px;
-    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 .login-wrapper .login-left,
@@ -222,16 +262,21 @@ main {
     flex-direction: row;
     justify-content: space-between;
     flex-grow: 1;
-    gap: 16px;
+    height: calc(100% - 60px);
+    gap: 7px;
     background: var(--deep-blue);
     padding: 20px 25px 50px;
-    border-radius: 32px;
-    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    border-radius: 0 0 32px 32px;
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 .main-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     flex-grow: 1;
     flex-basis: 50%;
+    margin-left: 9px;
 }
 
 .left-bar,
@@ -242,9 +287,17 @@ main {
     width: 25%;
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
+    overflow: hidden;
 }
 
 /* Main Containers and Bars Ends ------------------- */
+
+#post-container {
+    overflow-y: overlay;
+    scrollbar-gutter: stable;
+    border-radius: 16px;
+    padding-right: 5px;
+}
 
 /* Feed Posts Begins ------------------------------- */
 
@@ -258,6 +311,10 @@ main {
     padding: 16px;
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
+}
+
+.feed-post:last-of-type {
+    margin-bottom: 0;
 }
 
 .feed-post img {
@@ -283,6 +340,7 @@ main {
     gap: 10px;
 }
 
+.post-btn-wrap .btn,
 .post-btn-wrap button {
     display: flex;
     justify-content: center;
@@ -291,12 +349,13 @@ main {
     font-size: 1rem;
     color: var(--button-text);
     background: none;
-    border-radius: 25px;
+    border-radius: var(--card-round-border);
     border: 2px solid var(--medium-grey);
     min-width: 140px;
     min-height: 50px;
     transition: all 500ms ease 0s;
     letter-spacing: 0.25px;
+    padding: 0;
 }
 
 .post-btn-wrap button:hover,
@@ -381,7 +440,47 @@ main {
 
 /* Feed Posts Ends ----------------------------- */
 
+
+/* Visibility Button Starts --------------------------- */
+
+.post-btn-wrap .btn {
+    padding: 0 20px;
+}
+
+.post-content select {
+    text-align: left;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.post-content .select-wrap {
+    position: relative;
+}
+
+.post-content .select-wrap:after {
+    color: var(--button-text);
+    font-family: "Font Awesome 6 Free";
+    content: "\f06e";
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.post-content option {
+    color: var(--deep-blue);
+}
+
+/* Visibility Button Ends ----------------------------- */
+
 /* Create Post Begins -------------------------- */
+
+.feed-post.create-new {
+    width: calc(100% - 9px);
+    margin-right: auto;
+}
 
 .post-content input {
     color: #fff;
@@ -398,3 +497,91 @@ main {
 }
 
 /* Create Post Ends ----------------------- */
+
+/* Profile Bar Begins --------------------- */
+
+#profile-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#profile-bar .user-bg {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+}
+
+#profile-bar .profile-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    transform: translateY(-50%);
+    margin-bottom: -28px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+#profile-bar .user-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+#profile-bar .user-box > * {
+    margin: 0;
+}
+
+#profile-bar .username {
+    font-size: 20px;
+    font-weight: 500px;
+}
+
+#profile-bar .useremail {
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--light-grey);
+    letter-spacing: 0;
+} 
+
+#profile-bar .userbio {
+    max-width: 300px;
+}
+
+#profile-bar .follow-box {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+    padding: 20px 0;
+    border-top: 1px solid #606e7a61;
+    border-bottom: 1px solid #606e7a61;
+}
+
+#profile-bar .follow-box > div {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#profile-bar .follow-box > div:first-of-type {
+    border-right: 1px solid #606e7a61;
+}
+
+#profile-bar .follow-box .count {
+    color: var(--off-white);
+    font-weight: 700;
+    letter-spacing: 0.75px;
+}
+
+#profile-bar .follow-box .count-label {
+    color: #707f8c;
+    font-weight: 600;
+    letter-spacing: 0.75px;
+}
+
+/* Profile Bar Ends ----------------------- */
