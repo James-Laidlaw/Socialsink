@@ -18,8 +18,15 @@
 
     <script>
         const feedContainer = document.getElementById("post-container");
+        var oldPostsRetrieved = false
+        var posts = 10 //Change this value if we want more posts
 
         function addPost(post) {
+
+            if (posts === 0) {
+                container.removeChild(container.lastChild)
+                posts = posts + 1
+            }
             
             console.log(post)
             console.log("post-block-" + post.id)
@@ -56,24 +63,54 @@
             `;
 
             // Get the container where you want to insert the new post
-            feedContainer.insertBefore(postElement, feedContainer.firstChild);
-            console.log("Post added", postElement)  
+            if (feedContainer.firstChild) {
+                feedContainer.insertBefore(postElement, feedContainer.firstChild);
+            } else {
+                feedContainer.appendChild(postElement)
+            }
+
+            console.log("Post added", postElement) 
+            
+            posts = posts - 1
         }
 
-        function retrievePosts() {
-            $.ajax({
-                type: "GET",
-                url: "/api/get-new-available-posts/",
-                success: function (response) {
-                    // console.log("New posts coming in", response)
-                    for (const post in response) {
-                        addPost(response[post])
+        $(document).ready(function() {
+            function displayOldPosts() {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/get-old-available-posts/",
+                    success: function (response) {
+                        console.log("Getting the 10 most recent posts", response)
+                        for (const post in response) {
+                            addPost(response[post])
+                        }
+                        oldPostsRetrieved = true
+                    },
+                    error: function (error) {
+                        console.error(error);
                     }
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
+                })
+            }
+
+            displayOldPosts();
+        })
+
+        function retrievePosts() {
+            if (oldPostsRetrieved) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/get-new-available-posts/",
+                    success: function (response) {
+                        console.log("New posts coming in", response)
+                        for (const post in response) {
+                            addPost(response[post])
+                        }
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                })
+            }
         }
 
         setInterval(retrievePosts, 5000)
