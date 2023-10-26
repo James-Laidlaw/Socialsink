@@ -30,6 +30,29 @@ body {
     box-sizing: border-box;
 }
 
+/* width */
+::-webkit-scrollbar {
+    width: 4px;
+ }
+/* Track */
+ ::-webkit-scrollbar-track {
+   background: var(--deep-blue);
+   border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+   background: var(--button-text);
+   border-radius: 10px;
+}
+
+/* Handle on hover */
+ ::-webkit-scrollbar-thumb:hover {
+    background: var(--button-text);
+}
+
+/* -------------------------------------------------------------------------------------- */
+
 body {
     font-family: var(--primary-font);
     background: var(--light-blue);
@@ -240,7 +263,7 @@ main {
     justify-content: space-between;
     flex-grow: 1;
     height: calc(100% - 60px);
-    gap: 16px;
+    gap: 7px;
     background: var(--deep-blue);
     padding: 20px 25px 50px;
     border-radius: 0 0 32px 32px;
@@ -253,6 +276,7 @@ main {
     overflow: hidden;
     flex-grow: 1;
     flex-basis: 50%;
+    margin-left: 9px;
 }
 
 .left-bar,
@@ -268,8 +292,10 @@ main {
 /* Main Containers and Bars Ends ------------------- */
 
 #post-container {
-    overflow-y: scroll;
+    overflow-y: overlay;
+    scrollbar-gutter: stable;
     border-radius: 16px;
+    padding-right: 5px;
 }
 
 /* Feed Posts Begins ------------------------------- */
@@ -284,6 +310,10 @@ main {
     padding: 16px;
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
+}
+
+.feed-post:last-of-type {
+    margin-bottom: 0;
 }
 
 .feed-post img {
@@ -445,6 +475,11 @@ main {
 /* Visibility Button Ends ----------------------------- */
 
 /* Create Post Begins -------------------------- */
+
+.feed-post.create-new {
+    width: calc(100% - 9px);
+    margin-right: auto;
+}
 
 .post-content input {
     color: #fff;
