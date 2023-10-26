@@ -15,9 +15,11 @@ from rest_framework.response import Response
 @login_required
 def homepage(request):
     author = request.user.author
+    number_of_initial_post = 10
+    posts = Post.objects.order_by('-timestamp')[:number_of_initial_post]
     return render(request=request,
                   template_name='main/home.html',
-                  context={'user': request.user})
+                  context={'user': request.user, 'posts': posts})
 
 def login(request):
     return render(request=request,
@@ -113,11 +115,11 @@ def getNewAvailablePosts(request):
     i = 0
     for post in posts:
         if post.publicity == 0:
-            data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.author.user.username, post.content, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.id]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
                 i += 1
 
     return JsonResponse(data)
