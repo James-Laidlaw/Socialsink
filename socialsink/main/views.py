@@ -156,8 +156,7 @@ def deletePost(request):
     messages.info(request, "Delete post request received.")
 
     user = request.user
-    postID = request.data["id"] 
-    
+    postID = int(request.data["id"])
     try:
         post = Post(id = postID)
         post.delete()

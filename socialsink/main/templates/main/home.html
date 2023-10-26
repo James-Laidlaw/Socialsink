@@ -121,6 +121,14 @@
             shareButton.innerHTML = '<i class="fa-solid fa-share"></i>Share';
             postBtnWrapDiv.appendChild(shareButton);
             
+            // Create the Delete button
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "btn btn-delete";
+            deleteButton.innerHTML = '<i class="fa-solid fa-delete-left"></i>Delete';
+            deleteButton.addEventListener("click", buttonDelete);
+            postBtnWrapDiv.appendChild(deleteButton);
+
             if (container.firstChild) {
                 container.insertBefore(mainDiv, container.firstChild);
             } else {
@@ -128,6 +136,25 @@
             }
 
             posts = posts - 1
+            
+        }
+
+        function buttonDelete() {
+            post_id = document.getElementById("data-post-id")
+            $.ajax({
+                type: "DELETE",
+                url: "/api/delete-post/",
+                data: {
+                    'username': post_id.value,
+                },
+                success: function (response) {
+                   alert("success")
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+
             
         }
 
