@@ -45,6 +45,7 @@ p {
 }
 
 a {
+    cursor: pointer;
     color: var(--off-white);
     text-decoration: none;
     transition: all 300ms ease 0s;
@@ -65,13 +66,27 @@ button {
     display: inline-flex;
     flex-direction: row;
     height: 80px;
-    padding: 0 20px 20px;
+    padding: 20px 25px 0;
     background: none;
     box-sizing: border-box;
+    border-radius: 32px 32px 0 0;
+    background: var(--deep-blue);
 }
 
 .navbar {
+    width: 100%;
     padding: 0;
+}
+
+.navbar .nav-link {
+    padding: 5px;
+}
+
+.navbar .nav-right-options {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
 
 /* NavBar Ends ---------------------------------------- */
@@ -85,6 +100,8 @@ main {
     flex-grow: 1;
     margin: var(--design-padding) var(--design-padding);
     background: none;
+    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    border-radius: 32px;
 }
 
 /* Sign In Page Begins -------------------------------- */
@@ -98,7 +115,7 @@ main {
     background: var(--deep-blue);
     padding: 50px;
     border-radius: 32px;
-    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 .login-wrapper .login-left,
@@ -222,14 +239,18 @@ main {
     flex-direction: row;
     justify-content: space-between;
     flex-grow: 1;
+    height: calc(100% - 60px);
     gap: 16px;
     background: var(--deep-blue);
     padding: 20px 25px 50px;
-    border-radius: 32px;
-    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    border-radius: 0 0 32px 32px;
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 .main-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     flex-grow: 1;
     flex-basis: 50%;
 }
@@ -245,6 +266,11 @@ main {
 }
 
 /* Main Containers and Bars Ends ------------------- */
+
+#post-container {
+    overflow-y: scroll;
+    border-radius: 16px;
+}
 
 /* Feed Posts Begins ------------------------------- */
 
@@ -283,6 +309,7 @@ main {
     gap: 10px;
 }
 
+.post-btn-wrap .btn,
 .post-btn-wrap button {
     display: flex;
     justify-content: center;
@@ -291,12 +318,13 @@ main {
     font-size: 1rem;
     color: var(--button-text);
     background: none;
-    border-radius: 25px;
+    border-radius: var(--card-round-border);
     border: 2px solid var(--medium-grey);
     min-width: 140px;
     min-height: 50px;
     transition: all 500ms ease 0s;
     letter-spacing: 0.25px;
+    padding: 0;
 }
 
 .post-btn-wrap button:hover,
@@ -380,6 +408,41 @@ main {
 }
 
 /* Feed Posts Ends ----------------------------- */
+
+
+/* Visibility Button Starts --------------------------- */
+
+.post-btn-wrap .btn {
+    padding: 0 20px;
+}
+
+.post-content select {
+    text-align: left;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.post-content .select-wrap {
+    position: relative;
+}
+
+.post-content .select-wrap:after {
+    color: var(--button-text);
+    font-family: "Font Awesome 6 Free";
+    content: "\f06e";
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.post-content option {
+    color: var(--deep-blue);
+}
+
+/* Visibility Button Ends ----------------------------- */
 
 /* Create Post Begins -------------------------- */
 
