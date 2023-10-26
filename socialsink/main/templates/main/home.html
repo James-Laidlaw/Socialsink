@@ -140,12 +140,14 @@
         }
 
         function buttonDelete() {
-            post_id = document.getElementById("data-post-id")
+            const postId = deletePostButton.getAttribute("data-post-id");
+
             $.ajax({
                 type: "DELETE",
                 url: "/api/delete-post/",
+                dataType: "json",
                 data: {
-                    'id': post_id.value,
+                    "id": post_id.value
                 },
                 success: function (response) {
                    alert("success")

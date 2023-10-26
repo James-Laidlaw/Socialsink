@@ -158,7 +158,7 @@ def deletePost(request):
     user = request.user
     postID = int(request.data["id"])
     try:
-        post = Post(id = postID)
+        post = Post.objects.get(id=postID, author=user)
         post.delete()
         messages.success(request, "The post has been deleted")  
         return HttpResponse(201)
