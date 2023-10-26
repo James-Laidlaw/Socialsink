@@ -2,7 +2,9 @@
 {% block content %}
     {% include 'main/includes/navbar.html' %}
     <div class="home-wrapper">
-        <div class="left-bar"></div>
+        <div class="left-bar">
+            {% include 'main/includes/profilebar.html' %}
+        </div>
         <div class="main-area">
             {% include 'main/includes/createpost.html' %}
             <div id="post-container">
