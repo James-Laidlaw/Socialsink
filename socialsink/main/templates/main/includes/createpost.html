@@ -42,14 +42,16 @@
         $.ajax({
             type: "POST",
             url: "/api/make-post/",
-            dataType: 'json',
-            data: {
+            contentType: 'application/json',
+            data: JSON.stringify({
                 'text': text.value,
                 'publicity': publicity.value
-            },
-            success: function (response) {
-                text.value = ""
-                publicity.value = ""
+            }),
+            success: function (response, textStatus, http) {
+                if (http.status === 201) {
+                    text.value = ""
+                    publicity.value = ""
+                }
             },
             error: function (error) {
                 console.error(error);
