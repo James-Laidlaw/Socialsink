@@ -2,141 +2,87 @@
 {% block content %}
     {% include 'main/includes/navbar.html' %}
     <div class="home-wrapper">
-        <div class="left-bar"></div>
+        <div class="left-bar">
+            {% include 'main/includes/profilebar.html' %}
+        </div>
         <div class="main-area">
             {% include 'main/includes/createpost.html' %}
             <div id="post-container">
+                {% for post in posts %}
+                    {% include 'main/includes/feedpost.html' with post=post %}
+                {% endfor %}
             </div>
         </div>
         <div class="right-bar"></div>
     </div>
 
     <script>
-        const container = document.getElementById('post-container')
+        const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
         var posts = 10 //Change this value if we want more posts
+        var postIDs = []
 
         function addPost(post) {
+            postIDs.push(post[0])
 
-            // If there is 10 posts in the feed, remove the last one and create room for the new one
             if (posts === 0) {
                 container.removeChild(container.lastChild)
+                postIDs.shift()
                 posts = posts + 1
+
             }
-           
-            // Create the main div with class "feed-post existing-post"
-            const mainDiv = document.createElement("div");
-            mainDiv.className = "feed-post existing-post";
-            mainDiv.id = `post-block-${post[3]}`;
-
-            // Create the anchor tag within the main div
-            const anchorTag = document.createElement("a");
-            anchorTag.href = "/";
-            mainDiv.appendChild(anchorTag);
-
-            // Create the image element within the anchor tag
-            const img = document.createElement("img");
-            img.src = "../../../static/images/unknown_user.png";
-            anchorTag.appendChild(img);
-
-            // Create the post-content div within the main div
-            const postContentDiv = document.createElement("div");
-            postContentDiv.className = "post-content";
-            mainDiv.appendChild(postContentDiv);
-
-            // Create the dropdown div within the post-content div
-            const dropdownDiv = document.createElement("div");
-            dropdownDiv.className = "dropdown";
-            postContentDiv.appendChild(dropdownDiv);
-
-            // Create the button for dropdown
-            const dropdownButton = document.createElement("button");
-            dropdownButton.className = "btn btn-secondary dropdown-toggle";
-            dropdownButton.type = "button";
-            dropdownButton.id = "dropdownMenuButton";
-            dropdownButton.setAttribute("data-toggle", "dropdown");
-            dropdownButton.setAttribute("aria-haspopup", "true");
-            dropdownButton.setAttribute("aria-expanded", "false");
-            dropdownDiv.appendChild(dropdownButton);
-
-            // Create the icon for the button
-            const icon = document.createElement("i");
-            icon.className = "fa-solid fa-ellipsis";
-            dropdownButton.appendChild(icon);
-
-            // Create the dropdown menu within the dropdown div
-            const dropdownMenu = document.createElement("div");
-            dropdownMenu.className = "dropdown-menu";
-            dropdownMenu.setAttribute("aria-labelledby", "dropdownMenuButton");
-            dropdownDiv.appendChild(dropdownMenu);
-
-            // Create dropdown menu items
-            const menuItem1 = document.createElement("a");
-            menuItem1.className = "dropdown-item";
-            menuItem1.href = "#";
-            menuItem1.textContent = "Action";
-            dropdownMenu.appendChild(menuItem1);
-
-            const menuItem2 = document.createElement("a");
-            menuItem2.className = "dropdown-item";
-            menuItem2.href = "#";
-            menuItem2.textContent = "Another action";
-            dropdownMenu.appendChild(menuItem2);
-
-            const menuItem3 = document.createElement("a");
-            menuItem3.className = "dropdown-item";
-            menuItem3.href = "#";
-            menuItem3.textContent = "Something else here";
-            dropdownMenu.appendChild(menuItem3);
-
-            // Create the elements for user information and post content
-            const userName = document.createElement("p");
-            userName.textContent = post[0];
-            postContentDiv.appendChild(userName);
-
-            const timestamp = document.createElement("time");
-            timestamp.textContent = post[2];
-            postContentDiv.appendChild(timestamp);
-
-            const postContent = document.createElement("p");
-            postContent.textContent = post[1];
-            postContentDiv.appendChild(postContent);
-
-            // Create the post-btn-wrap div within the main div
-            const postBtnWrapDiv = document.createElement("div");
-            postBtnWrapDiv.className = "post-btn-wrap";
-            mainDiv.appendChild(postBtnWrapDiv);
-
-            // Create the Like button
-            const likeButton = document.createElement("button");
-            likeButton.type = "button";
-            likeButton.className = "btn btn-like";
-            likeButton.innerHTML = '<i class="fa-solid fa-heart"></i>Like';
-            postBtnWrapDiv.appendChild(likeButton);
-
-            // Create the Share button
-            const shareButton = document.createElement("button");
-            shareButton.type = "button";
-            shareButton.className = "btn btn-share";
-            shareButton.innerHTML = '<i class="fa-solid fa-share"></i>Share';
-            postBtnWrapDiv.appendChild(shareButton);
             
-            // Create the Delete button
-            const deleteButton = document.createElement("button");
-            deleteButton.type = "button";
-            deleteButton.className = "btn btn-delete";
-            deleteButton.innerHTML = '<i class="fa-solid fa-delete-left"></i>Delete';
-            deleteButton.addEventListener("click", buttonDelete);
-            postBtnWrapDiv.appendChild(deleteButton);
+            console.log(post)
+            console.log("post-block-" + post[0])
 
-            if (container.firstChild) {
-                container.insertBefore(mainDiv, container.firstChild);
+            const postElement = document.createElement("div");
+            postElement.classList.add("feed-post", "existing-post");
+            postElement.id = "post-block-" + post[0];
+            postElement.setAttribute('data-post-id', post[0]);
+
+            var likeButton = ''
+            if (post[5] === 1) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
             } else {
-                container.appendChild(mainDiv)
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
             }
 
-            posts = posts - 1
+            // Construct the post content using the provided data
+            postElement.innerHTML = `
+                <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+                <div class="post-content">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div>
+                    <div class="post-body">
+                        <p id="post-username">${post[1]}</p>
+                        <time id="post-timestamp">${post[2]}</time>
+                        <p id="post-content">${post[3]}</p>
+                    </div>
+                    <div class="post-btn-wrap">
+                        ${likeButton}
+                        <button type="submit" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                    </div>
+                </div>
+            `;
+
+            // Get the container where you want to insert the new post
+            if (feedContainer.firstChild) {
+                feedContainer.insertBefore(postElement, feedContainer.firstChild);
+            } else {
+                feedContainer.appendChild(postElement)
+            }
+
+            console.log("Post added", postElement) 
             
+            posts = posts - 1
         }
 
         function buttonDelete() {
@@ -199,7 +145,83 @@
                 })
             }
         }
-
         setInterval(retrievePosts, 5000)
+
+        function likePost(postID) {
+            console.log("Liking post")
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "POST",
+                url: `/api/like-post/${postID}`,
+                dataType: 'json',
+                data: {
+                    'id': postID
+                },
+                success: function (response) {
+                    $(`#like-button-${postID}`).addClass('liked')
+                    document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
+                    updateLikeCount(postID)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        function unlikePost(postID) {
+            console.log("Unliking Post")
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "DELETE",
+                url: `/api/unlike-post/${postID}`,
+                dataType: 'json',
+                data: {
+                    'id': postID
+                },
+                success: function (response) {
+                    $(`#like-button-${postID}`).removeClass('liked')
+                    document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
+                    updateLikeCount(postID)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        function updateAllPosts() {
+            console.log("Fetching new like counts if theres changes")
+            for (const postID in postIDs) {
+                updateLikeCount(postIDs[postID])
+            }
+        }
+        setInterval(updateAllPosts, 30000) //30 second refresh
+
+        function updateLikeCount(postID) {
+            $.ajax({
+                type: "GET",
+                url: `/api/get-like-count/${postID}`,
+                success: function (response) {
+                    document.getElementById(`like-button-${postID}`).innerHTML = `${response} <i class="fa-solid fa-heart"></i>Like`
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
     </script>
 {% endblock content %}
