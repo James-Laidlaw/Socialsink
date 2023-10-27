@@ -185,6 +185,7 @@
         }
 
         function updateAllPosts() {
+            console.log("Fetching new like counts if theres changes")
             for (const postID in postIDs) {
                 updateLikeCount(postIDs[postID])
             }
