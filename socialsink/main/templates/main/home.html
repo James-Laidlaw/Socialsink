@@ -103,9 +103,11 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/delete-post/${postID}`,
-                success: function (response) {
-                    console.log(response)
-                    $(`#post-block-${postID}`).remove()
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        $(`#post-block-${postID}`).remove()
+                    }
                 },
                 error: function (error) {
                     console.error(error);

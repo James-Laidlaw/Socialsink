@@ -147,3 +147,12 @@ class YourApiTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(int(response.data['count']), 1)
+
+    def test_delete_post(self):
+        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        url = reverse('deletePost', args=[post.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

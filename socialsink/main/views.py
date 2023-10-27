@@ -185,8 +185,6 @@ def deletePost(request, id):
     user = request.user
     
     if user.is_authenticated:
-        postID = request.data["id"] 
-        
         try:
             author = Author.objects.get(user=user)
             post = Post.objects.get(id=id, author=author)
