@@ -93,12 +93,17 @@ def getOldAvailablePosts(request):
             liked = 0
         else:
             liked = 1
+
+        isOwnPost = 0
+        if post.author == author:
+            isOwnPost = 1
+
         if post.publicity == 0:
-            data[i] =[post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked]
+            data[i] =[post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
                 i += 1
 
     return JsonResponse(data)
@@ -122,12 +127,17 @@ def getNewAvailablePosts(request):
             liked = 0
         else:
             liked = 1
+
+        isOwnPost = 0
+        if post.author == author:
+            isOwnPost = 1
+
         if post.publicity == 0:
-            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked]
+            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
                 i += 1
 
     return JsonResponse(data)
@@ -162,13 +172,14 @@ def deleteAccount(request):
         return HttpResponse(403)
     
 @api_view(['DELETE'])
-def deletePost(request):
-    messages.info(request, "Delete post request received.")
+def deletePost(request, id):
+    print("Delete post request received")
 
     user = request.user
-    postID = int(request.data["id"])
+
     try:
-        post = Post.objects.get(id=postID, author=user)
+        author = Author.objects.get(user=user)
+        post = Post.objects.get(id=id, author=author)
         post.delete()
         messages.success(request, "The post has been deleted")  
         return HttpResponse(201)
