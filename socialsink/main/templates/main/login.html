@@ -36,21 +36,22 @@
             $.ajax({
                 type: "POST",
                 url: "/api/login/",
-                dataType: 'json',
-                data: {
+                contentType: 'application/json',
+                data: JSON.stringify({
                     'username': document.getElementById('username').value,
                     'password': document.getElementById('password').value
-                },
-                success: function (response) {
-                    if (response === 201) {
+                }),
+                success: function (response, textStatus, http) {
+                    if (http.status === 201) {
                         window.location.href = "/"
-                    }
-                    else if (response === 403) {
-                        alert("Incorrect username or password")
                     }
                 },
                 error: function (error) {
-                    console.error(error);
+                    if (error.status === 401) {
+                        alert("Incorrect username or password")
+                    } else {
+                        console.error(error);
+                    }
                 }
             })
         }

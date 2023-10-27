@@ -14,10 +14,9 @@
         $.ajax({
             type: "GET",
             url: "/api/logout/",
-            success: function (response) {
+            success: function (response, textStatus, http) {
                 console.log(response)
-                if (response === '201') {
-                    console.log("HERE")
+                if (http.status === 200) {
                     window.location.href = "/login/"
                 }
             },
