@@ -373,6 +373,10 @@ main {
     color: var(--off-white);
 }
 
+.liked {
+    background: var(--hot-pink) !important;
+}
+
 .btn-share svg {
     color: var(--off-white);
 }

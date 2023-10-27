@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from .models import Author, Post
+from .models import Author, Post, Like
 
 from datetime import datetime, timedelta, date, time
 import pytz
@@ -88,12 +88,22 @@ def getOldAvailablePosts(request):
     data = {}
     i = 0
     for post in posts:
+        liked = author.likes.filter(post=post)
+        if len(liked) == 0:
+            liked = 0
+        else:
+            liked = 1
+
+        isOwnPost = 0
+        if post.author == author:
+            isOwnPost = 1
+
         if post.publicity == 0:
-            data[i] =[post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
+            data[i] =[post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
                 i += 1
 
     return JsonResponse(data)
@@ -112,12 +122,22 @@ def getNewAvailablePosts(request):
     data = {}
     i = 0
     for post in posts:
+        liked = author.likes.filter(post=post)
+        if len(liked) == 0:
+            liked = 0
+        else:
+            liked = 1
+
+        isOwnPost = 0
+        if post.author == author:
+            isOwnPost = 1
+
         if post.publicity == 0:
-            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
+            data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
             i += 1
         elif post.publicity == 1:
             if author in post.private_to:
-                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content]
+                data[i] = [post.id, post.author.user.username, f"{post.timestamp.date().strftime('%Y-%m-%d')} {post.timestamp.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
                 i += 1
 
     return JsonResponse(data)
@@ -152,14 +172,14 @@ def deleteAccount(request):
         return HttpResponse(403)
     
 @api_view(['DELETE'])
-def deletePost(request):
-    messages.info(request, "Delete post request received.")
+def deletePost(request, id):
+    print("Delete post request received")
 
     user = request.user
-    postID = request.data["id"] 
-    
+
     try:
-        post = Post(id = postID)
+        author = Author.objects.get(user=user)
+        post = Post.objects.get(id=id, author=author)
         post.delete()
         messages.success(request, "The post has been deleted")  
         return HttpResponse(201)
@@ -168,3 +188,48 @@ def deletePost(request):
         return HttpResponse(404)
     except Exception as e: 
         return HttpResponse(403)
+
+@api_view(['POST'])
+def likePost(request, id):
+    print("Like post request received")
+
+    user = request.user
+
+    try:
+        post = Post.objects.get(id=id)
+        author = Author.objects.get(user=user)
+        like = Like(author=author, post=post, timestamp=datetime.now(pytz.timezone('America/Edmonton')))
+        like.save()
+        return HttpResponse(201)
+    except Post.DoesNotExist:
+        return HttpResponse(404)
+
+
+@api_view(['DELETE'])
+def unlikePost(request, id):
+    print("Unlike Post request received")
+
+    user = request.user 
+    
+    try:
+        author = Author.objects.get(user=user)
+        post = Post.objects.get(id=id)
+        like = Like.objects.get(author=author, post=post)
+        like.delete()
+        return HttpResponse(201)
+    except Post.DoesNotExist:
+        return HttpResponse(404)
+
+
+@api_view(['GET'])
+def getLikeCount(request, id):
+    print("Get Like Count request received")
+
+    user = request.user
+    
+    try:
+        post = Post.objects.get(id=id)
+        count = len(post.likes.all())
+        return HttpResponse(count)
+    except Post.DoesNotExist:
+        return HttpResponse(404)

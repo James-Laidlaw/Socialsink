@@ -8,8 +8,10 @@ urlpatterns = [
     path("api/logout/", views.logoutRequest, name="logoutRequest"),
     path("api/make-post/", views.makePost, name="makePost"),
     path("api/delete-account/", views.deleteAccount, name="deleteAccount"),
-    path("api/delete-post/", views.deletePost, name="deletePost"),
+    path("api/delete-post/<int:id>", views.deletePost, name="deletePost"),
     path("api/get-old-available-posts/", views.getOldAvailablePosts, name="getOldAvailablePosts"),
     path("api/get-new-available-posts/", views.getNewAvailablePosts, name="getNewAvailablePosts"),
-    path("api/html-service/feedpost/", views.htmlServiceFeedPost, name="htmlServiceFeedPost"),
+    path("api/like-post/<int:id>", views.likePost, name="likePost"),
+    path("api/unlike-post/<int:id>", views.unlikePost, name="unlikePost"),
+    path("api/get-like-count/<int:id>", views.getLikeCount, name="getLikeCount"),
 ]
