@@ -137,13 +137,12 @@
             });
             $.ajax({
                 type: "POST",
-                url: "/api/like-post/",
+                url: `/api/like-post/${postID}`,
                 dataType: 'json',
                 data: {
                     'id': postID
                 },
                 success: function (response) {
-                    console.log(response)
                     $(`#like-button-${postID}`).addClass('liked')
                     document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
                     updateLikeCount(postID)
@@ -166,13 +165,12 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: "/api/unlike-post/",
+                url: `/api/unlike-post/${postID}`,
                 dataType: 'json',
                 data: {
                     'id': postID
                 },
                 success: function (response) {
-                    console.log(response)
                     $(`#like-button-${postID}`).removeClass('liked')
                     document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
                     updateLikeCount(postID)
@@ -184,20 +182,18 @@
         }
 
         function updateAllPosts() {
+            console.log("Fetching new like counts if theres changes")
             for (const postID in postIDs) {
-                updateLikeCount(postID)
+                updateLikeCount(postIDs[postID])
             }
         }
         setInterval(updateAllPosts, 30000) //30 second refresh
 
         function updateLikeCount(postID) {
-            console.log(postID)
-            console.log("Updating like count")
             $.ajax({
                 type: "GET",
                 url: `/api/get-like-count/${postID}`,
                 success: function (response) {
-                    console.log(response)
                     document.getElementById(`like-button-${postID}`).innerHTML = `${response} <i class="fa-solid fa-heart"></i>Like`
                 },
                 error: function (error) {

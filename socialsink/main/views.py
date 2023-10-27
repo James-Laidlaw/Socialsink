@@ -184,7 +184,7 @@ def likePost(request, id):
     print("Like post request received")
 
     user = request.user
-    
+
     try:
         post = Post.objects.get(id=id)
         author = Author.objects.get(user=user)
@@ -214,8 +214,6 @@ def unlikePost(request, id):
 @api_view(['GET'])
 def getLikeCount(request, id):
     print("Get Like Count request received")
-
-    print(request.data)
 
     user = request.user
     
