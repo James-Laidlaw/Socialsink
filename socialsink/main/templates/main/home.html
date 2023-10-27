@@ -107,6 +107,7 @@
                     if (http.status === 200) {
                         console.log(response)
                         $(`#post-block-${postID}`).remove()
+                        postIDs = postIDs.filter(item => item !== postID);
                     }
                 },
                 error: function (error) {
@@ -203,7 +204,6 @@
                 url: `/api/unlike-post/${postID}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         $(`#like-button-${postID}`).removeClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
                         updateLikeCount(postID)
@@ -229,7 +229,7 @@
                 type: "GET",
                 url: `/api/get-like-count/${postID}`,
                 success: function (response, textStatus, http) {
-                    if (http.status === 201) {
+                    if (http.status === 200) {
                         console.log(response)
                         document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>Like`
                     }
