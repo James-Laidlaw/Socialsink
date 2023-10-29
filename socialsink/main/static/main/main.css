@@ -373,10 +373,6 @@ main {
     color: var(--off-white);
 }
 
-.liked {
-    background: var(--hot-pink) !important;
-}
-
 .btn-share svg {
     color: var(--off-white);
 }
@@ -406,6 +402,12 @@ main {
 .existing-post .post-btn-wrap button:hover,
 .existing-post .post-btn-wrap button:focus {
     background-color: var(--deep-blue);
+}
+
+.existing-post .post-btn-wrap button.liked svg,
+.existing-post .post-btn-wrap button.liked:hover svg,
+.existing-post .post-btn-wrap button.liked:focus svg {
+    color: var(--hot-pink) !important;
 }
 
 .feed-post .dropdown {
@@ -589,3 +591,75 @@ main {
 }
 
 /* Profile Bar Ends ----------------------- */
+
+
+/* Testing Confirm Delete ----------------- */
+/* style.css */
+
+.popup-modal.hidden {
+    display: none !important;
+}
+
+.popup-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    gap: 30px;
+    width: 100%;
+    max-width: 800px;
+    min-height: 260px;
+    height: auto;
+    margin: auto;
+    padding: 50px 125px;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+    box-shadow: 0 1px 10px rgba(0,0,0,0.75);
+}
+
+.popup-modal p {
+    color: var(--light-blue);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.popup-modal .button-wrap {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+}
+
+.popup-modal button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: var(--button-text);
+    background: none;
+    border-radius: var(--card-round-border);
+    border: 2px solid var(--medium-grey);
+    min-width: 140px;
+    min-height: 50px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0 20px;
+}
+
+.popup-modal button:hover,
+.popup-modal button:focus {
+    color: var(--button-text);
+    background-color: var(--medium-grey);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.popup-modal button#confirm-yes:hover,
+.popup-modal button#confirm-yes:focus {
+    color: var(--hot-pink);
+}
