@@ -20,21 +20,37 @@
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
         var posts = 10 //Change this value if we want more posts
+        var postIDs = []
 
         function addPost(post) {
+            postIDs.push(post[0])
 
             if (posts === 0) {
                 container.removeChild(container.lastChild)
+                postIDs.shift()
                 posts = posts + 1
             }
             
             console.log(post)
-            console.log("post-block-" + post.id)
+            console.log("post-block-" + post[0])
 
             const postElement = document.createElement("div");
             postElement.classList.add("feed-post", "existing-post");
             postElement.id = "post-block-" + post[0];
             postElement.setAttribute('data-post-id', post[0]);
+
+            var likeButton = ''
+            if (post[5] === 1) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
+            } else {
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
+            }
+
+            if (post[6] === 1) {
+                deleteButton = `<button type="button" class="btn btn-like" onclick="deletePost(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
+            } else {
+                deleteButton = ""
+            }
 
             // Construct the post content using the provided data
             postElement.innerHTML = `
@@ -56,8 +72,9 @@
                         <p id="post-content">${post[3]}</p>
                     </div>
                     <div class="post-btn-wrap">
-                        <button type="button" class="btn btn-like"><i class="fa-solid fa-heart"></i>Like</button>
+                        ${likeButton}
                         <button type="submit" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        ${deleteButton}
                     </div>
                 </div>
             `;
@@ -74,17 +91,46 @@
             posts = posts - 1
         }
 
+        function deletePost(postID) {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "DELETE",
+                url: `/api/delete-post/${postID}`,
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        $(`#post-block-${postID}`).remove()
+                        postIDs = postIDs.filter(item => item !== postID);
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        //If the document is freshly loaded
         $(document).ready(function() {
             function displayOldPosts() {
                 $.ajax({
                     type: "GET",
                     url: "/api/get-old-available-posts/",
-                    success: function (response) {
-                        console.log("Getting the 10 most recent posts", response)
-                        for (const post in response) {
-                            addPost(response[post])
+                    dataType: 'json',
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            console.log("Getting the 10 most recent posts", response)
+                            for (const post in response) {
+                                addPost(response[post])
+                            }
+                            oldPostsRetrieved = true
                         }
-                        oldPostsRetrieved = true
                     },
                     error: function (error) {
                         console.error(error);
@@ -100,10 +146,13 @@
                 $.ajax({
                     type: "GET",
                     url: "/api/get-new-available-posts/",
-                    success: function (response) {
-                        console.log("New posts coming in", response)
-                        for (const post in response) {
-                            addPost(response[post])
+                    dataType: 'json',
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            console.log("New posts coming in", response)
+                            for (const post in response) {
+                                addPost(response[post])
+                            }
                         }
                     },
                     error: function (error) {
@@ -112,7 +161,83 @@
                 })
             }
         }
-
         setInterval(retrievePosts, 5000)
+
+        function likePost(postID) {
+            console.log("Liking post")
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "POST",
+                url: `/api/like-post/${postID}`,
+                success: function (response, textStatus, http) {
+                    if (http.status === 201) {
+                        $(`#like-button-${postID}`).addClass('liked')
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
+                        updateLikeCount(postID)
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        function unlikePost(postID) {
+            console.log("Unliking Post")
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "DELETE",
+                url: `/api/unlike-post/${postID}`,
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        $(`#like-button-${postID}`).removeClass('liked')
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
+                        updateLikeCount(postID)
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        function updateAllPosts() {
+            console.log("Fetching new like counts if theres changes")
+            for (const postID in postIDs) {
+                updateLikeCount(postIDs[postID])
+            }
+        }
+        setInterval(updateAllPosts, 30000) //30 second refresh
+
+        function updateLikeCount(postID) {
+            console.log("Updating like count")
+            $.ajax({
+                type: "GET",
+                url: `/api/get-like-count/${postID}`,
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>Like`
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
     </script>
 {% endblock content %}
