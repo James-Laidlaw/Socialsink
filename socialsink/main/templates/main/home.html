@@ -103,9 +103,12 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/delete-post/${postID}`,
-                success: function (response) {
-                    console.log(response)
-                    $(`#post-block-${postID}`).remove()
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        $(`#post-block-${postID}`).remove()
+                        postIDs = postIDs.filter(item => item !== postID);
+                    }
                 },
                 error: function (error) {
                     console.error(error);
@@ -119,12 +122,15 @@
                 $.ajax({
                     type: "GET",
                     url: "/api/get-old-available-posts/",
-                    success: function (response) {
-                        console.log("Getting the 10 most recent posts", response)
-                        for (const post in response) {
-                            addPost(response[post])
+                    dataType: 'json',
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            console.log("Getting the 10 most recent posts", response)
+                            for (const post in response) {
+                                addPost(response[post])
+                            }
+                            oldPostsRetrieved = true
                         }
-                        oldPostsRetrieved = true
                     },
                     error: function (error) {
                         console.error(error);
@@ -140,10 +146,13 @@
                 $.ajax({
                     type: "GET",
                     url: "/api/get-new-available-posts/",
-                    success: function (response) {
-                        console.log("New posts coming in", response)
-                        for (const post in response) {
-                            addPost(response[post])
+                    dataType: 'json',
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            console.log("New posts coming in", response)
+                            for (const post in response) {
+                                addPost(response[post])
+                            }
                         }
                     },
                     error: function (error) {
@@ -167,14 +176,12 @@
             $.ajax({
                 type: "POST",
                 url: `/api/like-post/${postID}`,
-                dataType: 'json',
-                data: {
-                    'id': postID
-                },
-                success: function (response) {
-                    $(`#like-button-${postID}`).addClass('liked')
-                    document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
-                    updateLikeCount(postID)
+                success: function (response, textStatus, http) {
+                    if (http.status === 201) {
+                        $(`#like-button-${postID}`).addClass('liked')
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
+                        updateLikeCount(postID)
+                    }
                 },
                 error: function (error) {
                     console.error(error);
@@ -195,14 +202,12 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/unlike-post/${postID}`,
-                dataType: 'json',
-                data: {
-                    'id': postID
-                },
-                success: function (response) {
-                    $(`#like-button-${postID}`).removeClass('liked')
-                    document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
-                    updateLikeCount(postID)
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        $(`#like-button-${postID}`).removeClass('liked')
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
+                        updateLikeCount(postID)
+                    }
                 },
                 error: function (error) {
                     console.error(error);
@@ -219,11 +224,15 @@
         setInterval(updateAllPosts, 30000) //30 second refresh
 
         function updateLikeCount(postID) {
+            console.log("Updating like count")
             $.ajax({
                 type: "GET",
                 url: `/api/get-like-count/${postID}`,
-                success: function (response) {
-                    document.getElementById(`like-button-${postID}`).innerHTML = `${response} <i class="fa-solid fa-heart"></i>Like`
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>Like`
+                    }
                 },
                 error: function (error) {
                     console.error(error);
