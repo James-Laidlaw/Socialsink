@@ -1,0 +1,591 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap');
+
+/* Variables and Colors */
+:root {
+    --primary-font: 'Open Sans', sans-serif;
+    --secondary-font: 'Lora', serif;
+    --lightest-blue: #f8fbff;
+    --light-blue: #bdd1de;
+    --bright-blue: #1a63fb;
+    --turquoise-blue: #29afc2;
+    --hot-pink: #fe5969;
+    --pastel-green: #07ddae;
+    --beige: #e6ddd6;
+    --off-white: #f9f9f9;
+    --deep-blue: #06141d;
+    --dark-gray: #1b2730;
+    --medium-grey: #28343e;
+    --light-grey: #606e7a;
+    --button-text: #9ba9b6;
+    --design-padding: 60px;
+    --card-round-border: 14px;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
+/* width */
+::-webkit-scrollbar {
+    width: 4px;
+ }
+/* Track */
+ ::-webkit-scrollbar-track {
+   background: var(--deep-blue);
+   border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+   background: var(--button-text);
+   border-radius: 10px;
+}
+
+/* Handle on hover */
+ ::-webkit-scrollbar-thumb:hover {
+    background: var(--button-text);
+}
+
+/* -------------------------------------------------------------------------------------- */
+
+body {
+    font-family: var(--primary-font);
+    background: var(--light-blue);
+    color: var(--off-white);
+    margin: 0;
+    display: flex;
+    letter-spacing: 0.5px;
+}
+
+p {
+    margin: 0.125rem 0;
+    letter-spacing: 0.5px;
+}
+
+a {
+    cursor: pointer;
+    color: var(--off-white);
+    text-decoration: none;
+    transition: all 300ms ease 0s;
+}
+
+a:hover {
+    color: var(--bright-blue);
+    text-decoration: none;
+}
+
+button {
+    font-family: var(--primary-font);
+    cursor: pointer;
+}
+
+/* NavBar Begins -------------------------------------- */
+.site-header {
+    display: inline-flex;
+    flex-direction: row;
+    height: 80px;
+    padding: 20px 25px 0;
+    background: none;
+    box-sizing: border-box;
+    border-radius: 32px 32px 0 0;
+    background: var(--deep-blue);
+}
+
+.navbar {
+    width: 100%;
+    padding: 0;
+}
+
+.navbar .nav-link {
+    padding: 5px;
+}
+
+.navbar .nav-right-options {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+/* NavBar Ends ---------------------------------------- */
+
+/* Main Containers and Bars Begins -------------------  */
+
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex-grow: 1;
+    margin: var(--design-padding) var(--design-padding);
+    background: none;
+    box-shadow: 0 30px 40px rgba(0,0,0,.5);
+    border-radius: 32px;
+}
+
+/* Sign In Page Begins -------------------------------- */
+
+.login-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: var(--deep-blue);
+    padding: 50px;
+    border-radius: 32px;
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
+}
+
+.login-wrapper .login-left,
+.login-wrapper .login-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0;
+}
+
+.login-wrapper .login-left {
+    width: 55%;
+}
+
+.login-wrapper .login-right {
+    width: 45%;
+}
+
+.login-wrapper .login-right img {
+    /* image from dalle 2 and bg color edited with https://www4.lunapic.com/editor/?action=save */
+    width: 100%;
+    object-fit: cover;
+}
+
+.login-wrapper h1 {
+    font-family: var(--secondary-font);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--off-white);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.login-wrapper h1 span {
+    color: var(--bright-blue);
+}
+
+.login-wrapper form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 22px;
+    width: 360px;
+}
+
+.login-wrapper p {
+    font-size: 1.125rem;
+    font-weight: 400;
+    color: var(--button-text);
+    letter-spacing: 0.5px;
+}
+
+.login-wrapper p a {
+    font-weight: 500;
+}
+
+.login-wrapper input {
+    color: #fff;
+    background: var(--medium-grey);
+    min-height: 50px;
+    outline: none;
+    border: none;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    padding: 5px 16px;
+    min-width: 360px;
+    width: 100%;
+    transition: background-color 300ms ease 0s, box-shadow 300ms ease 0s;
+}
+
+.login-wrapper input::placeholder {
+    color: var(--button-text);
+}
+
+.login-wrapper input:hover,
+.login-wrapper input:focus {
+    background-color: var(--dark-gray);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.login-wrapper #forgot-password {
+    width: 100%;
+    text-align: right;
+}
+
+.login-wrapper button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 140px;
+    min-height: 50px;
+    
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--button-text);
+    background: none;
+    border-radius: 10px;
+    border: 2px solid var(--medium-grey);
+    margin: 10px 0 34px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 1.5px;
+}
+
+.login-wrapper button:hover,
+.login-wrapper button:focus {
+    color: var(--deep-blue);
+    background-color: var(--light-blue);
+    border: 2px solid var(--light-blue);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+/* Sign In Page Ends ---------------------------------- */
+
+.home-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-grow: 1;
+    height: calc(100% - 60px);
+    gap: 7px;
+    background: var(--deep-blue);
+    padding: 20px 25px 50px;
+    border-radius: 0 0 32px 32px;
+    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
+}
+
+.main-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-grow: 1;
+    flex-basis: 50%;
+    margin-left: 9px;
+}
+
+.left-bar,
+.right-bar {
+    position: relative;
+    height: 100%;
+    flex-basis: 25%;
+    width: 25%;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+    overflow: hidden;
+}
+
+/* Main Containers and Bars Ends ------------------- */
+
+#post-container {
+    overflow-y: overlay;
+    scrollbar-gutter: stable;
+    border-radius: 16px;
+    padding-right: 5px;
+}
+
+/* Feed Posts Begins ------------------------------- */
+
+.feed-post {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+}
+
+.feed-post:last-of-type {
+    margin-bottom: 0;
+}
+
+.feed-post img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.post-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 16px;
+}
+
+.post-btn-wrap {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.post-btn-wrap .btn,
+.post-btn-wrap button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: var(--button-text);
+    background: none;
+    border-radius: var(--card-round-border);
+    border: 2px solid var(--medium-grey);
+    min-width: 140px;
+    min-height: 50px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+.post-btn-wrap button:hover,
+.post-btn-wrap button:focus {
+    color: var(--button-text);
+    background-color: var(--medium-grey);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.post-btn-wrap button svg {
+    font-size: 1.125rem;
+} 
+
+.btn-like svg {
+    color: var(--off-white);
+}
+
+.liked {
+    background: var(--hot-pink) !important;
+}
+
+.btn-share svg {
+    color: var(--off-white);
+}
+
+.btn-photo svg {
+    color: var(--pastel-green);
+}
+
+.btn-post svg {
+    color: var(--bright-blue);
+}
+
+.post-content time {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--light-grey);
+    letter-spacing: 0;
+}
+
+.existing-post .post-btn-wrap button {
+    color: var(--button-text);
+    background: var(--medium-grey);
+    border-radius: var(--card-round-border);
+    border: none;
+}
+
+.existing-post .post-btn-wrap button:hover,
+.existing-post .post-btn-wrap button:focus {
+    background-color: var(--deep-blue);
+}
+
+.feed-post .dropdown {
+    position: absolute;
+    right: 0;
+}
+
+.feed-post .dropdown-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    min-width: 50px;
+    height: 30px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--light-grey);
+    background: none;
+    border-radius: 5px;
+    border: none;
+    transition: all 500ms ease 0s;
+}
+
+.feed-post .dropdown-toggle:hover,
+.feed-post .dropdown-toggle:focus {
+    color: var(--off-white);
+}
+
+.feed-post .dropdown-toggle::after {
+    display: none;
+}
+
+.feed-post .dropdown-menu {
+    right: 0;
+}
+
+/* Feed Posts Ends ----------------------------- */
+
+
+/* Visibility Button Starts --------------------------- */
+
+.post-btn-wrap .btn {
+    padding: 0 20px;
+}
+
+.post-content select {
+    text-align: left;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.post-content .select-wrap {
+    position: relative;
+}
+
+.post-content .select-wrap:after {
+    color: var(--button-text);
+    font-family: "Font Awesome 6 Free";
+    content: "\f06e";
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.post-content option {
+    color: var(--deep-blue);
+}
+
+/* Visibility Button Ends ----------------------------- */
+
+/* Create Post Begins -------------------------- */
+
+.feed-post.create-new {
+    width: calc(100% - 9px);
+    margin-right: auto;
+}
+
+.post-content input {
+    color: #fff;
+    background: var(--medium-grey);
+    min-height: 50px;
+    outline: none;
+    border: none;
+    border-radius: var(--card-round-border);
+    letter-spacing: 0.5px;
+}
+
+.post-content input::placeholder {
+    color: var(--button-text);
+}
+
+/* Create Post Ends ----------------------- */
+
+/* Profile Bar Begins --------------------- */
+
+#profile-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#profile-bar .user-bg {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+}
+
+#profile-bar .profile-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    transform: translateY(-50%);
+    margin-bottom: -28px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+#profile-bar .user-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+#profile-bar .user-box > * {
+    margin: 0;
+}
+
+#profile-bar .username {
+    font-size: 20px;
+    font-weight: 500px;
+}
+
+#profile-bar .useremail {
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--light-grey);
+    letter-spacing: 0;
+} 
+
+#profile-bar .userbio {
+    max-width: 300px;
+}
+
+#profile-bar .follow-box {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 26px;
+    padding: 20px 0;
+    border-top: 1px solid #606e7a61;
+    border-bottom: 1px solid #606e7a61;
+}
+
+#profile-bar .follow-box > div {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#profile-bar .follow-box > div:first-of-type {
+    border-right: 1px solid #606e7a61;
+}
+
+#profile-bar .follow-box .count {
+    color: var(--off-white);
+    font-weight: 700;
+    letter-spacing: 0.75px;
+}
+
+#profile-bar .follow-box .count-label {
+    color: #707f8c;
+    font-weight: 600;
+    letter-spacing: 0.75px;
+}
+
+/* Profile Bar Ends ----------------------- */

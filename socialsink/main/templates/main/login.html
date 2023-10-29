@@ -1,0 +1,59 @@
+{% extends "main/header.html" %}
+{% block content %}
+    <div class="login-wrapper">
+        <div class="login-left">
+            <h1>Sign <span>In</span></h1>
+            <form onsubmit="submitLogin(event)">
+                {% csrf_token %}
+                <input type="text" id="username" name="username" autocomplete="false" placeholder="Username">
+                <input type="password" id="password" name="password" placeholder="Password">
+                <a href="/forgot-password/" id="forgot-password">Forgot Password?</a>
+                <button type="submit">Sign In</button>
+            </form>
+            <div class="login-sign-up">
+                <p>Not a member yet? <a href="/register/">Sign Up</a></p>
+            </div>
+        </div>
+        <div class="login-right">
+            <img src="../../../static/images/login-image.jpg" />
+        </div>
+    </div>
+
+    <script>
+        function submitLogin(e) {
+            e.preventDefault()
+            console.log("Sending login request to server")
+
+
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "POST",
+                url: "/api/login/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'username': document.getElementById('username').value,
+                    'password': document.getElementById('password').value
+                }),
+                success: function (response, textStatus, http) {
+                    if (http.status === 201) {
+                        window.location.href = "/"
+                    }
+                },
+                error: function (error) {
+                    if (error.status === 401) {
+                        alert("Incorrect username or password")
+                    } else {
+                        console.error(error);
+                    }
+                }
+            })
+        }
+    </script>
+{% endblock content %}

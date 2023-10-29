@@ -1,0 +1,28 @@
+<header class="site-header">
+    <nav class="navbar">
+        <a class="nav-item nav-link" href="/">Home</a>
+        <div class="nav-right-options">
+            <a class="nav-item nav-link" onclick="logout()">Logout</a>
+            <p>{{ user.email }}</p>
+        </div>
+    </nav>
+</header>
+
+<script>
+    function logout() {
+        console.log("Logging out")
+        $.ajax({
+            type: "GET",
+            url: "/api/logout/",
+            success: function (response, textStatus, http) {
+                console.log(response)
+                if (http.status === 200) {
+                    window.location.href = "/login/"
+                }
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
+    }
+</script>
