@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth.models import User
 from .models import Author, Post, Like
 
 from datetime import datetime, timedelta, date, time
@@ -14,6 +15,7 @@ from rest_framework.response import Response
 # Create your views here.
 @login_required
 def homepage(request):
+    print(request.user)
     author = request.user.author
     return render(request=request,
                   template_name='main/home.html',
@@ -24,6 +26,31 @@ def login(request):
                   template_name='main/login.html',
                   context={})
 
+def register(request):
+    return render(request=request,
+                  template_name='main/register.html',
+                  context={})
+
+@api_view(['PUT'])
+def createAccount(request):
+    print("Registration request received")
+
+    username = request.data['username']
+    email = request.data['email']
+    password = request.data['password']
+
+    try:    
+        user = User.objects.create_user(username=username, email=email, password=password)
+        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        author.save()
+        user.author = author
+        user.save()
+
+        auth_login(request, user)
+        return Response(status=201)
+        
+    except:
+        return Response(status=401)
 
 @api_view(['POST'])
 def loginRequest(request):
