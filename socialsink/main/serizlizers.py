@@ -11,14 +11,16 @@ class AuthorSerializer(serializers.ModelSerializer):
         fields = [ 'github', 'profileImage']
 
     def update(self, instance, validated_data):
-        instance.user.username = validated_data.get('displayName', instance.user.username)
+        # its a little hacky to use initial_data here, but I can't figure out how to allow custom fields through the validation
+        instance.user.username = self.initial_data.get('displayName', instance.user.username)
+        instance.user.save() # serializers dont automatically save related models
+
         return super().update(instance, validated_data)
     
     def to_representation(self, instance):
         request: Request = self.context.get('request')
 
         if request is None:
-            print("Need request to add host to author")
             return super().to_representation(instance)
 
         super_result = super().to_representation(instance)

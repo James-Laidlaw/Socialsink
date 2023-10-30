@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect, FileResponse, JsonResponse
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
@@ -260,14 +260,15 @@ def getLikeCount(request, id):
     else:
         return Response(status=401)
     
-
+# outwards facing API endpoints
 @api_view(['GET'])
 #get list of authors with pagination
 def getAuthors(request):
+    print("service: Get authors request received")
     pageNum = request.GET.get('page', 1)
     pageSize = request.GET.get('size', 50)
 
-    authors = Author.objects.all()
+    authors = Author.objects.all().order_by('id')
 
     paginatedAuthors = Paginator(authors, pageSize)
 
@@ -275,7 +276,7 @@ def getAuthors(request):
     try: 
         page = paginatedAuthors.page(pageNum)
     except:
-        return HttpResponse(404)
+        return Response(status=404)
 
 
     author_serializer = AuthorSerializer(page, many=True, context={'request': request})
@@ -284,37 +285,59 @@ def getAuthors(request):
 
     return JsonResponse(serialized_authors, safe=False)
 
-@api_view(['GET'])
-def getAuthor(request, author_id):
 
+
+@api_view(['GET', 'POST'])
+def authorDetail(request, author_id):
+
+    if request.method == 'GET': 
+        print("service: Get author request received")
+        return getAuthor(request, author_id)
+    elif request.method == 'POST':
+        print("service: Update author request received")
+        return updateAuthor(request, author_id)
+    else:
+        return Response(status=405)
+
+
+
+# get a single author by id
+def getAuthor(request, author_id):
     if author_id == None:
-        return HttpResponse(400)
+        return Response(status=400)
     
     author = Author.objects.get(id=author_id)
 
     if author == None:
-        return HttpResponse(404)
+        return Response(status=404)
     author_serializer = AuthorSerializer(author, context={'request': request})
 
     serialized_author = author_serializer.data
     return JsonResponse(serialized_author, safe=False)
 
-@api_view(["POST"])
-def updateAuthor(request, author_id):
+# update an author by id
+def updateAuthor(request, author_id):  
     if author_id == None:
-        return HttpResponse(400)
+        return Response(status=400)
 
     author = Author.objects.get(id=author_id)
 
     if author == None:
-        return HttpResponse(404)
+        return Response(status=404)
+    
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+     print("unauthorized, returning 401")
+     return Response(status=401)
 
     author_serializer = AuthorSerializer(author, data=request.data, partial=True)
 
     if author_serializer.is_valid():
         author_serializer.save()
-        return HttpResponse(200)
+        print(request.data)
+        print(author_serializer.data)
+        return Response(status=200)
     else:
-        return HttpResponse(400)
-    
+        return Response(status=400)
+
     
