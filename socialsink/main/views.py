@@ -284,3 +284,22 @@ def getLikeCount(request, id):
 
     else:
         return Response(status=401)
+
+
+@api_view(['GET'])
+def getDeletedPosts(request):
+    print("Get Deleted Posts request received")
+
+    user = request.user
+    if user.is_authenticated:
+        
+        ids = list(request.query_params.getlist('ids[]'))
+        data = {}
+        for i in range(len(ids)):
+            if not Post.objects.filter(id=int(ids[i])):
+                data[i] = int(ids[i])
+
+        return Response(data, status=200)
+
+    else:
+        return Response(status=401)
