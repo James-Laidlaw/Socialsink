@@ -55,3 +55,6 @@ class Like(models.Model):
     comment = models.ForeignKey(Comment, related_name='likes', on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+
+# https://stackoverflow.com/questions/53461410/make-user-email-unique-django
+User._meta.get_field('email')._unique = True
