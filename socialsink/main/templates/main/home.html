@@ -16,6 +16,14 @@
         <div class="right-bar"></div>
     </div>
 
+    <div id="confirm-dialog" class="popup-modal hidden">
+        <p>Are you sure you want to permanantly delete this post?</p>
+        <div class="button-wrap">
+            <button id="confirm-yes">Yes</button>
+            <button id="confirm-no">No</button>
+        </div>
+    </div>
+
     <script>
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
@@ -41,13 +49,13 @@
 
             var likeButton = ''
             if (post[5] === 1) {
-                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
             } else {
-                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i>Like</button>`
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
             }
 
             if (post[6] === 1) {
-                deleteButton = `<button type="button" class="btn btn-like" onclick="deletePost(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
+                deleteButton = `<button type="button" class="btn" onclick="showDeleteConfirmation(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
             } else {
                 deleteButton = ""
             }
@@ -91,7 +99,27 @@
             posts = posts - 1
         }
 
+        function showDeleteConfirmation(postID) {
+            // Set a global variable to store the post ID to be deleted
+            window.postToDelete = postID;
+
+            // Show the custom confirmation dialog
+            $("#confirm-dialog").removeClass("hidden");
+        }
+
+        $("#confirm-yes").click(function() {
+            // Execute the post deletion logic when the user clicks "Yes"
+            deletePost(window.postToDelete);
+            $("#confirm-dialog").addClass("hidden");
+        });
+
+        $("#confirm-no").click(function() {
+            // Cancel the post deletion action when the user clicks "No"
+            $("#confirm-dialog").addClass("hidden");
+        });
+
         function deletePost(postID) {
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -231,7 +259,7 @@
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         console.log(response)
-                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>Like`
+                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>`
                     }
                 },
                 error: function (error) {
