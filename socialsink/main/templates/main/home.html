@@ -251,6 +251,30 @@
         }
         setInterval(updateAllPosts, 30000) //30 second refresh
 
+        function checkForDeletedPosts() {
+            $.ajax({
+                type: "GET",
+                url: `/api/get-deleted-posts/`,
+                contentType: 'application/json',
+                data: {
+                    ids: postIDs
+                },
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response)
+                        for (const post in response) {
+                            $(`#post-block-${response[post]}`).remove()
+                            postIDs = postIDs.filter(item => item !== response[post]);
+                        }
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+        setInterval(checkForDeletedPosts, 5000) //30 second refresh
+
         function updateLikeCount(postID) {
             console.log("Updating like count")
             $.ajax({
