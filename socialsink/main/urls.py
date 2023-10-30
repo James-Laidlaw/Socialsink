@@ -21,4 +21,5 @@ urlpatterns = [
     path("api/like-post/<int:id>", views.likePost, name="likePost"),
     path("api/unlike-post/<int:id>", views.unlikePost, name="unlikePost"),
     path("api/get-like-count/<int:id>", views.getLikeCount, name="getLikeCount"),
+    path("api/get-deleted-posts/", views.getDeletedPosts, name="getDeletedPosts"),
 ]
