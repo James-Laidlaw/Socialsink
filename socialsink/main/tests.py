@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import Author, Follower, Friendship, Post, Comment, Like
+from .models import Author, Follow, Friendship, Post, Comment, Like
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.urls import reverse
@@ -19,12 +19,12 @@ class AuthorModelTest(TestCase):
     
     def test_followers(self):
         follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword'))
-        Follower.objects.create(follower=follower, followee=self.author)
+        Follow.objects.create(follower=follower, followee=self.author)
         self.assertEqual(self.author.followed_by.first().follower, follower)
 
     def test_following(self):
         follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword'))
-        Follower.objects.create(follower=follower, followee=self.author)
+        Follow.objects.create(follower=follower, followee=self.author)
         self.assertEqual(follower.follows.first(), self.author)
     
 class PostModelTest(TestCase):
