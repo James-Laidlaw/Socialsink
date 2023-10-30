@@ -13,6 +13,7 @@ class Author(models.Model):
     follows = models.ManyToManyField('self', symmetrical=False, through="Follow", related_name='follower_set')
     friends = models.ManyToManyField('self', symmetrical=False, through="Friendship", related_name='friend_set')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
 
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
 # a friendship is when two authors follow each other
@@ -23,6 +24,7 @@ class Follow(models.Model):
     dismissed = models.BooleanField(default=False) # false if followee has not yet viewed and dismissed the follow request, allows for "Friend Requests"
     accepted = models.BooleanField(default=False) # This is a flag for informing the server if their is a mutual following or not
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
 
 # TODO discuss if we need this. IMO it's redundant because a friendship is just a mutual follow
 class Friendship(models.Model):
@@ -30,12 +32,14 @@ class Friendship(models.Model):
     myself = models.ForeignKey(Author, related_name='outgoing_friends', on_delete=models.CASCADE)
     friend = models.ForeignKey(Author, related_name='incoming_friends', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
 
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Author, related_name='posts', on_delete=models.CASCADE)
     content = models.CharField(max_length=600)
-    timestamp = models.DateTimeField('date published')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     publicity = models.IntegerField(default=0) # 2 = private, 1 = friends, 0 = public
     private_to = models.ForeignKey(Author, related_name='readable_by', null=True, on_delete=models.SET_NULL) # only used if publicity = 0
 
@@ -44,10 +48,13 @@ class Comment(models.Model):
     author = models.ForeignKey(Author, related_name='comments', on_delete=models.CASCADE)
     post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
     content = models.CharField(max_length=600)
-    timestamp = models.DateTimeField('date published')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
 
 class Like(models.Model): 
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Author, related_name='likes', on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
-    timestamp = models.DateTimeField('date published')
+    post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE, null=True)
+    comment = models.ForeignKey(Comment, related_name='likes', on_delete=models.CASCADE, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, blank=True)

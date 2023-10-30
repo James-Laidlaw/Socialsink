@@ -7,11 +7,13 @@
         <div class="post-btn-wrap">
             <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
             <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
-            <select type="button" name="publicity-items" id="publicity-drop-down" placeholder="Publicity">
-                <option value="public">Public</option>
-                <option value="friends">Friends</option>
-                <option value="private">Private</option>
-            </select>
+            <div class="select-wrap">
+                <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
+                    <option value="public">Public</option>
+                    <option value="friends">Friends</option>
+                    <option value="private">Private</option>
+                </select>
+            </div>
             <button type="button" class="btn btn-photo"><i class="fa-solid fa-image"></i>Photo</button>
             <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
         </div>
@@ -40,14 +42,16 @@
         $.ajax({
             type: "POST",
             url: "/api/make-post/",
-            dataType: 'json',
-            data: {
+            contentType: 'application/json',
+            data: JSON.stringify({
                 'text': text.value,
                 'publicity': publicity.value
-            },
-            success: function (response) {
-                text.value = ""
-                publicity.value = ""
+            }),
+            success: function (response, textStatus, http) {
+                if (http.status === 201) {
+                    text.value = ""
+                    publicity.value = ""
+                }
             },
             error: function (error) {
                 console.error(error);

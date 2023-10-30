@@ -1,13 +1,9 @@
 <header class="site-header">
     <nav class="navbar">
-        <div class="navbar-nav">
-            <a class="nav-item nav-link" href="/">Home</a>
-        </div>
-        <div class="navbar-nav">
-            <div class="nav-item nav-link" onclick="logout()">Logout</div>
-        </div>
-        <div class="navbar-nav">
-            <div>{{ user.email }}</div>
+        <a class="nav-item nav-link" href="/">Home</a>
+        <div class="nav-right-options">
+            <a class="nav-item nav-link" onclick="logout()">Logout</a>
+            <p>{{ user.email }}</p>
         </div>
     </nav>
 </header>
@@ -18,10 +14,9 @@
         $.ajax({
             type: "GET",
             url: "/api/logout/",
-            success: function (response) {
+            success: function (response, textStatus, http) {
                 console.log(response)
-                if (response === '201') {
-                    console.log("HERE")
+                if (http.status === 200) {
                     window.location.href = "/login/"
                 }
             },
