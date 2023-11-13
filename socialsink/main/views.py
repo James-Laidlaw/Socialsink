@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
@@ -328,7 +327,7 @@ def getAuthors(request):
 
     serialized_authors = author_serializer.data
 
-    return JsonResponse(serialized_authors, safe=False)
+    return Response(serialized_authors)
 
 
 
@@ -358,7 +357,7 @@ def getAuthor(request, author_id):
     author_serializer = AuthorSerializer(author, context={'request': request})
 
     serialized_author = author_serializer.data
-    return JsonResponse(serialized_author, safe=False)
+    return Response(serialized_author)
 
 # update an author by id
 def updateAuthor(request, author_id):  
