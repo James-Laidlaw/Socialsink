@@ -10,23 +10,23 @@ class Author(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     github = models.CharField(max_length=200, null=True)
     profileImage = models.CharField(max_length=200, null=True) #link to public image
-    follows = models.ManyToManyField('self', symmetrical=False, through="Follow", related_name='follower_set')
+    follows = models.ManyToManyField('self', symmetrical=False, through="Follower", related_name='follower_set')
     friends = models.ManyToManyField('self', symmetrical=False, through="Friendship", related_name='friend_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
-# a friendship is when two authors follow each other
-class Follow(models.Model):
+# a friendship synonymous with a follow, a true friendship is when two authors follow each other
+class Follower(models.Model):
     id = models.AutoField(primary_key=True)
     follower = models.ForeignKey(Author, related_name='following', on_delete=models.CASCADE)
     followee = models.ForeignKey(Author, related_name='followed_by', on_delete=models.CASCADE)
     dismissed = models.BooleanField(default=False) # false if followee has not yet viewed and dismissed the follow request, allows for "Friend Requests"
-    accepted = models.BooleanField(default=False) # This is a flag for informing the server if their is a mutual following or not
+    accepted = models.BooleanField(default=False) # This flag indicates if the follow request has been accepted. 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
-# TODO discuss if we need this. IMO it's redundant because a friendship is just a mutual follow
+# TODO discuss if we need this. IMO it's redundant because a friendship is synonymous with a follow and a true friendship is just a bidirectional follow
 class Friendship(models.Model):
     id = models.AutoField(primary_key=True)
     myself = models.ForeignKey(Author, related_name='outgoing_friends', on_delete=models.CASCADE)
@@ -58,3 +58,6 @@ class Like(models.Model):
     comment = models.ForeignKey(Comment, related_name='likes', on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+
+# https://stackoverflow.com/questions/53461410/make-user-email-unique-django
+User._meta.get_field('email')._unique = True

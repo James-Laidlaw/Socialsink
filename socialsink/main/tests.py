@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import Author, Follow, Friendship, Post, Comment, Like
+from .models import Author, Follower, Friendship, Post, Comment, Like
 from django.contrib.auth.models import User
 from datetime import datetime
 from django.urls import reverse
@@ -20,13 +20,13 @@ class AuthorModelTest(TestCase):
         self.assertTrue(isinstance(self.author.created_at, datetime))
     
     def test_followers(self):
-        follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword'))
-        Follow.objects.create(follower=follower, followee=self.author)
+        follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword', email='follow@mail.com'))
+        Follower.objects.create(follower=follower, followee=self.author)
         self.assertEqual(self.author.followed_by.first().follower, follower)
 
     def test_following(self):
-        follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword'))
-        Follow.objects.create(follower=follower, followee=self.author)
+        follower = Author.objects.create(user=User.objects.create_user(username='follower', password='followerpassword', email='follow@mail.com'))
+        Follower.objects.create(follower=follower, followee=self.author)
         self.assertEqual(follower.follows.first(), self.author)
     
 class PostModelTest(TestCase):
@@ -92,6 +92,13 @@ class YourApiTests(TestCase):
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
+
+    def test_sign_up(self):
+        url = reverse('createAccount')
+        # EMAIL MUST BE UNIQUE (CANNOT EXIST ALREADY)
+        data = {'username': 'unique_testuser', 'email': 'unique_test_email@mail.com', 'password': 'testpassword'}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_login_request(self):
         url = reverse('loginRequest')

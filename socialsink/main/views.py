@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
+from django.contrib.auth.models import User
 from .models import Author, Post, Like
 from .serizlizers import AuthorSerializer
 
@@ -16,6 +17,7 @@ from rest_framework.response import Response
 # Create your views here.
 @login_required
 def homepage(request):
+    print(request.user)
     author = request.user.author
     return render(request=request,
                   template_name='main/home.html',
@@ -26,6 +28,31 @@ def login(request):
                   template_name='main/login.html',
                   context={})
 
+def register(request):
+    return render(request=request,
+                  template_name='main/register.html',
+                  context={})
+
+@api_view(['PUT'])
+def createAccount(request):
+    print("Registration request received")
+
+    username = request.data['username']
+    email = request.data['email']
+    password = request.data['password']
+
+    try:    
+        user = User.objects.create_user(username=username, email=email, password=password)
+        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        author.save()
+        user.author = author
+        user.save()
+
+        auth_login(request, user)
+        return Response(status=201)
+        
+    except:
+        return Response(status=401)
 
 @api_view(['POST'])
 def loginRequest(request):
@@ -256,10 +283,28 @@ def getLikeCount(request, id):
             return Response(data, status=200)
         except Post.DoesNotExist:
             return Response(status=404)
-
     else:
         return Response(status=401)
-    
+
+
+@api_view(['GET'])
+def getDeletedPosts(request):
+    print("Get Deleted Posts request received")
+
+    user = request.user
+    if user.is_authenticated:
+        
+        ids = list(request.query_params.getlist('ids[]'))
+        data = {}
+        for i in range(len(ids)):
+            if not Post.objects.filter(id=int(ids[i])):
+                data[i] = int(ids[i])
+
+        return Response(data, status=200)
+    else:
+        return Response(status=401)
+
+
 # outwards facing API endpoints
 @api_view(['GET'])
 #get list of authors with pagination
