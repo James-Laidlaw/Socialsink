@@ -21,18 +21,4 @@ class Migration(migrations.Migration):
             name='post',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='main.post'),
         ),
-        migrations.RenameModel(
-            old_name='Follower',
-            new_name='Follow',
-        ),
-        migrations.AddField(
-            model_name='author',
-            name='github',
-            field=models.CharField(max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name='author',
-            name='profileImage',
-            field=models.CharField(max_length=200, null=True),
-        ),
     ]
