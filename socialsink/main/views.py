@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect, FileResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.core.paginator import Paginator
 from django.contrib.auth.models import User
 from .models import Author, Post, Like
+from .serizlizers import AuthorSerializer
 
 from datetime import datetime, timedelta, date, time
 import pytz
@@ -281,7 +282,6 @@ def getLikeCount(request, id):
             return Response(data, status=200)
         except Post.DoesNotExist:
             return Response(status=404)
-
     else:
         return Response(status=401)
 
@@ -300,6 +300,88 @@ def getDeletedPosts(request):
                 data[i] = int(ids[i])
 
         return Response(data, status=200)
-
     else:
         return Response(status=401)
+
+
+# outwards facing API endpoints
+@api_view(['GET'])
+#get list of authors with pagination
+def getAuthors(request):
+    print("service: Get authors request received")
+    pageNum = request.GET.get('page', 1)
+    pageSize = request.GET.get('size', 50)
+
+    authors = Author.objects.all().order_by('id')
+
+    paginatedAuthors = Paginator(authors, pageSize)
+
+    #paginator crashes if page number is out of range
+    try: 
+        page = paginatedAuthors.page(pageNum)
+    except:
+        return Response(status=404)
+
+
+    author_serializer = AuthorSerializer(page, many=True, context={'request': request})
+
+    serialized_authors = author_serializer.data
+
+    return Response(serialized_authors)
+
+
+
+@api_view(['GET', 'POST'])
+def authorDetail(request, author_id):
+
+    if request.method == 'GET': 
+        print("service: Get author request received")
+        return getAuthor(request, author_id)
+    elif request.method == 'POST':
+        print("service: Update author request received")
+        return updateAuthor(request, author_id)
+    else:
+        return Response(status=405)
+
+
+
+# get a single author by id
+def getAuthor(request, author_id):
+    if author_id == None:
+        return Response(status=400)
+    
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return Response(status=404)
+    author_serializer = AuthorSerializer(author, context={'request': request})
+
+    serialized_author = author_serializer.data
+    return Response(serialized_author)
+
+# update an author by id
+def updateAuthor(request, author_id):  
+    if author_id == None:
+        return Response(status=400)
+
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return Response(status=404)
+    
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+     print("unauthorized, returning 401")
+     return Response(status=401)
+
+    author_serializer = AuthorSerializer(author, data=request.data, partial=True)
+
+    if author_serializer.is_valid():
+        author_serializer.save()
+        print(request.data)
+        print(author_serializer.data)
+        return Response(status=200)
+    else:
+        return Response(status=400)
+
+    

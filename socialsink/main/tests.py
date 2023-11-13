@@ -6,6 +6,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from django.http import JsonResponse
+from rest_framework.response import Response
 
 #Testing the models!!
 class AuthorModelTest(TestCase):
@@ -90,7 +92,7 @@ class YourApiTests(TestCase):
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
-    
+
     def test_sign_up(self):
         url = reverse('createAccount')
         # EMAIL MUST BE UNIQUE (CANNOT EXIST ALREADY)
@@ -163,3 +165,43 @@ class YourApiTests(TestCase):
         self.client.force_authenticate(user=self.user)
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # tests for outward facing API (/service/*)
+
+    #GET /service/authors/
+    def test_get_authors(self):
+        url = reverse('authorList')
+        response: JsonResponse = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    #GET /service/authors/<str:author_id>/
+    def test_get_author(self):
+        url = reverse('authorDetail', args=[self.author.id])
+        response: JsonResponse = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['id'], 'http://testserver/service/authors/1/')
+        self.assertEqual(response.json()['url'], 'http://testserver/service/authors/1/')
+        self.assertEqual(response.json()['host'], 'http://testserver/')
+        self.assertEqual(response.json()['displayName'], 'testuser')
+        self.assertEqual(response.json()['github'], None)
+        self.assertEqual(response.json()['profileImage'], None)
+
+    #POST /service/authors/<str:author_id>/ //only for updating, not creating
+    def test_update_author(self):
+        url = reverse('authorDetail', args=[self.author.id])
+        data = {'displayName': 'testuser2'}
+        
+        # try to update without authentication
+        response: Response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # try to update with authentication
+        self.client.force_authenticate(user=self.user)
+        response: Response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        #check if the author was updated
+        response: JsonResponse = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()['displayName'], 'testuser2')
+
