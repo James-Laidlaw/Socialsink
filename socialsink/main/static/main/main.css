@@ -390,6 +390,7 @@ main {
     font-weight: 600;
     color: var(--light-grey);
     letter-spacing: 0;
+    flex-direction: row;
 }
 
 .existing-post .post-btn-wrap button {
@@ -662,4 +663,9 @@ main {
 .popup-modal button#confirm-yes:hover,
 .popup-modal button#confirm-yes:focus {
     color: var(--hot-pink);
+}
+
+.hide {
+    display: none !important;
+    visibility: hidden;
 }

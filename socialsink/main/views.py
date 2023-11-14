@@ -133,11 +133,11 @@ def getOldAvailablePosts(request):
                 isOwnPost = 1
 
             if post.publicity == 0:
-                data[i] =[post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                data[i] =[post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
                     i += 1
 
         return Response(data, status=200)
@@ -171,11 +171,11 @@ def getNewAvailablePosts(request):
                 isOwnPost = 1
 
             if post.publicity == 0:
-                data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
 
         return Response(data, status=200)
 
@@ -206,6 +206,32 @@ def deleteAccount(request):
     else:
         return Response(status=401)
     
+
+@api_view(['PUT'])
+def updatePostData(request, id):
+    print("Update post request received")
+
+    user = request.user
+    
+    if user.is_authenticated:
+        try:
+            author = Author.objects.get(user=user)
+            post = Post.objects.get(id=id, author=author)
+            post.content = request.data['text']
+            post.updated_at = datetime.now(pytz.timezone('America/Edmonton'))
+            post.edited = True
+            post.save()
+            return Response(status=200)
+        except Post.DoesNotExist:
+            messages.error(request, "Post does not exist")    
+            return Response(status=404)
+        except Exception as e: 
+            return Response(status=500)
+
+    else:
+        return Response(status=401)
+
+
 @api_view(['DELETE'])
 def deletePost(request, id):
     print("Delete post request received")
@@ -269,7 +295,7 @@ def unlikePost(request, id):
 
 
 @api_view(['GET'])
-def getLikeCount(request, id):
+def getPostData(request, id):
     print("Get Like Count request received")
 
     user = request.user
@@ -278,7 +304,7 @@ def getLikeCount(request, id):
         try:
             post = Post.objects.get(id=id)
             count = len(post.likes.all())
-            data = {'count': count}
+            data = {'count': count, 'content': post.content, 'edited': post.edited}
             return Response(data, status=200)
         except Post.DoesNotExist:
             return Response(status=404)
