@@ -1,9 +1,13 @@
 {% block content %}
 <div class="feed-post create-new">
     <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
-    <form class="post-content" onsubmit="submitPost(event)">
+    <form class="post-content" onsubmit="submitPost(event)" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="text" id="create-post-text" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status">
+        <div class="hide" id="image-preview-container">
+            <img id="image-preview" src="#" alt="preview">
+            <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
         <div class="post-btn-wrap">
             <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
             <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
@@ -14,13 +18,17 @@
                     <option value="private">Private</option>
                 </select>
             </div>
-            <button type="button" class="btn btn-photo"><i class="fa-solid fa-image"></i>Photo</button>
+            <div>
+                <label class="btn" id="photo-attach-container" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
+                <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+            </div>
             <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
         </div>
     </form>
 </div>
 
 <script>
+    photoAttachment = document.getElementById("photo-attachment")
 
     function submitPost(e) {
         e.preventDefault()
@@ -28,8 +36,10 @@
         text = document.getElementById("create-post-text")
         publicity = document.getElementById("publicity-drop-down")
 
-        console.log(text.value)
-        console.log(publicity.value)
+        var formData = new FormData()
+        formData.append('text', text.value)
+        formData.append('publicity', publicity.value)
+        formData.append('image', photoAttachment.files[0])
 
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
@@ -42,15 +52,15 @@
         $.ajax({
             type: "POST",
             url: "/api/make-post/",
-            contentType: 'application/json',
-            data: JSON.stringify({
-                'text': text.value,
-                'publicity': publicity.value
-            }),
+            data: formData,
+            contentType: false,
+            processData: false,
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     text.value = ""
                     publicity.value = ""
+                    $("#image-preview").hide()
+                    removePhoto()
                 }
             },
             error: function (error) {
@@ -65,6 +75,26 @@
 
     function setPublicity() {
 
+    }
+
+    photoAttachment.addEventListener('change', function () {
+        loadPhoto(photoAttachment.files[0])
+    })
+
+    function loadPhoto(file) {
+        var reader = new FileReader()
+
+        reader.onload = function(e) {
+            $("#image-preview").attr('src', e.target.result)
+            $("#image-preview-container").removeClass("hide")
+        }
+
+        reader.readAsDataURL(file)
+    }
+
+    function removePhoto() {
+        $("#image-preview-container").addClass("hide")
+        photoAttachment.value = ''
     }
 
 </script>

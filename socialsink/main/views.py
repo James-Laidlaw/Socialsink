@@ -13,6 +13,12 @@ from django.contrib import messages
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+#Image Imports
+from django.core.files.base import ContentFile
+import base64
+from PIL import Image
+from io import BytesIO
+
 # Create your views here.
 @login_required
 def homepage(request):
@@ -83,6 +89,7 @@ def makePost(request):
     if user.is_authenticated:
         text = request.data['text']
         publicity = request.data['publicity']
+        image = request.data['image']
 
         if publicity == 'public':
             publicity = 0
@@ -97,9 +104,20 @@ def makePost(request):
         if publicity == 1:
             author = Author.objects.get(user=user)
             friends = author.friend_set.all()
-            post = Post(author=author, content=text, created_at=datetime.now(pytz.timezone('America/Edmonton')), publicity=publicity, private_to=friends)
+            post = Post(
+                author=author, 
+                content=text,  
+                image=image,
+                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
+                publicity=publicity, 
+                private_to=friends)
         else:
-            post = Post(author=author, content=text, created_at=datetime.now(pytz.timezone('America/Edmonton')), publicity=publicity)
+            post = Post(
+                author=author, 
+                content=text, 
+                image=image,
+                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
+                publicity=publicity)
 
         post.save()
 
@@ -132,12 +150,40 @@ def getOldAvailablePosts(request):
             if post.author == author:
                 isOwnPost = 1
 
+            #Image code
+            image = post.image
+            if image != None:
+                image_data = base64.b64encode(image.read()).decode('utf-8')
+                image_extension = image.name.split('.')[-1]
+                image = f"data:image/{image_extension};base64,{image_data}"
+            else:
+                image = None
+
             if post.publicity == 0:
-                data[i] =[post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
+                data[i] = [
+                    post.id, 
+                    post.author.user.username, 
+                    f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                    post.content, 
+                    len(post.likes.all()), 
+                    liked, 
+                    isOwnPost, 
+                    post.edited,
+                    image]
+
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
+                    data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
                     i += 1
 
         return Response(data, status=200)
@@ -170,12 +216,40 @@ def getNewAvailablePosts(request):
             if post.author == author:
                 isOwnPost = 1
 
+            #Image code
+            image = post.image
+            if image != None:
+                image_data = base64.b64encode(image.read()).decode('utf-8')
+                image_extension = image.name.split('.')[-1]
+                image = f"data:image/{image_extension};base64,{image_data}"
+            else:
+                image = None
+
             if post.publicity == 0:
-                data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
+
+                data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost, post.edited]
+                    data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
 
         return Response(data, status=200)
 
@@ -220,7 +294,9 @@ def updatePostData(request, id):
             post.content = request.data['text']
             post.updated_at = datetime.now(pytz.timezone('America/Edmonton'))
             post.edited = True
+
             post.save()
+
             return Response(status=200)
         except Post.DoesNotExist:
             messages.error(request, "Post does not exist")    
@@ -304,7 +380,9 @@ def getPostData(request, id):
         try:
             post = Post.objects.get(id=id)
             count = len(post.likes.all())
+
             data = {'count': count, 'content': post.content, 'edited': post.edited}
+
             return Response(data, status=200)
         except Post.DoesNotExist:
             return Response(status=404)
