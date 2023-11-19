@@ -1,6 +1,6 @@
 {% block content %}
 <div class="feed-post create-new">
-    <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+    <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
     <form class="post-content" onsubmit="submitPost(event)" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="text" id="create-post-text" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status">
@@ -19,7 +19,7 @@
                 </select>
             </div>
             <div>
-                <label class="btn" id="photo-attach-container" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
+                <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
                 <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
             </div>
             <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
@@ -57,9 +57,10 @@
             processData: false,
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
-                    text.value = ""
-                    publicity.value = ""
-                    $("#image-preview").hide()
+                    text.value = ""                   
+                    // Reset the publicity drop down to public to fix the bug where it would reset to nothing
+                    $('#publicity-drop-down').val('public')
+                    // $("#image-preview").hide()
                     removePhoto()
                 }
             },
@@ -78,7 +79,8 @@
     }
 
     photoAttachment.addEventListener('change', function () {
-        loadPhoto(photoAttachment.files[0])
+        loadPhoto(photoAttachment.files[0]);
+        $(".feed-post.create-new").toggleClass("upload-img");
     })
 
     function loadPhoto(file) {
@@ -93,8 +95,9 @@
     }
 
     function removePhoto() {
-        $("#image-preview-container").addClass("hide")
-        photoAttachment.value = ''
+        $("#image-preview-container").addClass("hide");
+        $(".feed-post.create-new").removeClass("upload-img");
+        photoAttachment.value = '';
     }
 
 </script>
