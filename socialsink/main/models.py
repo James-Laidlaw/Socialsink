@@ -38,6 +38,7 @@ class Post(models.Model):
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Author, related_name='posts', on_delete=models.CASCADE)
     content = models.CharField(max_length=600)
+    image = models.ImageField(null=True, upload_to="images/")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
     edited = models.BooleanField(default=False)

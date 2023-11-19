@@ -38,9 +38,6 @@
                 postIDs.shift()
                 posts = posts + 1
             }
-            
-            console.log(post)
-            console.log("post-block-" + post[0])
 
             const postElement = document.createElement("div");
             postElement.classList.add("feed-post", "existing-post");
@@ -68,9 +65,16 @@
                 edited = ''
             }
 
+            if (post[8] !== null) {
+                img = `<img src="${post[8]}" alt="${post[0]}-image">`
+            } else {
+                img = ``
+            }
+
             // Construct the post content using the provided data
+            // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
             postElement.innerHTML = `
-                <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+                <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
                 <div class="post-content">
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${post[0]}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -84,6 +88,7 @@
                         <p id="post-username-${post[0]}">${post[1]}</p>
                         <time id="post-timestamp-${post[0]}">${post[2]}${edited}</time>
                         <p id="post-content-${post[0]}">${post[3]}</p>
+                        <div id="post-image-container-${post[0]}">${img}</div>
                     </div>
                     <div class="post-btn-wrap" id="post-btn-wrap-${post[0]}">
                         ${likeButton}
@@ -99,8 +104,6 @@
             } else {
                 feedContainer.appendChild(postElement)
             }
-
-            console.log("Post added", postElement) 
             
             posts = posts - 1
         }
@@ -119,8 +122,6 @@
         });
 
         function editPost(id) {
-            console.log("Editing")
-
             if ($(`#like-button-${id}`).hasClass('hide') === false) {
                 currentText = $(`#post-content-${id}`).text()
 
@@ -144,10 +145,7 @@
         }
 
         function saveEditPost(id) {
-            console.log("Saved")
-
             currentText = $(`#edit-post-text-${id}`).val()
-            console.log(currentText)
 
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
@@ -162,7 +160,7 @@
                 url: `/api/update-post-data/${id}`,
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    'text': currentText
+                    'text': currentText,
                 }),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
@@ -186,13 +184,13 @@
         }
 
         function cancelEditPost(id, currentText) {
-            console.log("Canceled")
             $(`#post-content-${id}`).show()
             $(`#edit-post-text-${id}`).remove()
             $(`#post-content-${id}`).text(currentText)
 
             $(`#save-button-${id}`).remove()
             $(`#cancel-button-${id}`).remove()
+
             $(`#like-button-${id}`).removeClass('hide')
             $(`#share-button-${id}`).removeClass('hide')
             $(`#delete-button-${id}`).removeClass('hide')
@@ -232,7 +230,6 @@
                 url: `/api/delete-post/${postID}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         $(`#post-block-${postID}`).remove()
                         postIDs = postIDs.filter(item => item !== postID);
                     }
@@ -252,7 +249,6 @@
                     dataType: 'json',
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
-                            console.log("Getting the 10 most recent posts", response)
                             for (const post in response) {
                                 addPost(response[post])
                             }
@@ -276,7 +272,6 @@
                     dataType: 'json',
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
-                            console.log("New posts coming in", response)
                             for (const post in response) {
                                 addPost(response[post])
                             }
@@ -291,7 +286,6 @@
         setInterval(retrievePosts, 5000)
 
         function likePost(postID) {
-            console.log("Liking post")
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -317,7 +311,6 @@
         }
 
         function unlikePost(postID) {
-            console.log("Unliking Post")
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -343,7 +336,6 @@
         }
 
         function updateAllPosts() {
-            console.log("Fetching new like counts if theres changes")
             for (const postID in postIDs) {
                 updatePostData(postIDs[postID])
             }
@@ -360,7 +352,6 @@
                 },
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         for (const post in response) {
                             $(`#post-block-${response[post]}`).remove()
                             postIDs = postIDs.filter(item => item !== response[post]);
@@ -375,13 +366,11 @@
         setInterval(checkForDeletedPosts, 5000) //5 second refresh
 
         function updatePostData(postID) {
-            console.log("Updating the post")
             $.ajax({
                 type: "GET",
                 url: `/api/get-post-data/${postID}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>`
                         if ($(`#post-content-${postID}`).children().length === 0) {
                             $(`#post-content-${postID}`).text(response['content'])

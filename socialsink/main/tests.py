@@ -114,7 +114,7 @@ class YourApiTests(TestCase):
 
     def test_make_post(self):
         url = reverse('makePost')
-        data = {'text': 'Test post content', 'publicity': 'public'}
+        data = {'text': 'Test post content', 'publicity': 'public', 'image': None}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.force_authenticate(user=self.user)
