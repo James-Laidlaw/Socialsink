@@ -24,6 +24,8 @@ urlpatterns = [
     path("api/unlike-post/<int:id>", views.unlikePost, name="unlikePost"),
     path("api/get-like-count/<int:id>", views.getLikeCount, name="getLikeCount"),
     path("api/get-deleted-posts/", views.getDeletedPosts, name="getDeletedPosts"),
+    path("api/get-following/", views.getFollowing, name="getFollowing"),
+    path("api/follow/", views.followAuthor, name="followAuthor"),
     path("service/authors/<str:author_id>/", views.authorDetail, name="authorDetail"),
     re_path (r"^service/authors/?", views.getAuthors, name="authorList"), 
 ]

@@ -279,7 +279,18 @@ main {
     margin-left: 9px;
 }
 
-.left-bar,
+.left-bar{
+    position: relative;
+    height: 100%;
+    flex-basis: 25%;
+    width: 25%;
+    overflow: hidden;
+    /* ADDITIONS */
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
 .right-bar {
     position: relative;
     height: 100%;
@@ -510,6 +521,8 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
 }
 
 #profile-bar .user-bg {
@@ -592,6 +605,76 @@ main {
 
 /* Profile Bar Ends ----------------------- */
 
+/* Find Author Bar Starts ----------------- */
+
+#find-author-bar {
+    display: flex;
+    flex-direction: column;
+    height: 50%;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+}
+
+#find-author-bar .heading { 
+    padding: 1em 2em 0 30px;
+}
+
+#find-author-bar .author-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    height: 100%;
+    gap: 2em;
+    padding: 0.5em 2em 0 30px;
+}
+
+#find-author-bar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+#find-author-bar .author {
+    display: inline-flex;
+    gap: 1em;
+}
+
+#find-author-bar .author-content {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+}
+
+#find-author-bar .author-username {
+    font-size: 18.5px;
+    font-weight: 600;
+}
+
+#find-author-bar .author-email {
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--light-grey);
+    letter-spacing: 0;
+}
+
+#find-author-bar .author-content .btn {
+    font-size: 0.8em;
+    font-weight: 700;
+    color: var(--deep-blue);
+    background: white;
+    border-radius: 50px;
+    min-width: 80px;
+    min-height: 45px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+/* Find Author Bar End -------------------- */
 
 /* Testing Confirm Delete ----------------- */
 /* style.css */

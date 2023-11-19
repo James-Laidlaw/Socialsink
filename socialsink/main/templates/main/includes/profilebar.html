@@ -8,7 +8,7 @@
     </div>
     <div class="follow-box">
         <div>
-            <p class="count">243</p>
+            <p id="following" class="count"></p>
             <p class="count-label">Following</p>
         </div>
         <div>
@@ -17,3 +17,24 @@
         </div>
     </div>
 </div>
+
+<script>
+    function getFollowingCount() {
+        console.log("Getting Following count")
+        $.ajax({
+            type: "GET",
+            url: "api/get-following/",
+            success: function (response, textStatus, http) {
+                console.log(Object.keys(response).length);
+                followingCount = document.getElementById('following');
+                followingCount.innerText = Object.keys(response).length;
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
+    }
+
+    getFollowingCount();
+    setInterval(getFollowingCount, 5000);
+</script>

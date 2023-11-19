@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like
+from .models import Author, Post, Like, Follower
 from .serizlizers import AuthorSerializer
 
 from datetime import datetime, timedelta, date, time
@@ -304,6 +304,32 @@ def getDeletedPosts(request):
         return Response(status=401)
 
 
+@api_view(['GET'])
+def getFollowing(request):
+    user = request.user
+    if user.is_authenticated:
+        author = Author.objects.get(user=user)
+        #### TESTING ####
+        # Follower.objects.create(follower = author, followee = author, accepted = True)
+        #### TESTING ####
+        print("Author follows:", author.follows.all())
+        data = {}
+        for i, follow in enumerate(author.follows.all()):
+            data[i] = [follow.id, follow.user.username]
+        return Response(data, status=200)
+    
+@api_view(['POST'])
+def followAuthor(request):
+    user = request.user
+    if user.is_authenticated:
+        author = Author.objects.get(user=user)
+        id = request.data['id'].split('/')[-2]
+        print("following", id)
+        # Follower.objects.create(follower = Author.objects.get(id=id), followee = author, accepted = True)
+        author.follows.add(Author.objects.get(id=id))
+        return Response(status=200)
+
+
 # outwards facing API endpoints
 @api_view(['GET'])
 #get list of authors with pagination
@@ -383,5 +409,3 @@ def updateAuthor(request, author_id):
         return Response(status=200)
     else:
         return Response(status=400)
-
-    
