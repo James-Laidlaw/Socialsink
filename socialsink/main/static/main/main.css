@@ -17,7 +17,7 @@
     --medium-grey: #28343e;
     --light-grey: #606e7a;
     --button-text: #9ba9b6;
-    --design-padding: 60px;
+    --design-padding: 30px;
     --card-round-border: 14px;
 }
 
@@ -49,6 +49,11 @@ body {
 /* Handle on hover */
  ::-webkit-scrollbar-thumb:hover {
     background: var(--button-text);
+}
+
+.hide {
+    display: none !important;
+    visibility: hidden;
 }
 
 /* -------------------------------------------------------------------------------------- */
@@ -317,12 +322,20 @@ main {
     margin-bottom: 0;
 }
 
-.feed-post img {
+.feed-post img.profile-img {
     width: 80px;
+    min-width: 80px;
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.feed-post img {
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 350px;
+    border-radius: 5px;
 }
 
 .post-content {
@@ -358,8 +371,8 @@ main {
     padding: 0;
 }
 
-.post-btn-wrap button:hover,
-.post-btn-wrap button:focus {
+.post-btn-wrap .btn:hover,
+.post-btn-wrap .btn:focus {
     color: var(--button-text);
     background-color: var(--medium-grey);
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
@@ -477,7 +490,12 @@ main {
 }
 
 .post-content option {
-    color: var(--deep-blue);
+    color: var(--button-text);
+}
+
+.post-content option:hover,
+.post-content option:focus {
+    color: var(--button-text);   
 }
 
 /* Visibility Button Ends ----------------------------- */
@@ -486,7 +504,13 @@ main {
 
 .feed-post.create-new {
     width: calc(100% - 9px);
+    min-height: 148px;
     margin-right: auto;
+    transition: min-height 500ms ease 0s;
+}
+
+.feed-post.create-new.upload-img {
+    min-height: initial;
 }
 
 .post-content input {
@@ -665,7 +689,36 @@ main {
     color: var(--hot-pink);
 }
 
-.hide {
-    display: none !important;
-    visibility: hidden;
+/* Upload Image Starts -------------------- */
+#image-preview-container {
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 10px;
 }
+
+#image-preview-container button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--button-text);
+    background-color: var(--medium-grey);
+    border-radius: 50%;
+    border: 2px solid var(--medium-grey);
+    min-width: 30px;
+    min-height: 30px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+#image-preview-container button:hover,
+#image-preview-container button:focus {
+    color: var(--button-text);
+    background: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+/* Upload Image Ends ---------------------- */

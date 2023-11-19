@@ -152,7 +152,8 @@ def getOldAvailablePosts(request):
 
             #Image code
             image = post.image
-            if image != None:
+            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
+            if image != None and image != "undefined":
                 image_data = base64.b64encode(image.read()).decode('utf-8')
                 image_extension = image.name.split('.')[-1]
                 image = f"data:image/{image_extension};base64,{image_data}"
@@ -218,7 +219,8 @@ def getNewAvailablePosts(request):
 
             #Image code
             image = post.image
-            if image != None:
+            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
+            if image != None and image != "undefined":
                 image_data = base64.b64encode(image.read()).decode('utf-8')
                 image_extension = image.name.split('.')[-1]
                 image = f"data:image/{image_extension};base64,{image_data}"

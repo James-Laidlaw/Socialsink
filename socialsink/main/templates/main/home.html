@@ -72,8 +72,9 @@
             }
 
             // Construct the post content using the provided data
+            // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
             postElement.innerHTML = `
-                <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+                <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
                 <div class="post-content">
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${post[0]}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
