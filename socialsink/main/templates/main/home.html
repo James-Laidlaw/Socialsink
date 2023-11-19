@@ -131,14 +131,15 @@
                 $(`#post-content-${id}`).append(editBox)
                 $(`#edit-post-text-${id}`).val(currentText)
 
-                saveButton = `<button type="button" class="btn" id="save-button-${id}" onclick="saveEditPost(${id})"><i class="fa-solid fa-trash"></i>Save</button>`
-                cancelButton = `<button type="button" class="btn" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${currentText}')"><i class="fa-solid fa-trash"></i>Cancel</button>`
+                saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id})"><i class="fa-solid fa-check"></i>Save</button>`
+                cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${currentText}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
                 $(`#post-btn-wrap-${id}`).append(saveButton)
                 $(`#post-btn-wrap-${id}`).append(cancelButton)
                 
                 $(`#like-button-${id}`).addClass('hide')
                 $(`#share-button-${id}`).addClass('hide')
                 $(`#delete-button-${id}`).addClass('hide')
+                $(".dropdown-menu").removeClass('show');
             }
         }
 
