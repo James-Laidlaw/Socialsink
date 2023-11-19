@@ -40,6 +40,7 @@ class Post(models.Model):
     content = models.CharField(max_length=600)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+    edited = models.BooleanField(default=False)
     publicity = models.IntegerField(default=0) # 2 = private, 1 = friends, 0 = public
     private_to = models.ForeignKey(Author, related_name='readable_by', null=True, on_delete=models.SET_NULL) # only used if publicity = 0
 

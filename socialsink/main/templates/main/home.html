@@ -55,9 +55,17 @@
             }
 
             if (post[6] === 1) {
-                deleteButton = `<button type="button" class="btn" onclick="showDeleteConfirmation(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
+                deleteButton = `<button type="button" class="btn" id="delete-button-${post[0]}" onclick="showDeleteConfirmation(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
+                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${post[0]})">Edit Post</div>`
             } else {
                 deleteButton = ""
+                dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
+            }
+
+            if (post[7] === true) {
+                edited = ` - Edited`
+            } else {
+                edited = ''
             }
 
             // Construct the post content using the provided data
@@ -65,23 +73,21 @@
                 <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
                 <div class="post-content">
                     <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${post[0]}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa-solid fa-ellipsis"></i>
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
+                            ${dropdown}
                         </div>
                     </div>
                     <div class="post-body">
-                        <p id="post-username">${post[1]}</p>
-                        <time id="post-timestamp">${post[2]}</time>
-                        <p id="post-content">${post[3]}</p>
+                        <p id="post-username-${post[0]}">${post[1]}</p>
+                        <time id="post-timestamp-${post[0]}">${post[2]}${edited}</time>
+                        <p id="post-content-${post[0]}">${post[3]}</p>
                     </div>
-                    <div class="post-btn-wrap">
+                    <div class="post-btn-wrap" id="post-btn-wrap-${post[0]}">
                         ${likeButton}
-                        <button type="submit" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        <button type="submit" id="share-button-${post[0]}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                         ${deleteButton}
                     </div>
                 </div>
@@ -97,6 +103,99 @@
             console.log("Post added", postElement) 
             
             posts = posts - 1
+        }
+
+        $(document).on('click', '.dropdown-toggle', function () {
+            var dropdown = $(this).siblings('.dropdown-menu');
+            $('.dropdown-menu').not(dropdown).removeClass('show');
+            dropdown.toggleClass('show');
+        });
+    
+        // Close dropdown when clicking outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+
+        function editPost(id) {
+            console.log("Editing")
+
+            if ($(`#like-button-${id}`).hasClass('hide') === false) {
+                currentText = $(`#post-content-${id}`).text()
+
+                $(`#post-content-${id}`).text("")
+
+                editBox = `<input type="text" id="edit-post-text-${id}" class="form-control" aria-label="What's happening?" name="status" value="">`
+                
+                $(`#post-content-${id}`).append(editBox)
+                $(`#edit-post-text-${id}`).val(currentText)
+
+                saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id})"><i class="fa-solid fa-check"></i>Save</button>`
+                cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${currentText}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
+                $(`#post-btn-wrap-${id}`).append(saveButton)
+                $(`#post-btn-wrap-${id}`).append(cancelButton)
+                
+                $(`#like-button-${id}`).addClass('hide')
+                $(`#share-button-${id}`).addClass('hide')
+                $(`#delete-button-${id}`).addClass('hide')
+                $(".dropdown-menu").removeClass('show');
+            }
+        }
+
+        function saveEditPost(id) {
+            console.log("Saved")
+
+            currentText = $(`#edit-post-text-${id}`).val()
+            console.log(currentText)
+
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "PUT",
+                url: `/api/update-post-data/${id}`,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'text': currentText
+                }),
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        $(`#save-button-${id}`).remove()
+                        $(`#cancel-button-${id}`).remove()
+                        $(`#edit-post-text-${id}`).remove()
+                        $(`#post-content-${id}`).text(currentText)
+
+                        $(`#like-button-${id}`).removeClass('hide')
+                        $(`#share-button-${id}`).removeClass('hide')
+                        $(`#delete-button-${id}`).removeClass('hide')
+
+                        current = $(`#post-timestamp-${id}`).text()
+                        $(`#post-timestamp-${id}`).text(`${current} - Edited`)
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
+        function cancelEditPost(id, currentText) {
+            console.log("Canceled")
+            $(`#post-content-${id}`).show()
+            $(`#edit-post-text-${id}`).remove()
+            $(`#post-content-${id}`).text(currentText)
+
+            $(`#save-button-${id}`).remove()
+            $(`#cancel-button-${id}`).remove()
+            $(`#like-button-${id}`).removeClass('hide')
+            $(`#share-button-${id}`).removeClass('hide')
+            $(`#delete-button-${id}`).removeClass('hide')
         }
 
         function showDeleteConfirmation(postID) {
@@ -208,7 +307,7 @@
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
-                        updateLikeCount(postID)
+                        updatePostData(postID)
                     }
                 },
                 error: function (error) {
@@ -234,7 +333,7 @@
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
-                        updateLikeCount(postID)
+                        updatePostData(postID)
                     }
                 },
                 error: function (error) {
@@ -246,10 +345,10 @@
         function updateAllPosts() {
             console.log("Fetching new like counts if theres changes")
             for (const postID in postIDs) {
-                updateLikeCount(postIDs[postID])
+                updatePostData(postIDs[postID])
             }
         }
-        setInterval(updateAllPosts, 30000) //30 second refresh
+        setInterval(updateAllPosts, 5000) //5 second refresh
 
         function checkForDeletedPosts() {
             $.ajax({
@@ -273,17 +372,24 @@
                 }
             })
         }
-        setInterval(checkForDeletedPosts, 5000) //30 second refresh
+        setInterval(checkForDeletedPosts, 5000) //5 second refresh
 
-        function updateLikeCount(postID) {
-            console.log("Updating like count")
+        function updatePostData(postID) {
+            console.log("Updating the post")
             $.ajax({
                 type: "GET",
-                url: `/api/get-like-count/${postID}`,
+                url: `/api/get-post-data/${postID}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         console.log(response)
                         document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>`
+                        if ($(`#post-content-${postID}`).children().length === 0) {
+                            $(`#post-content-${postID}`).text(response['content'])
+                        }
+                        current = $(`#post-timestamp-${postID}`).text()
+                        if (response['edited'] === true && current.includes("Edited") === false) {
+                            $(`#post-timestamp-${postID}`).text(`${current} - Edited`)
+                        }
                     }
                 },
                 error: function (error) {
