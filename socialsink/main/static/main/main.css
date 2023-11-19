@@ -669,3 +669,15 @@ main {
     display: none !important;
     visibility: hidden;
 }
+
+/* Edit Post Starts ----------------------- */
+.existing-post .btn-save:hover svg,
+.existing-post .btn-save:focus svg {
+    color: var(--pastel-green);
+}
+
+.existing-post .btn-cancel:hover svg,
+.existing-post .btn-cancel:focus svg  {
+    color: var(--hot-pink);
+}
+/* Edit Post Ends ------------------------- */
