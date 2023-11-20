@@ -605,6 +605,8 @@ main {
 
 /* Profile Bar Ends ----------------------- */
 
+
+
 /* Find Author Bar Starts ----------------- */
 
 #find-author-bar {
@@ -661,7 +663,7 @@ main {
     letter-spacing: 0;
 }
 
-#find-author-bar .author-content .btn {
+#find-author-bar .author-content .follow{
     font-size: 0.8em;
     font-weight: 700;
     color: var(--deep-blue);
@@ -669,12 +671,94 @@ main {
     border-radius: 50px;
     min-width: 80px;
     min-height: 45px;
-    transition: all 500ms ease 0s;
+    transition: all 200ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+#find-author-bar .author-content .unfollow {
+    font-size: 0.8em;
+    font-weight: 700;
+    color: white;
+    background: none;
+    border-radius: 50px;
+    border: 2px solid var(--medium-grey);
+    min-width: 80px;
+    min-height: 45px;
+    transition: all 200ms ease 0s;
     letter-spacing: 0.25px;
     padding: 0;
 }
 
 /* Find Author Bar End -------------------- */
+
+
+
+/* Follow Request Bar Start --------------- */
+#follow-requests-bar .heading { 
+    padding: 1em 2em 0 30px;
+}
+
+#follow-requests-bar .request-box{
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    height: 100%;
+    gap: 2em;
+    padding: 0.5em 2em 0 30px;
+}
+
+#follow-requests-bar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+#follow-requests-bar .request {
+    display: inline-flex;
+    gap: 1em;
+}
+
+#follow-requests-bar .request-content {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+}
+
+#follow-requests-bar .author-username {
+    font-size: 16.5px;
+    font-weight: 600;
+}
+
+#follow-requests-bar .request-content .btn {
+    font-size: 0.8em;
+    font-weight: 700;
+    border-radius: 50px;
+    min-width: 80px;
+    min-height: 45px;
+    transition: all 200ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+#follow-requests-bar .request-content .btn-accept {
+    color: var(--deep-blue);
+    background: white;
+}
+
+#follow-requests-bar .request-content .btn-dismiss {
+    color: white;
+    background: var(--dark-gray);
+    border: 2px solid var(--medium-grey);
+}
+
+
+/* Follow Request Bar End ----------------- */
+
 
 /* Testing Confirm Delete ----------------- */
 /* style.css */

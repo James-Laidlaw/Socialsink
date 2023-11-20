@@ -23,7 +23,7 @@
         console.log("Getting Following count")
         $.ajax({
             type: "GET",
-            url: "api/get-following/",
+            url: "api/following/",
             success: function (response, textStatus, http) {
                 console.log(Object.keys(response).length);
                 followingCount = document.getElementById('following');

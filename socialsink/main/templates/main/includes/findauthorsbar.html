@@ -6,22 +6,46 @@
 <script>
     const authorBox = document.querySelector('.author-box')
 
-    function createAuthorPanel(username, id) {
+    function createAuthorPanel(username, id, following) {
         const authorElem = document.createElement('div');
         authorElem.classList.add('author');
+
+        var state;
+        var text;
+        if (following) {
+            state = 'unfollow';
+            text = 'Following'
+        } else {
+            state = 'follow';
+            text = 'Follow'
+        }
 
         authorElem.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
                                 <div class="author-content">
                                     <div>
                                         <p class="author-username">${username}</p>
                                     </div>
-                                    <button class="btn" onClick="followAuthor(event, '${id}')">Follow</button>
+                                    <button type="button" id="follow-${id}" class="btn-follow ${state}" onclick="followAuthor(event, '${id}')">${text}</button>
                                 </div>`;
         return authorElem;
     }
 
+    function checkFollowing() {
+        return $.ajax({
+            type: "GET",
+            url: "api/following/",
+            success: function (response, textStatus, http) {
+                console.log(response)
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
+    }
+
     function followAuthor(e, id) {
         e.preventDefault();
+        button = document.getElementById(`follow-${id}`);
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -30,20 +54,44 @@
                 }
             }
         });
-        $.ajax({
-            type: "POST",
-            url: "/api/follow/",
-            contentType: 'application/json',
-            data: JSON.stringify({
-                'id': id
-            }),
-            success: function (response, textStatus, http) {
-                console.log("followed", id)
-            },
-            error: function (error) {
-                console.error(error);
-            }
-        })
+
+        if (button.classList.contains('follow')) {
+            button.innerText = 'Following';
+            button.classList.remove("follow");
+            button.classList.add("unfollow");
+            $.ajax({
+                type: "PUT",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id)
+                }),
+                success: function (response, textStatus, http) {
+                    console.log("followed", id)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        } else if (button.classList.contains('unfollow')) {
+            button.innerText = 'Follow';
+            button.classList.remove("unfollow");
+            button.classList.add("follow");
+            $.ajax({
+                type: "DELETE",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id)
+                }),
+                success: function (response, textStatus, http) {
+                    console.log("unfollowed", id)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
     }
 
     function addAuthors() {
@@ -52,9 +100,21 @@
             type: "GET",
             url: "service/authors/page=1&size=3",
             success: function (response, textStatus, http) {
-                for (const author in response) {
-                    authorBox.appendChild(createAuthorPanel(response[author].displayName, response[author].id));
-                }
+                checkFollowing().done(function (result) {
+                    var followers = [];
+                    for (follower in result) {
+                        followers.push(result[follower][1]);
+                    }
+                    console.log(followers)
+                    for (const author in response) {
+                        var id = response[author].id.split("/").reverse()[1]
+                        if (followers.includes(response[author].displayName)) {
+                            authorBox.appendChild(createAuthorPanel(response[author].displayName, id, true));
+                        } else {
+                            authorBox.appendChild(createAuthorPanel(response[author].displayName, id, false));
+                        }
+                    }
+                })
             },
             error: function (error) {
                 console.error(error);
@@ -63,6 +123,9 @@
     }
 
     addAuthors();
+
+    // TESTING
+    
 
 
 </script>
