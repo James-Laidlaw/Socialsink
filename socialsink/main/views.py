@@ -23,10 +23,11 @@ from io import BytesIO
 @login_required
 def homepage(request):
     print(request.user)
-    author = request.user.author
+    author = Author.objects.get(user=request.user)
     return render(request=request,
                   template_name='main/home.html',
-                  context={'user': request.user})
+                  context={'user': request.user,
+                           'author': author})
 
 def login(request):
     return render(request=request,
@@ -406,6 +407,27 @@ def getDeletedPosts(request):
                 data[i] = int(ids[i])
 
         return Response(data, status=200)
+    else:
+        return Response(status=401)
+
+
+@api_view(['PUT'])
+def updateUser(request, id):
+    print("Update User request received")
+
+    user = request.user
+    if user.is_authenticated and user.id == id:
+        
+        u = User.objects.get(id=id)
+        author = Author.objects.get(user=u)
+
+        author.bio = request.data["bio"]
+        author.save()
+
+        u.username = request.data["username"]
+        u.save()
+
+        return Response(status=200)
     else:
         return Response(status=401)
 

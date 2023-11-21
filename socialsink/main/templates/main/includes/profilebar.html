@@ -5,9 +5,9 @@
     <img src="../../../static/images/user_bg.jpg" class="user-bg" />
     <img src="../../../static/images/unknown_user.png" class="profile-img" />
     <div class="user-box">
-        <h3 class="username">{{ user.username}}</h3>
-        <p class="useremail">{{ user.email }}</p>
-        <p class="userbio">My user bio can be read here</p>
+        <h3 id="profile-username" class="username">{{ user.username}}</h3>
+        <p id="profile-email" class="useremail">{{ user.email }}</p>
+        <p id="profile-bio" class="userbio">{% if author.bio %}{{ author.bio }}{% endif %}</p>
     </div>
     <div class="follow-box">
         <div>
@@ -36,7 +36,7 @@
             <label for="edit-username">Username</label>
             <input type="text" id="edit-username" class="username form-control" placeholder="{{ user.username }}"/>
             <label for="edit-username">Bio</label>
-            <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ user.userbio }}"/>
+            <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ author.bio }}"/>
         </div>
     </div>
     <div class="button-wrap">
@@ -55,9 +55,43 @@
 
     $("#confirm-edit-profile-yes").click(function() {
         // Execute the edit profile logic when the user clicks "Yes"
-        deletePost(window.postToDelete);
-        $("#edit-profile-dialog").removeClass("show");
-        $("body").toggleClass("has-popup-modal");
+        var username = $("#edit-username").val()
+        var bio = $("#edit-userbio").val()
+        if (username.length === 0 && bio.length === 0) {
+            alert("No changes have been made, fields are empty")
+            $("#edit-profile-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
+        } else if (bio.length > 200) {
+            alert("Bio is too long, must be under 200 characters")
+        } else {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "PUT",
+                url: `/api/update-user/{{user.id}}`,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'username': username,
+                    'bio': bio
+                }),
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        $("#edit-profile-dialog").removeClass("show");
+                        $("body").toggleClass("has-popup-modal");
+                        window.location.reload()
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
     });
 
     $("#confirm-edit-profile-no").click(function() {
