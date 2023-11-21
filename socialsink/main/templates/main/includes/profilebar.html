@@ -1,4 +1,7 @@
 <div id="profile-bar" style="overflow: hidden;">
+    <button id="edit-profile-btn" class="button" onclick="showEditProfile()">
+        <i class="fa-solid fa-pencil"></i>
+    </button>
     <img src="../../../static/images/user_bg.jpg" class="user-bg" />
     <img src="../../../static/images/unknown_user.png" class="profile-img" />
     <div class="user-box">
@@ -17,3 +20,60 @@
         </div>
     </div>
 </div>
+
+<!-- Edit profile dialog -->
+<div id="edit-profile-dialog" class="popup-modal">
+    <p>Edit your profile here</p>
+    <div id="profile-bar" style="overflow: hidden;">
+        <input type="file" id="profile-banner-attachment" style="display:none" name="photo-attachment" accept="image/*">
+        <img src="../../../static/images/user_bg.jpg" class="user-bg" onclick="chooseBannerImage()" />
+        <div class="edit-profile-image-container">
+            <input type="file" id="profile-photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+            <img src="../../../static/images/unknown_user.png" class="profile-img" onclick="chooseProfileImage()" />
+        </div>
+        <div class="user-box">
+            <p class="useremail">{{ user.email }}</p>
+            <label for="edit-username">Username</label>
+            <input type="text" id="edit-username" class="username form-control" placeholder="{{ user.username }}"/>
+            <label for="edit-username">Bio</label>
+            <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ user.userbio }}"/>
+        </div>
+    </div>
+    <div class="button-wrap">
+        <button id="confirm-edit-profile-yes">Save</button>
+        <button id="confirm-edit-profile-no">Cancel</button>
+    </div>
+</div>
+<!-- Edit profile dialog -->
+
+<script>
+
+    function showEditProfile() {
+       $("#edit-profile-dialog").addClass("show");
+       $("body").toggleClass("has-popup-modal");
+    }
+
+    $("#confirm-edit-profile-yes").click(function() {
+        // Execute the edit profile logic when the user clicks "Yes"
+        deletePost(window.postToDelete);
+        $("#edit-profile-dialog").removeClass("show");
+        $("body").toggleClass("has-popup-modal");
+    });
+
+    $("#confirm-edit-profile-no").click(function() {
+        // Cancel the edit profile action when the user clicks "No"
+        $("#edit-profile-dialog").removeClass("show");
+        $("body").toggleClass("has-popup-modal");
+    });
+
+    function chooseBannerImage() {
+        // Trigger the file input when the image is clicked
+        $("#profile-banner-attachment").click();
+    }
+
+    function chooseProfileImage() {
+        // Trigger the file input when the image is clicked
+        $("#profile-photo-attachment").click();
+    }
+
+</script>

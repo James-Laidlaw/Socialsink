@@ -15,12 +15,12 @@
         </div>
         <div class="right-bar"></div>
     </div>
-
-    <div id="confirm-dialog" class="popup-modal hidden">
+    
+    <div id="delete-post-dialog" class="popup-modal">
         <p>Are you sure you want to permanantly delete this post?</p>
         <div class="button-wrap">
-            <button id="confirm-yes">Yes</button>
-            <button id="confirm-no">No</button>
+            <button id="confirm-delete-post-yes">Yes</button>
+            <button id="confirm-delete-post-no">No</button>
         </div>
     </div>
 
@@ -201,18 +201,21 @@
             window.postToDelete = postID;
 
             // Show the custom confirmation dialog
-            $("#confirm-dialog").removeClass("hidden");
+            $("#delete-post-dialog").addClass("show");
+            $("body").toggleClass("has-popup-modal");
         }
 
-        $("#confirm-yes").click(function() {
+        $("#confirm-delete-post-yes").click(function() {
             // Execute the post deletion logic when the user clicks "Yes"
             deletePost(window.postToDelete);
-            $("#confirm-dialog").addClass("hidden");
+            $("#delete-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
         });
 
-        $("#confirm-no").click(function() {
+        $("#confirm-delete-post-no").click(function() {
             // Cancel the post deletion action when the user clicks "No"
-            $("#confirm-dialog").addClass("hidden");
+            $("#delete-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
         });
 
         function deletePost(postID) {
