@@ -8,6 +8,7 @@ from django.dispatch import receiver
 class Author(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    bio = models.CharField(max_length=200, null=True)
     github = models.CharField(max_length=200, null=True)
     profileImage = models.CharField(max_length=200, null=True) #link to public image
     follows = models.ManyToManyField('self', symmetrical=False, through="Follower", related_name='follower_set')

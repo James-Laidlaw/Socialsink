@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/get-post-data/<int:id>", views.getPostData, name="getPostData"),
     path("api/update-post-data/<int:id>", views.updatePostData, name="updatePostData"),
     path("api/get-deleted-posts/", views.getDeletedPosts, name="getDeletedPosts"),
+    path("api/update-user/<int:id>", views.updateUser, name="updateUser"),
     path("service/authors/<str:author_id>/", views.authorDetail, name="authorDetail"),
     re_path (r"^service/authors/?", views.getAuthors, name="authorList"), 
 ]
