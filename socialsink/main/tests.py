@@ -139,15 +139,6 @@ class YourApiTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_make_post(self):
-        url = reverse('makePost')
-        data = {'text': 'Test post content', 'publicity': 'public', 'image': None}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
     def test_get_old_available_posts(self):
         url = reverse('getOldAvailablePosts')
         response = self.client.get(url)
@@ -349,7 +340,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.client.force_authenticate(user=self.user)
         response: JsonResponse = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response: JsonResponse = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['title'], 'New Title')

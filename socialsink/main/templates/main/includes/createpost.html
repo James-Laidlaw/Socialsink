@@ -1,9 +1,11 @@
 {% block content %}
 <div class="feed-post create-new">
-    <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
-    <form class="post-content" onsubmit="submitPost(event)" enctype="multipart/form-data">
+    <form class="post-content" onsubmit="submitPost(event)">
         {% csrf_token %}
-        <input type="text" id="create-post-text" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status">
+        <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
+        <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
+        <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
+        <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
         <div class="hide" id="image-preview-container">
             <img id="image-preview" src="#" alt="preview">
             <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
@@ -11,11 +13,17 @@
         <div class="post-btn-wrap">
             <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
             <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
-            <div class="select-wrap">
+            <div class="content-type-select-wrap">
+                <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
+                    <option value="text/plain">Plaintext</option>
+                    <option value="text/markdown">Markdown</option>
+                </select>
+            </div>
+            <div class="publicity-select-wrap">
                 <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
                     <option value="public">Public</option>
                     <option value="friends">Friends</option>
-                    <option value="private">Private</option>
+                    <option value="unlisted">Unlisted</option>
                 </select>
             </div>
             <div>
@@ -33,14 +41,77 @@
     function submitPost(e) {
         e.preventDefault()
 
-        text = document.getElementById("create-post-text")
+        title = document.getElementById("create-post-title")
+        description = document.getElementById("create-post-description")
+        categories = document.getElementById("create-post-categories")
+        content = document.getElementById("create-post-content")
+        contentType = document.getElementById("content-type-drop-down")
         publicity = document.getElementById("publicity-drop-down")
 
-        var formData = new FormData()
-        formData.append('text', text.value)
-        formData.append('publicity', publicity.value)
-        formData.append('image', photoAttachment.files[0])
+        origin = `${window.location.href}`
 
+        author_id = "{{author.id}}"
+
+        var error = false
+        if (title.value.length > 200) {
+            alert("Please enter a title less than 200 characters")
+            error = true
+        } else if (description.value.length > 200) {
+            alert("Please enter a description less than 200 characters")
+            error = true
+        } else if (categories.value.length > 200) {
+            alert("Please enter categories less than 200 characters")
+            error = true
+        }
+
+        if (!error) {
+            if (photoAttachment.files[0]) {
+                var reader = new FileReader()
+
+                reader.onload = function(e) {
+                    console.log(e.target.result)
+                    createPost(JSON.stringify({
+                        'title': title.value,
+                        'description': description.value,
+                        'categories': categories.value,
+                        'content': `${e.target.result}`,
+                        'contentType': contentType.value,
+                        'publicity': publicity.value,
+                        'origin': origin,
+                        'image': true,
+                    }))
+                }
+
+                reader.readAsDataURL(photoAttachment.files[0])
+
+            } else if (title.value.length > 0 && content.value.length > 0 && description.value.length > 0) {
+                createPost(JSON.stringify({
+                    'title': title.value,
+                    'description': description.value,
+                    'categories': categories.value,
+                    'content': content.value,
+                    'contentType': contentType.value,
+                    'publicity': publicity.value,
+                    'origin': origin,
+                    'image': false,
+                }))
+            } else {
+                alert("Please fill in the required fields")
+            }
+        }
+    }
+
+    function getFileData(file) {
+        var reader = new FileReader()
+
+        reader.onload = function(e) {
+            return e.target.result
+        }
+
+        reader.readAsDataURL(file)
+    }
+
+    function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -51,17 +122,23 @@
         });
         $.ajax({
             type: "POST",
-            url: "/api/make-post/",
+            url: `/service/authors/${author_id}/posts/`,
             data: formData,
-            contentType: false,
-            processData: false,
+            contentType: 'application/json',
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
-                    text.value = ""                   
-                    // Reset the publicity drop down to public to fix the bug where it would reset to nothing
+                    title.value = "" 
+                    description.value = "" 
+                    categories.value = "" 
+                    content.value = ""         
+
+                    // Reset the publicity and content-type drop down to public and text/plain
                     $('#publicity-drop-down').val('public')
-                    // $("#image-preview").hide()
-                    removePhoto()
+                    $('#content-type-drop-down').val('text/plain')
+                    
+                    if (photoAttachment.files[0]) {
+                        removePhoto()
+                    }
                 }
             },
             error: function (error) {
@@ -81,6 +158,8 @@
     photoAttachment.addEventListener('change', function () {
         loadPhoto(photoAttachment.files[0]);
         $(".feed-post.create-new").toggleClass("upload-img");
+
+        $("#create-post-content").hide()
     })
 
     function loadPhoto(file) {
@@ -98,6 +177,9 @@
         $("#image-preview-container").addClass("hide");
         $(".feed-post.create-new").removeClass("upload-img");
         photoAttachment.value = '';
+
+        $("#create-post-content").val("")
+        $("#create-post-content").show()
     }
 
 </script>

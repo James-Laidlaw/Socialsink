@@ -14,7 +14,6 @@ urlpatterns = [
     path("api/login/", views.loginRequest, name="loginRequest"),
     path("api/logout/", views.logoutRequest, name="logoutRequest"),
     path("api/register/", views.createAccount, name="createAccount"),
-    path("api/make-post/", views.makePost, name="makePost"),
     path("api/delete-account/", views.deleteAccount, name="deleteAccount"),
     path("api/delete-post/<int:id>", views.deletePost, name="deletePost"),
     path("api/get-old-available-posts/", views.getOldAvailablePosts, name="getOldAvailablePosts"),

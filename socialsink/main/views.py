@@ -94,51 +94,6 @@ def logoutRequest(request):
     auth_logout(request)
     return Response(status=200)
 
-@api_view(['POST'])
-def makePost(request):
-    print("Make-post request received")
-
-    user = request.user
-    if user.is_authenticated:
-        text = request.data['text']
-        publicity = request.data['publicity']
-        image = request.data['image']
-
-        if publicity == 'public':
-            publicity = 0
-        elif publicity == 'friends':
-            publicity = 1
-        elif publicity == 'private':
-            publicity = 2
-        else:
-            publicity = -1 #Unknown publicity
-
-        author = Author.objects.get(user=user)
-        if publicity == 1:
-            author = Author.objects.get(user=user)
-            friends = author.friend_set.all()
-            post = Post(
-                author=author, 
-                content=text,  
-                image=image,
-                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
-                publicity=publicity, 
-                private_to=friends)
-        else:
-            post = Post(
-                author=author, 
-                content=text, 
-                image=image,
-                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
-                publicity=publicity)
-
-        post.save()
-
-        return Response(status=201)
-    
-    else:
-        return Response(status=401)
-
 @api_view(['GET'])
 def getOldAvailablePosts(request):
     print("Get available posts request received")
@@ -603,20 +558,24 @@ def postReqHandler(request, author_id, post_id):
         print("service: Get post request received")
         return getPost(request, post_id)
     
-    elif request.method == 'POST':
-        print("service: Update post request received")
-        return updatePost(request, post_id)
+    user = request.user
+    if user.is_authenticated:
+        if request.method == 'POST':
+            print("service: Update post request received")
+            return updatePost(request, post_id)
 
-    elif request.method == 'PUT':
-        print("service: Create specific post request received")
-        return createSpecificPost(request, author_id, post_id)
-    
-    elif request.method == 'DELETE':
-        print("service: Delete post request received")
-        return deletePost_1(request, post_id)
-    
+        elif request.method == 'PUT':
+            print("service: Create specific post request received")
+            return createSpecificPost(request, author_id, post_id)
+        
+        elif request.method == 'DELETE':
+            print("service: Delete post request received")
+            return deletePost_1(request, post_id)
+
+        else:
+            return Response(status=405)
     else:
-        return Response(status=405)
+        return Response(status=401)
 
 def getPost(request, post_id):
     found_post = Post.objects.filter(id=post_id).first()
@@ -658,11 +617,6 @@ def createSpecificPost(request, author_id, post_id):
     # check if post id is in use
     if Post.objects.filter(id=post_id).exists():
         return Response(status=409) #409 = conflict
-    
-    #check authorization
-    if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
-        return Response(status=401)
 
     #slot in id
     request.data['id'] = post_id
@@ -679,14 +633,21 @@ def createSpecificPost(request, author_id, post_id):
 #not a great name, but it follows the spec
 @api_view(['GET', 'POST'])
 def postCreationReqHandler(request, author_id):
-    if request.method == 'POST':
-        print("service: Create post request received")
-        return createPost(request, author_id)
-    elif request.method == 'GET':
-        print("service: Get posts request received")
-        return getAuthorPosts(request, author_id)
+    
+    user = request.user
+    if user.is_authenticated:
+
+        if request.method == 'POST':
+            print("service: Create post request received")
+            return createPost(request, author_id)
+        elif request.method == 'GET':
+            print("service: Get posts request received")
+            return getAuthorPosts(request, author_id)
+        else:
+            return Response(status=405)
+    
     else:
-        return Response(status=405)
+        return Response(status=401)
     
 #like create specific post, but without the post_id
 def createPost(request, author_id):
@@ -694,17 +655,56 @@ def createPost(request, author_id):
     if author == None:
         return Response(status=404)
     
-    post_serializer = PostSerializer(data=request.data, context={'request': request})
+    try:
+        title = request.data['title']
+        description = request.data['description']
+        categories = request.data['categories']
+        content = request.data['content']
+        contentType = request.data['contentType']
+        publicity = request.data['publicity']
+        origin = request.data['origin']
+        image = request.data['image']
 
-    #check authorization
-    if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
-        return Response(status=401)
+        if image:
+            contentType = content.split(",")[0].split(":")[1]
 
-    if post_serializer.is_valid():
-        post_serializer.save()
-        return Response(status=200)
-    else:
+        unlisted = False
+        if publicity == 'public':
+            publicity = 0
+        elif publicity == 'friends':
+            publicity = 1
+        elif publicity == 'unlisted':
+            publicity = 0
+            unlisted = True
+        else:
+            publicity = -1 #Unknown publicity
+
+        post = Post(
+                author=author, 
+                title=title,
+                description=description,
+                categories=categories,
+                contentType=contentType,
+                content=content,
+                origin=origin,
+                publicity=publicity,
+                unlisted=unlisted,
+                created_at=datetime.now(pytz.timezone('America/Edmonton'))
+            )
+
+        if publicity == 1:
+            friends = author.friend_set.all()
+            post.private_to=friends
+
+        post.save()
+
+        origin += f'posts/{post.id}'
+        post.origin = origin
+
+        post.save()
+
+        return Response(status=201)
+    except:
         return Response(status=400)
     
 def getAuthorPosts(request, author_id):
