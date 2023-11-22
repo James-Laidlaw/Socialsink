@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like, Follower
+from .models import Author, Post, Like, Follower, ServerSettings
 from .serizlizers import AuthorSerializer, PostSerializer
 
 from datetime import datetime, timedelta, date, time
@@ -13,14 +13,21 @@ from django.contrib import messages
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+#Image Imports
+from django.core.files.base import ContentFile
+import base64
+from PIL import Image
+from io import BytesIO
+
 # Create your views here.
 @login_required
 def homepage(request):
     print(request.user)
-    author = request.user.author
+    author = Author.objects.get(user=request.user)
     return render(request=request,
                   template_name='main/home.html',
-                  context={'user': request.user})
+                  context={'user': request.user,
+                           'author': author})
 
 def login(request):
     return render(request=request,
@@ -40,14 +47,22 @@ def createAccount(request):
     email = request.data['email']
     password = request.data['password']
 
+    ss = ServerSettings.objects.first()
+
     try:    
         user = User.objects.create_user(username=username, email=email, password=password)
-        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        if ss.auto_permit_users == True:
+            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        else:
+            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')), is_permitted=False)
         author.save()
         user.author = author
         user.save()
 
-        auth_login(request, user)
+        if ss.auto_permit_users == True:
+            auth_login(request, user)
+        else:
+            return Response(status=301)
         return Response(status=201)
         
     except:
@@ -62,9 +77,13 @@ def loginRequest(request):
 
     user = authenticate(username=username, password=password)
 
-    if user != None:
-        auth_login(request, user)
-        return Response(status=201)
+    author = Author.objects.get(user=user)
+    if author.is_permitted:
+        if user != None:
+            auth_login(request, user)
+            return Response(status=201)
+    else:
+        return Response(status=301)
 
     return Response(status=401)
 
@@ -83,6 +102,7 @@ def makePost(request):
     if user.is_authenticated:
         text = request.data['text']
         publicity = request.data['publicity']
+        image = request.data['image']
 
         if publicity == 'public':
             publicity = 0
@@ -97,9 +117,20 @@ def makePost(request):
         if publicity == 1:
             author = Author.objects.get(user=user)
             friends = author.friend_set.all()
-            post = Post(author=author, content=text, created_at=datetime.now(pytz.timezone('America/Edmonton')), publicity=publicity, private_to=friends)
+            post = Post(
+                author=author, 
+                content=text,  
+                image=image,
+                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
+                publicity=publicity, 
+                private_to=friends)
         else:
-            post = Post(author=author, content=text, created_at=datetime.now(pytz.timezone('America/Edmonton')), publicity=publicity)
+            post = Post(
+                author=author, 
+                content=text, 
+                image=image,
+                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
+                publicity=publicity)
 
         post.save()
 
@@ -132,12 +163,41 @@ def getOldAvailablePosts(request):
             if post.author == author:
                 isOwnPost = 1
 
+            #Image code
+            image = post.image
+            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
+            if image != None and image != "undefined":
+                image_data = base64.b64encode(image.read()).decode('utf-8')
+                image_extension = image.name.split('.')[-1]
+                image = f"data:image/{image_extension};base64,{image_data}"
+            else:
+                image = None
+
             if post.publicity == 0:
-                data[i] =[post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                data[i] = [
+                    post.id, 
+                    post.author.user.username, 
+                    f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                    post.content, 
+                    len(post.likes.all()), 
+                    liked, 
+                    isOwnPost, 
+                    post.edited,
+                    image]
+
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                    data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
                     i += 1
 
         return Response(data, status=200)
@@ -170,12 +230,41 @@ def getNewAvailablePosts(request):
             if post.author == author:
                 isOwnPost = 1
 
+            #Image code
+            image = post.image
+            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
+            if image != None and image != "undefined":
+                image_data = base64.b64encode(image.read()).decode('utf-8')
+                image_extension = image.name.split('.')[-1]
+                image = f"data:image/{image_extension};base64,{image_data}"
+            else:
+                image = None
+
             if post.publicity == 0:
-                data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+
+                data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
                 i += 1
             elif post.publicity == 1:
                 if author in post.private_to:
-                    data[i] = [post.id, post.author.user.username, f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", post.content, len(post.likes.all()), liked, isOwnPost]
+                    data[i] = [
+                        post.id, 
+                        post.author.user.username, 
+                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
+                        post.content, 
+                        len(post.likes.all()), 
+                        liked, 
+                        isOwnPost, 
+                        post.edited,
+                        image]
 
         return Response(data, status=200)
 
@@ -206,6 +295,34 @@ def deleteAccount(request):
     else:
         return Response(status=401)
     
+
+@api_view(['PUT'])
+def updatePostData(request, id):
+    print("Update post request received")
+
+    user = request.user
+    
+    if user.is_authenticated:
+        try:
+            author = Author.objects.get(user=user)
+            post = Post.objects.get(id=id, author=author)
+            post.content = request.data['text']
+            post.updated_at = datetime.now(pytz.timezone('America/Edmonton'))
+            post.edited = True
+
+            post.save()
+
+            return Response(status=200)
+        except Post.DoesNotExist:
+            messages.error(request, "Post does not exist")    
+            return Response(status=404)
+        except Exception as e: 
+            return Response(status=500)
+
+    else:
+        return Response(status=401)
+
+
 @api_view(['DELETE'])
 def deletePost(request, id):
     print("Delete post request received")
@@ -269,7 +386,7 @@ def unlikePost(request, id):
 
 
 @api_view(['GET'])
-def getLikeCount(request, id):
+def getPostData(request, id):
     print("Get Like Count request received")
 
     user = request.user
@@ -278,7 +395,9 @@ def getLikeCount(request, id):
         try:
             post = Post.objects.get(id=id)
             count = len(post.likes.all())
-            data = {'count': count}
+
+            data = {'count': count, 'content': post.content, 'edited': post.edited}
+
             return Response(data, status=200)
         except Post.DoesNotExist:
             return Response(status=404)
@@ -300,6 +419,27 @@ def getDeletedPosts(request):
                 data[i] = int(ids[i])
 
         return Response(data, status=200)
+    else:
+        return Response(status=401)
+
+
+@api_view(['PUT'])
+def updateUser(request, id):
+    print("Update User request received")
+
+    user = request.user
+    if user.is_authenticated and user.id == id:
+        
+        u = User.objects.get(id=id)
+        author = Author.objects.get(user=u)
+
+        author.bio = request.data["bio"]
+        author.save()
+
+        u.username = request.data["username"]
+        u.save()
+
+        return Response(status=200)
     else:
         return Response(status=401)
 

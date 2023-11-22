@@ -5,15 +5,21 @@ from django.dispatch import receiver
 
 # Create your models here.
 
+class ServerSettings(models.Model):
+    id = models.AutoField(primary_key=True)
+    auto_permit_users = models.BooleanField()
+
 class Author(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    github = models.CharField(max_length=200, null=True)
-    profileImage = models.CharField(max_length=200, null=True) #link to public image
+    bio = models.CharField(max_length=200, null=True)
+    github = models.CharField(max_length=200, null=True, blank=True)
+    profileImage = models.CharField(max_length=200, null=True, blank=True) #link to public image
     follows = models.ManyToManyField('self', symmetrical=False, through="Follower", related_name='follower_set')
     friends = models.ManyToManyField('self', symmetrical=False, through="Friendship", related_name='friend_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+    is_permitted = models.BooleanField(default=True)
 
 #only stores follows TO local authors, follows TO remote authors are stored in the remote author's server
 # a friendship synonymous with a follow, a true friendship is when two authors follow each other
@@ -45,8 +51,10 @@ class Post(models.Model):
     source = models.CharField(max_length=200, null=True) #Where did reposter get post from
     origin = models.CharField(max_length=200, null=True) #Where post is actually from
     categories = models.CharField(max_length=200, null=True) #comma separated list of categories
+    image = models.ImageField(null=True, upload_to="images/")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+    edited = models.BooleanField(default=False)
     publicity = models.IntegerField(default=0) # 2 = private, 1 = friends, 0 = public
     private_to = models.ForeignKey(Author, related_name='readable_by', null=True, on_delete=models.SET_NULL) # only used if publicity = 0
 

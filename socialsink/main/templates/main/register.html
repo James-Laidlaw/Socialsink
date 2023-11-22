@@ -72,6 +72,9 @@
             error: function (error) {
                 if (error.status === 401) {
                     alert("Username/Email already in use")
+                } else if (error.status === 301) {
+                    alert("Staff have been notified of your signup, please wait while they approve your account")
+                    window.location.href = "/login/"
                 } else {
                     console.error(error);
                 }
