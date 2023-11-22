@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Author
+from .models import Author, Post
 from django.urls import reverse
 from rest_framework.request import Request
 
@@ -25,12 +25,47 @@ class AuthorSerializer(serializers.ModelSerializer):
 
         super_result = super().to_representation(instance)
 
-        author_url = request.build_absolute_uri(reverse('authorDetail', args=[instance.id]))
+        author_url = request.build_absolute_uri(reverse('authorReqHandler', args=[instance.id]))
         host_url = request.build_absolute_uri("/")
 
+        super_result['type'] = "author"
         super_result['id'] = author_url
         super_result['url'] = author_url
         super_result['host'] = host_url
         super_result['displayName'] = instance.user.username
         
         return super_result
+    
+visibility_options = {0: "PUBLIC", 1: "FRIENDS", 2: "PRIVATE"}
+#TODO serializer should return comments too
+#TODO test
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['title', 'description', 'contentType', 'content', 'source', 'origin']
+
+    def to_representation(self, instance):
+        request: Request = self.context.get('request')
+
+        super_result = super().to_representation(instance)
+        author_id = instance.author.id
+        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, instance.id]))
+        #TODO comments, likes
+        super_result['type'] = "post"
+        super_result['id'] = post_url
+        super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+        super_result['published'] = instance.created_at.isoformat()
+        super_result['visibility'] = visibility_options[instance.publicity]
+        super_result['unlisted'] = instance.publicity == 2 #TODO Not sure if this is correct
+        
+        return super_result
+    
+    def create(self, validated_data):
+        request: Request = self.context.get('request')
+        validated_data['author_id'] = Author.objects.get(user=request.user).id
+        validated_data['id'] = self.initial_data.get('id', None) # not sure if the best way to do this
+
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)

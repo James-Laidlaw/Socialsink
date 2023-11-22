@@ -17,7 +17,7 @@
     --medium-grey: #28343e;
     --light-grey: #606e7a;
     --button-text: #9ba9b6;
-    --design-padding: 60px;
+    --design-padding: 30px;
     --card-round-border: 14px;
 }
 
@@ -49,6 +49,15 @@ body {
 /* Handle on hover */
  ::-webkit-scrollbar-thumb:hover {
     background: var(--button-text);
+}
+
+svg {
+    transition: color 300ms ease 0s;
+}
+
+.hide {
+    display: none !important;
+    visibility: hidden;
 }
 
 /* -------------------------------------------------------------------------------------- */
@@ -328,12 +337,20 @@ main {
     margin-bottom: 0;
 }
 
-.feed-post img {
+.feed-post img.profile-img {
     width: 80px;
+    min-width: 80px;
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+.feed-post img {
+    max-width: 100%;
+    overflow: hidden;
+    max-height: 350px;
+    border-radius: 5px;
 }
 
 .post-content {
@@ -369,8 +386,8 @@ main {
     padding: 0;
 }
 
-.post-btn-wrap button:hover,
-.post-btn-wrap button:focus {
+.post-btn-wrap .btn:hover,
+.post-btn-wrap .btn:focus {
     color: var(--button-text);
     background-color: var(--medium-grey);
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
@@ -401,6 +418,7 @@ main {
     font-weight: 600;
     color: var(--light-grey);
     letter-spacing: 0;
+    flex-direction: row;
 }
 
 .existing-post .post-btn-wrap button {
@@ -487,7 +505,12 @@ main {
 }
 
 .post-content option {
-    color: var(--deep-blue);
+    color: var(--button-text);
+}
+
+.post-content option:hover,
+.post-content option:focus {
+    color: var(--button-text);   
 }
 
 /* Visibility Button Ends ----------------------------- */
@@ -496,7 +519,13 @@ main {
 
 .feed-post.create-new {
     width: calc(100% - 9px);
+    min-height: 148px;
     margin-right: auto;
+    transition: min-height 500ms ease 0s;
+}
+
+.feed-post.create-new.upload-img {
+    min-height: initial;
 }
 
 .post-content input {
@@ -522,6 +551,7 @@ main {
     flex-direction: column;
     align-items: center;
     background: var(--dark-gray);
+    width: 100%;
     border-radius: var(--card-round-border);
 }
 
@@ -529,6 +559,7 @@ main {
     width: 100%;
     height: 130px;
     object-fit: cover;
+    transition: opacity 300ms ease 0s;
 }
 
 #profile-bar .profile-img {
@@ -539,6 +570,7 @@ main {
     transform: translateY(-50%);
     margin-bottom: -28px;
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
+    transition: opacity 300ms ease 0s;
 }
 
 #profile-bar .user-box {
@@ -555,7 +587,7 @@ main {
 
 #profile-bar .username {
     font-size: 20px;
-    font-weight: 500px;
+    font-weight: 500;
 }
 
 #profile-bar .useremail {
@@ -769,10 +801,22 @@ main {
 
 
 /* Testing Confirm Delete ----------------- */
-/* style.css */
 
-.popup-modal.hidden {
+.popup-modal:not(.show) {
     display: none !important;
+}
+
+body.has-popup-modal:before {
+    position: absolute;
+    content: '';
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 9;
 }
 
 .popup-modal {
@@ -794,6 +838,7 @@ main {
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
     box-shadow: 0 1px 10px rgba(0,0,0,0.75);
+    z-index: 10;
 }
 
 .popup-modal p {
@@ -834,7 +879,170 @@ main {
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
 }
 
-.popup-modal button#confirm-yes:hover,
-.popup-modal button#confirm-yes:focus {
+.popup-modal button#confirm-delete-post-yes:hover,
+.popup-modal button#confirm-delete-post-yes:focus {
     color: var(--hot-pink);
 }
+
+/* Upload Image Starts -------------------- */
+#image-preview-container {
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+#image-preview-container button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--button-text);
+    background-color: var(--medium-grey);
+    border-radius: 50%;
+    border: 2px solid var(--medium-grey);
+    min-width: 30px;
+    min-height: 30px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+}
+
+#image-preview-container button:hover,
+#image-preview-container button:focus {
+    color: var(--button-text);
+    background: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+/* Upload Image Ends ---------------------- */
+
+/* Edit Post Starts ----------------------- */
+.existing-post .btn-save:hover svg,
+.existing-post .btn-save:focus svg {
+    color: var(--pastel-green);
+}
+
+.existing-post .btn-cancel:hover svg,
+.existing-post .btn-cancel:focus svg  {
+    color: var(--hot-pink);
+}
+
+/* Edit Post Ends ------------------------- */
+
+/* Edit Profile Begins -------------------- */
+
+#edit-profile-dialog.popup-modal {
+    padding: 50px 150px;
+    max-width: 600px;
+}
+
+#edit-profile-btn svg {
+    color: var(--button-text);
+}
+
+#edit-profile-btn {
+    position: absolute;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: var(--button-text);
+    background: var(--dark-gray);
+    border-radius: 50%;
+    border: none;
+    min-width: 40px;
+    min-height: 40px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0;
+    margin: 10px;
+}
+
+#edit-profile-btn:hover,
+#edit-profile-btn:focus {
+    background-color: var(--deep-blue);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+}
+
+#edit-profile-btn:hover svg,
+#edit-profile-btn:focus svg {
+    color: var(--bright-blue); 
+}
+
+.popup-modal button#confirm-edit-profile-yes:hover,
+.popup-modal button#confirm-edit-profile-yes:focus {
+    color: var(--pastel-green);
+}
+
+.popup-modal button#confirm-edit-profile-no:hover,
+.popup-modal button#confirm-edit-profile-no:focus {
+    color: var(--hot-pink);
+}
+
+#edit-profile-dialog.popup-modal .user-bg:hover,
+#edit-profile-dialog.popup-modal .user-bg:focus,
+#edit-profile-dialog.popup-modal .profile-img:hover,
+#edit-profile-dialog.popup-modal .profile-img:focus  {
+    cursor: pointer;
+    opacity: 0.80;
+}
+
+#edit-profile-dialog.popup-modal .edit-profile-image-container {
+    position: relative;
+    height: 100px;
+    width: 100px;
+    margin-bottom: -28px;
+    transform: translateY(-50%);
+}
+
+#edit-profile-dialog.popup-modal .profile-img {
+    margin-bottom: 0;
+    transform: none;
+}
+
+#edit-profile-dialog.popup-modal .edit-profile-image-container:before  {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: var(--dark-gray);
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+#edit-profile-dialog.popup-modal label {
+    width: 100%;
+    padding-left: 5px;
+}
+
+#edit-profile-dialog.popup-modal input {
+    color: #fff;
+    background: var(--medium-grey);
+    min-height: 40px;
+    height: 40px;
+    outline: none;
+    border: none;
+    border-radius: var(--card-round-border);
+    letter-spacing: 0.5px;
+    font-size: 16.5px;
+    font-weight: 400;
+}
+
+#edit-profile-dialog.popup-modal .user-box {
+    width: calc(100% + 20px);
+    padding: 0 10px 5px;
+}
+
+#edit-profile-dialog.popup-modal .userbio {
+    max-width: none;
+}
+
+/* Edit Profile Ends ---------------------- */
