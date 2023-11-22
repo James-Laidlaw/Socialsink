@@ -5,16 +5,21 @@ from django.dispatch import receiver
 
 # Create your models here.
 
+class ServerSettings(models.Model):
+    id = models.AutoField(primary_key=True)
+    auto_permit_users = models.BooleanField()
+
 class Author(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     bio = models.CharField(max_length=200, null=True)
-    github = models.CharField(max_length=200, null=True)
-    profileImage = models.CharField(max_length=200, null=True) #link to public image
+    github = models.CharField(max_length=200, null=True, blank=True)
+    profileImage = models.CharField(max_length=200, null=True, blank=True) #link to public image
     follows = models.ManyToManyField('self', symmetrical=False, through="Follower", related_name='follower_set')
     friends = models.ManyToManyField('self', symmetrical=False, through="Friendship", related_name='friend_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+    is_permitted = models.BooleanField(default=True)
 
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
 # a friendship synonymous with a follow, a true friendship is when two authors follow each other
