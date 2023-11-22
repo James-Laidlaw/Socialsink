@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like
+from .models import Author, Post, Like, ServerSettings
 from .serizlizers import AuthorSerializer
 
 from datetime import datetime, timedelta, date, time
@@ -47,14 +47,22 @@ def createAccount(request):
     email = request.data['email']
     password = request.data['password']
 
+    ss = ServerSettings.objects.first()
+
     try:    
         user = User.objects.create_user(username=username, email=email, password=password)
-        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        if ss.auto_permit_users == True:
+            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+        else:
+            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')), is_permitted=False)
         author.save()
         user.author = author
         user.save()
 
-        auth_login(request, user)
+        if ss.auto_permit_users == True:
+            auth_login(request, user)
+        else:
+            return Response(status=301)
         return Response(status=201)
         
     except:
@@ -69,9 +77,13 @@ def loginRequest(request):
 
     user = authenticate(username=username, password=password)
 
-    if user != None:
-        auth_login(request, user)
-        return Response(status=201)
+    author = Author.objects.get(user=user)
+    if author.is_permitted:
+        if user != None:
+            auth_login(request, user)
+            return Response(status=201)
+    else:
+        return Response(status=301)
 
     return Response(status=401)
 
