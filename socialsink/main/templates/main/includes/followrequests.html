@@ -1,0 +1,126 @@
+<div id="follow-requests-bar" style="overflow: hidden;">
+    <h4 class="heading">Follow Requests</h4>
+    <div class="request-box">
+        <!-- CONTENT ENTERS HERE -->
+    </div>
+</div>
+
+<script>
+
+    const request_box = document.querySelector('.request-box');
+    var requests_ids = [];
+
+    function handleRequestOption(e, id, action) {
+        e.preventDefault();
+
+        var csrf_token = "{{ csrf_token }}";
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+
+        if (action === 'accept') {
+            document.getElementById(`follow-request-${id}`).remove();
+            requests_ids.splice(requests_ids.indexOf(id), 1);
+            $.ajax({
+                type: "POST",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id),
+                    'action': 'accept'
+                }),
+                success: function (response, textStatus, http) {
+                    console.log(response)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+
+        } else if (action === 'dismiss') {
+            document.getElementById(`follow-request-${id}`).remove();
+            requests_ids.splice(requests_ids.indexOf(id), 1);
+            $.ajax({
+                type: "POST",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id),
+                    'action': 'dismiss'
+                }),
+                success: function (response, textStatus, http) {
+                    console.log(response)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+    }
+
+    function createFollowRequestPanel(id, username) {
+        const follow_request = document.createElement('div');
+        follow_request.classList.add('request')
+        follow_request.id = `follow-request-${id}`
+
+        follow_request.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+                                    <div class="request-content">
+                                        <div>
+                                            <p class="author-username">${username}</p>
+                                        </div>
+                                        <div>
+                                            <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept')">Accept</button>
+                                            <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss')">Dismiss</button>
+                                        </div>
+                                    </div>`;
+        return follow_request;
+    }
+
+    function getFollowRequests() {
+        return $.ajax({
+            type: "GET",
+            url: "api/follow-requests/",
+            contentType: 'application/json',
+            success: function (response, textStatus, http) {
+                console.log(response)
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        });
+    }
+
+    function addRequests() {
+        getFollowRequests().done(function (result) {
+            // CONDITIONALLY adding requests
+            var id_list = [];
+            for (i in result) {
+                if (!requests_ids.includes(result[i].id)) {
+                    request_box.appendChild(createFollowRequestPanel(result[i].id, result[i].user))
+                    requests_ids.push(result[i].id)
+                }
+
+                // PREP for next step
+                id_list.push(result[i].id)
+            }
+
+            // CHECKING for expired/deleted requests
+            for (i in requests_ids) {
+                if (!(id_list.includes(requests_ids[i]))) {
+                    document.getElementById(`follow-request-${requests_ids[i]}`).remove();
+                    requests_ids.splice(requests_ids.indexOf(requests_ids[i]), 1);
+                }
+            }
+
+        })
+    }
+
+    addRequests();
+    setInterval(addRequests, 5000);
+
+
+</script>

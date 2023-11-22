@@ -13,7 +13,10 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="right-bar"></div>
+        <div class="right-bar">
+            {% include 'main/includes/followrequests.html' %}
+            {% include 'main/includes/findauthorsbar.html' %}
+        </div>
     </div>
     
     <div id="delete-post-dialog" class="popup-modal">
