@@ -285,10 +285,8 @@ main {
     flex-basis: 25%;
     width: 25%;
     overflow: hidden;
-    /* ADDITIONS */
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
 }
 
 .right-bar {
@@ -296,9 +294,11 @@ main {
     height: 100%;
     flex-basis: 25%;
     width: 25%;
-    background: var(--dark-gray);
-    border-radius: var(--card-round-border);
     overflow: hidden;
+    /* ADDITIONS */
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
 }
 
 /* Main Containers and Bars Ends ------------------- */
@@ -625,7 +625,7 @@ main {
     display: flex;
     flex-direction: column;
     justify-content: left;
-    height: 100%;
+    height: fit-content;
     gap: 2em;
     padding: 0.5em 2em 0 30px;
 }
@@ -663,7 +663,7 @@ main {
     letter-spacing: 0;
 }
 
-#find-author-bar .author-content .follow{
+#find-author-bar .author-content .request{
     font-size: 0.8em;
     font-weight: 700;
     color: var(--deep-blue);
@@ -695,6 +695,14 @@ main {
 
 
 /* Follow Request Bar Start --------------- */
+#follow-requests-bar {
+    display: flex;
+    flex-direction: column;
+    height: 50%;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+}
+
 #follow-requests-bar .heading { 
     padding: 1em 2em 0 30px;
 }

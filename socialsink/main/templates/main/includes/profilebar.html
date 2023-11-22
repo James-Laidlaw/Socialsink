@@ -8,11 +8,11 @@
     </div>
     <div class="follow-box">
         <div>
-            <p id="following" class="count"></p>
+            <p id="following-count" class="count"></p>
             <p class="count-label">Following</p>
         </div>
         <div>
-            <p class="count">72</p>
+            <p id="friend-count" class="count"></p>
             <p class="count-label">Friends</p>
         </div>
     </div>
@@ -20,14 +20,22 @@
 
 <script>
     function getFollowingCount() {
-        console.log("Getting Following count")
         $.ajax({
             type: "GET",
             url: "api/following/",
             success: function (response, textStatus, http) {
-                console.log(Object.keys(response).length);
-                followingCount = document.getElementById('following');
+                followingCount = document.getElementById('following-count');
+                friendCount = document.getElementById('friend-count');
+
                 followingCount.innerText = Object.keys(response).length;
+
+                friendCounter = 0
+                for (i in response) {
+                    if (response[i].friendship) {
+                        friendCounter += 1;
+                    }
+                }
+                friendCount.innerText = friendCounter;
             },
             error: function (error) {
                 console.error(error);
@@ -36,5 +44,6 @@
     }
 
     getFollowingCount();
+    // Update interval
     setInterval(getFollowingCount, 5000);
 </script>

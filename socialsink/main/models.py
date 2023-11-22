@@ -15,9 +15,6 @@ class Author(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
-    # def __str__(self):
-    #     return "id: {}\tuser: {}\tgithub: {}".format(self.id.__str__(), self.user.__str__(), self.github.__str__())
-
 #only stores follows FROM local authors, follows from remote authors are stored in the remote author's server
 # a friendship synonymous with a follow, a true friendship is when two authors follow each other
 class Follower(models.Model):
@@ -25,14 +22,15 @@ class Follower(models.Model):
     follower = models.ForeignKey(Author, related_name='following', on_delete=models.CASCADE)
     followee = models.ForeignKey(Author, related_name='followed_by', on_delete=models.CASCADE)
     dismissed = models.BooleanField(default=False) # false if followee has not yet viewed and dismissed the follow request, allows for "Friend Requests"
-    accepted = models.BooleanField(default=False) # This flag indicates if the follow request has been accepted. 
+    accepted = models.BooleanField(default=False) # This flag indicates if the follow request has been accepted.
+    friendship = models.BooleanField(default=False) # This flag indicates if there is a bidirectional follow (friend)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return "id: {}\tfollower: {}\tfollowee: {}\tdismissed: {}\taccepted: {}".format(self.id.__str__(), self.follower.__str__(), 
+        return "id: {} | follower: {} | followee: {} | dismissed: {} | accepted: {} | friendship: {}".format(self.id.__str__(), self.follower.__str__(), 
                                                                                            self.followee.__str__(), self.dismissed.__str__(),
-                                                                                           self.accepted.__str__())
+                                                                                           self.accepted.__str__(), self.friendship.__str__())
 
 # TODO discuss if we need this. IMO it's redundant because a friendship is synonymous with a follow and a true friendship is just a bidirectional follow
 class Friendship(models.Model):

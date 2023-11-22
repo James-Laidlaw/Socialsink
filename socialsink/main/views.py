@@ -309,47 +309,68 @@ def getFollowing(request):
     user = request.user
     if user.is_authenticated:
         author = Author.objects.get(user=user)
-        #### TESTING ####
-        # Follower.objects.create(follower = author, followee = author, accepted = True)
-        #### TESTING ####
-        # print("Author follows:", author.follows.all())
+        following = [x for x in Follower.objects.filter(follower = author)]
         data = {}
-        for i, follow in enumerate(author.follows.all()):
-            data[i] = [follow.id, follow.user.username]
+        for i, follow in enumerate(following):
+            data[i] = {'id': follow.followee.id, 'user': follow.followee.user.username, 'accepted': follow.accepted, 'friendship': follow.friendship}
         return Response(data, status=200)
 
-# TODO implement friendship checking and request sending
-@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+
+@api_view(['GET'])
+def getFollowRequests(request):
+    user = request.user
+    if user.is_authenticated:
+        author = Author.objects.get(user=user)
+        # Requests that not accepted and not dismissed
+        follow_requests = [x for x in Follower.objects.filter(followee = author) if (not x.dismissed and not x.accepted)]
+        data = {}
+        for i, follow_request in enumerate(follow_requests):
+            data[i] = {'id': follow_request.follower.id, 'user': follow_request.follower.user.username}
+        return Response(data, status=200)
+
+
+@api_view(['POST', 'PUT', 'DELETE'])
 def handleFollow(request):
     user = request.user
     if user.is_authenticated:
         author = Author.objects.get(user=user)
         
-        # retrieving follow requests
-        if request.method == 'GET':
-            # Requests that not accepted and not dismissed
-            follow_requests = [x for x in Follower.objects.filter(followee = author) if (not x.dismissed and not x.accepted)]
-            data = {}
-            for i, follow_request in enumerate(follow_requests):
-                data[i] = {'id': follow_request.follower.id, 'user': follow_request.follower.user.username}
-            return Response(data, status=200)
-
         # accept/dismiss follow request
-        elif request.method == 'POST':
+        if request.method == 'POST':
             if request.data['action'] == 'accept':
-                pass
+                # FRIENDSHIP CHECKING HERE
+                id = request.data['id']
+                follower = Author.objects.get(id=id)
+                follow_obj = Follower.objects.get(follower = follower, followee = author)
+                follow_obj.accepted = True
+                follow_obj.save()
+
+                # CHECK FOR FRIENDSHIP
+                try:
+                    returned_follow_obj = Follower.objects.get(follower = author, followee = follower)
+                    returned_follow_obj.friendship = True
+                    returned_follow_obj.save()
+
+                    follow_obj.friendship = True
+                    follow_obj.save()
+
+                finally:
+                    return Response(status=200)
+                    
+
             elif request.data['action'] == 'dismiss':
                 id = request.data['id']
                 follower = Author.objects.get(id=id)
                 follow_obj = Follower.objects.get(follower = follower, followee = author)
-                print(follow_obj)
                 follow_obj.dismissed = True
                 follow_obj.save()
+
+                # DISCUSSED DELETION OF FOLLOW OBJ
+                follow_obj.delete()
                 return Response(status=200)
         
         # put follow request
         elif request.method == 'PUT':
-            # id = request.data['id'].split('/')[-2]
             id = request.data['id']
             followee = Author.objects.get(id=id)
             Follower(follower = author, followee = followee, dismissed = False, accepted = False).save()
@@ -358,12 +379,20 @@ def handleFollow(request):
         # Used to consider unfollow and dismissal as the same operation,
         # moving dismissal to POST
         elif request.method == 'DELETE':
-            # id = request.data['id'].split('/')[-2]
+            # FRIENDSHIP REMOVAL HERE
             id = request.data['id']
-            print("FOLLOW DELETE",id)
             followee = Author.objects.get(id=id)
             Follower.objects.get(follower = author, followee = followee).delete()
-            return Response(status=200)
+
+            # CHECK FOR FRIENDSHIP
+            try:
+                returned_follow_obj = Follower.objects.get(follower = followee, followee = author)
+                returned_follow_obj.friendship = False
+                returned_follow_obj.save()
+
+            finally:
+                return Response(status=200)
+
 
 
 # outwards facing API endpoints

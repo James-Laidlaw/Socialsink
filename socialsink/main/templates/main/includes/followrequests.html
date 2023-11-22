@@ -23,9 +23,25 @@
         });
 
         if (action === 'accept') {
+            document.getElementById(`follow-request-${id}`).remove();
+            requests_ids.splice(requests_ids.indexOf(id), 1);
+            $.ajax({
+                type: "POST",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id),
+                    'action': 'accept'
+                }),
+                success: function (response, textStatus, http) {
+                    console.log(response)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
 
         } else if (action === 'dismiss') {
-            console.log("dismissing", id)
             document.getElementById(`follow-request-${id}`).remove();
             requests_ids.splice(requests_ids.indexOf(id), 1);
             $.ajax({
@@ -67,7 +83,7 @@
     function getFollowRequests() {
         return $.ajax({
             type: "GET",
-            url: "/api/follow/",
+            url: "api/follow-requests/",
             contentType: 'application/json',
             success: function (response, textStatus, http) {
                 console.log(response)
@@ -81,7 +97,6 @@
     function addRequests() {
         getFollowRequests().done(function (result) {
             // CONDITIONALLY adding requests
-            console.log("REQUESTS", result)
             var id_list = [];
             for (i in result) {
                 if (!requests_ids.includes(result[i].id)) {
@@ -94,8 +109,6 @@
             }
 
             // CHECKING for expired/deleted requests
-            console.log("requests", requests_ids);
-            console.log("ids", id_list);
             for (i in requests_ids) {
                 if (!(id_list.includes(requests_ids[i]))) {
                     document.getElementById(`follow-request-${requests_ids[i]}`).remove();

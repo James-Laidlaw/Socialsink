@@ -4,28 +4,39 @@
 </div>
 
 <script>
-    const authorBox = document.querySelector('.author-box')
+    var authorList = [];
+    const authorBox = document.querySelector('.author-box');
 
-    function createAuthorPanel(username, id, following) {
+    /*
+        Builder function for author panels
+    */
+    function createAuthorPanel(username, id, friends, following, requested) {
         const authorElem = document.createElement('div');
         authorElem.classList.add('author');
+        authorElem.id = `author-panel-${id}`;
 
-        var state;
+        var action;
         var text;
-        if (following) {
-            state = 'unfollow';
-            text = 'Following'
+        if (friends) {
+            action = 'unfollow';
+            text = 'Friends';
+        } else if (following) {
+            action = 'unfollow';
+            text = 'Following';
+        } else if (requested) {
+            action = 'unfollow';
+            text = 'Requested';
         } else {
-            state = 'follow';
-            text = 'Follow'
-        }
+            action = 'request';
+            text = 'Follow';
+        };
 
         authorElem.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
                                 <div class="author-content">
                                     <div>
                                         <p class="author-username">${username}</p>
                                     </div>
-                                    <button type="button" id="follow-${id}" class="btn-follow ${state}" onclick="followAuthor(event, '${id}')">${text}</button>
+                                    <button type="button" id="follow-${id}" class="btn-follow ${action}" onclick="followAuthor(event, '${id}')">${text}</button>
                                 </div>`;
         return authorElem;
     }
@@ -40,9 +51,12 @@
             error: function (error) {
                 console.error(error);
             }
-        })
+        });
     }
 
+    /*
+        Handle follow actions in the bar
+    */
     function followAuthor(e, id) {
         e.preventDefault();
         button = document.getElementById(`follow-${id}`);
@@ -54,11 +68,15 @@
                 }
             }
         });
-
-        if (button.classList.contains('follow')) {
-            button.innerText = 'Following';
-            button.classList.remove("follow");
+        
+        // Not the most robust method but works well
+        // Checks the class list on the action to complete
+        if (button.classList.contains('request')) {
+            // Switching states
+            button.innerText = 'Requested';
+            button.classList.remove("request");
             button.classList.add("unfollow");
+            // Send request
             $.ajax({
                 type: "PUT",
                 url: "/api/follow/",
@@ -67,16 +85,19 @@
                     'id': parseInt(id)
                 }),
                 success: function (response, textStatus, http) {
-                    console.log("followed", id)
+                    console.log(response)
                 },
                 error: function (error) {
                     console.error(error);
                 }
-            })
+            });
+
         } else if (button.classList.contains('unfollow')) {
+            // Switching states
             button.innerText = 'Follow';
             button.classList.remove("unfollow");
-            button.classList.add("follow");
+            button.classList.add("request");
+            // Send request
             $.ajax({
                 type: "DELETE",
                 url: "/api/follow/",
@@ -85,33 +106,80 @@
                     'id': parseInt(id)
                 }),
                 success: function (response, textStatus, http) {
-                    console.log("unfollowed", id)
+                    console.log(response)
                 },
                 error: function (error) {
                     console.error(error);
                 }
-            })
+            });
         }
     }
 
     function addAuthors() {
-        console.log("Getting authors");
+        // Nesting two requests
         $.ajax({
             type: "GET",
             url: "service/authors/page=1&size=3",
             success: function (response, textStatus, http) {
                 checkFollowing().done(function (result) {
+                    var friends = [];
                     var followers = [];
-                    for (follower in result) {
-                        followers.push(result[follower][1]);
-                    }
-                    console.log(followers)
-                    for (const author in response) {
-                        var id = response[author].id.split("/").reverse()[1]
-                        if (followers.includes(response[author].displayName)) {
-                            authorBox.appendChild(createAuthorPanel(response[author].displayName, id, true));
+                    var requests = [];
+
+                    for (i in result) {
+                        if (result[i].friendship) {
+                            // FRIENDSHIP
+                            friends.push(result[i].id);
+                        } else if (result[i].accepted) {
+                            // FOLLOWING
+                            followers.push(result[i].id);
                         } else {
-                            authorBox.appendChild(createAuthorPanel(response[author].displayName, id, false));
+                            // REQUESTED
+                            requests.push(result[i].id);
+                        }
+                    }
+
+                    for (i in response) {
+                        // had to split since its requesting from outward service api
+                        var id = parseInt(response[i].id.split("/").reverse()[1]);
+                        
+                        // Add authors conditionally -> updates if the author id already in place
+                        if (friends.includes(id)) {
+                            if (!authorList.includes(id)) {
+                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, true, false, false));
+                                authorList.push(id);
+                            } else {
+                                authorBox.replaceChild(
+                                    createAuthorPanel(response[i].displayName, id, true, false, false), document.getElementById(`author-panel-${id}`))
+                            }
+
+                        } else if (followers.includes(id)) {
+                            if (!authorList.includes(id)) {
+                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, false, true, false));
+                                authorList.push(id);
+                            } else {
+                                authorBox.replaceChild(
+                                    createAuthorPanel(response[i].displayName, id, false, true, false), document.getElementById(`author-panel-${id}`));
+                            }
+
+                        } else if (requests.includes(id)) {
+                            if (!authorList.includes(id)) {
+                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, false, false, true));
+                                authorList.push(id);
+                            } else {
+                                authorBox.replaceChild(
+                                    createAuthorPanel(response[i].displayName, id, false, false, true), document.getElementById(`author-panel-${id}`));
+                            }
+
+                        } else {
+                            if (!authorList.includes(id)) {
+                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, false, false, false));
+                                authorList.push(id);
+                            } else {
+                                authorBox.replaceChild(
+                                    createAuthorPanel(response[i].displayName, id, false, false, false), document.getElementById(`author-panel-${id}`));
+                            }
+
                         }
                     }
                 })
@@ -123,6 +191,8 @@
     }
 
     addAuthors();
+    // Update interval
+    setInterval(addAuthors, 5000);
 
     // TESTING
     
