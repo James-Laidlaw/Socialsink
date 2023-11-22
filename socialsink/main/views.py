@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like
-from .serizlizers import AuthorSerializer
+from .models import Author, Post, Like, Follower
+from .serizlizers import AuthorSerializer, PostSerializer
 
 from datetime import datetime, timedelta, date, time
 import pytz
@@ -332,7 +332,7 @@ def getAuthors(request):
 
 
 @api_view(['GET', 'POST'])
-def authorDetail(request, author_id):
+def authorReqHandler(request, author_id):
 
     if request.method == 'GET': 
         print("service: Get author request received")
@@ -378,10 +378,220 @@ def updateAuthor(request, author_id):
 
     if author_serializer.is_valid():
         author_serializer.save()
-        print(request.data)
-        print(author_serializer.data)
         return Response(status=200)
     else:
         return Response(status=400)
 
+@api_view(['GET'])
+def getFollowers(request, author_id):
+    print("service: Get followers request received")
+    if author_id == None:
+        return Response(status=400)
     
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return Response(status=404)
+    
+    followers = author.followed_by.all()
+    # get the author instances from the follower instances
+    follower_authors = []
+    for follower in followers:
+        follower_authors.append(follower.follower)
+
+
+    author_serializer = AuthorSerializer(follower_authors, many=True, context={'request': request})
+
+    serialized_followers = author_serializer.data
+    returnDict = {"type": "followers", "items": serialized_followers}
+
+    return Response(returnDict)
+
+@api_view(['GET', 'POST', 'DELETE'])
+def followerReqHandler(request, author_id, foreign_author_id):
+    print("service: Get follower-followee relationship details request received")
+    if foreign_author_id == None or author_id == None:
+        return Response(status=400)
+    
+    followee = Author.objects.get(id=author_id)
+
+    if followee == None:
+        return Response(status=404)
+    
+    if request.method == 'GET':
+        relationships_exists = followee.followed_by.filter(follower_id=foreign_author_id).exists()
+        return Response(relationships_exists)
+    
+    # Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID (must be authenticated)
+    #TODO Allow foriegn keys to remote authors
+    elif request.method == 'POST':
+        #TODO not sure if they want the follower or the followee to be authenticated
+        if not request.user.is_authenticated or request.user != followee.user:
+            return Response(status=401)
+        follower = Author.objects.get(id=foreign_author_id)
+        
+        if not Follower.objects.filter(followee=followee, follower=follower).exists():
+            Follower.objects.create(followee=followee, follower=follower)
+
+
+        return Response(status=200)
+
+    # remove FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
+    #TODO Allow foriegn keys to remote authors
+    elif request.method == 'DELETE':
+        follower = Author.objects.get(id=foreign_author_id)
+        follower_instance = Follower.objects.filter(followee=followee, follower=follower).first()
+
+        if follower_instance != None:
+            follower_instance.delete()
+
+        return Response(status=200)
+    
+    # if the request is not GET, POST, or DELETE, return 405
+    else:
+        return Response(status=405)
+            
+
+#TODO Friend / follow request (The spec is unclear on the path for this, so leaving it for later)
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+def postReqHandler(request, author_id, post_id):
+    if post_id == None:
+        return Response(status=400)
+    
+    if request.method == 'GET': 
+        print("service: Get post request received")
+        return getPost(request, post_id)
+    
+    elif request.method == 'POST':
+        print("service: Update post request received")
+        return updatePost(request, post_id)
+
+    elif request.method == 'PUT':
+        print("service: Create specific post request received")
+        return createSpecificPost(request, author_id, post_id)
+    
+    elif request.method == 'DELETE':
+        print("service: Delete post request received")
+        return deletePost_1(request, post_id)
+    
+    else:
+        return Response(status=405)
+
+def getPost(request, post_id):
+    found_post = Post.objects.filter(id=post_id).first()
+    if found_post == None:
+        return Response(status=404)
+    post_serializer = PostSerializer(found_post, context={'request': request})
+    return Response(post_serializer.data)
+
+def updatePost(request, post_id):
+    found_post = Post.objects.get(id=post_id)
+    if found_post == None:
+        return Response(status=404)
+    
+    #check authorization
+    if found_post.author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
+    post_serializer = PostSerializer(found_post, data=request.data, partial=True)
+    if post_serializer.is_valid():
+        post_serializer.save()
+        return Response(status=200)
+    else:
+        return Response(status=400)
+
+#_1 is to avoid name conflict with the deletePost function above
+def deletePost_1(request, post_id):
+    found_post = Post.objects.get(id=post_id)
+    if found_post == None:
+        return Response(status=404)
+    found_post.delete()
+    return Response(status=200)
+
+def createSpecificPost(request, author_id, post_id):
+    author = Author.objects.get(id=author_id)
+    if author == None:
+        return Response(status=404)
+    
+    # check if post id is in use
+    if Post.objects.filter(id=post_id).exists():
+        return Response(status=409) #409 = conflict
+    
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
+    #slot in id
+    request.data['id'] = post_id
+
+    #create post with given id
+    post_serializer = PostSerializer(data=request.data, context={'request': request})
+
+    if post_serializer.is_valid():
+        post_serializer.save()
+        return Response(status=200)
+    else:
+        return Response(status=400)
+    
+#not a great name, but it follows the spec
+@api_view(['GET', 'POST'])
+def postCreationReqHandler(request, author_id):
+    if request.method == 'POST':
+        print("service: Create post request received")
+        return createPost(request, author_id)
+    elif request.method == 'GET':
+        print("service: Get posts request received")
+        return getAuthorPosts(request, author_id)
+    else:
+        return Response(status=405)
+    
+#like create specific post, but without the post_id
+def createPost(request, author_id):
+    author = Author.objects.get(id=author_id)
+    if author == None:
+        return Response(status=404)
+    
+    post_serializer = PostSerializer(data=request.data, context={'request': request})
+
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
+    if post_serializer.is_valid():
+        post_serializer.save()
+        return Response(status=200)
+    else:
+        return Response(status=400)
+    
+def getAuthorPosts(request, author_id):
+    pageNum = request.GET.get('page', 1)
+    pageSize = request.GET.get('size', 50)
+
+    if author_id == None:
+        return Response(status=400)
+    
+    author = Author.objects.get(id=author_id)
+
+    if author == None:
+        return Response(status=404)
+    
+
+    posts = author.posts.all().order_by('created_at')
+
+    paginatedPosts = Paginator(posts, pageSize)
+
+    #paginator crashes if page number is out of range
+    try: 
+        page = paginatedPosts.page(pageNum)
+    except:
+        return Response(status=404)
+
+
+    post_serializer = PostSerializer(page, many=True, context={'request': request})
+
+    serialized_posts = post_serializer.data
+    return Response(serialized_posts)
