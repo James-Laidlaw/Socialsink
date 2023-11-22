@@ -11,11 +11,11 @@
     </div>
     <div class="follow-box">
         <div>
-            <p class="count">243</p>
+            <p id="following-count" class="count"></p>
             <p class="count-label">Following</p>
         </div>
         <div>
-            <p class="count">72</p>
+            <p id="friend-count" class="count"></p>
             <p class="count-label">Friends</p>
         </div>
     </div>
@@ -47,6 +47,34 @@
 <!-- Edit profile dialog -->
 
 <script>
+
+    function getFollowingCount() {
+        $.ajax({
+            type: "GET",
+            url: "api/following/",
+            success: function (response, textStatus, http) {
+                followingCount = document.getElementById('following-count');
+                friendCount = document.getElementById('friend-count');
+
+                followingCount.innerText = Object.keys(response).length;
+
+                friendCounter = 0
+                for (i in response) {
+                    if (response[i].friendship) {
+                        friendCounter += 1;
+                    }
+                }
+                friendCount.innerText = friendCounter;
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
+    }
+
+    getFollowingCount();
+    // Update interval
+    setInterval(getFollowingCount, 5000);
 
     function showEditProfile() {
        $("#edit-profile-dialog").addClass("show");
