@@ -4,7 +4,6 @@ from . import views
 from rest_framework.schemas import get_schema_view
 from django.views.generic import TemplateView
 
-#re_path credit # https://stackoverflow.com/questions/1596552/django-urls-without-a-trailing-slash-do-not-redirect?rq=4
 
 urlpatterns = [
     path('api_schema', get_schema_view(title='API Schema', description='Guide for the REST API'), name='api_schema'),
@@ -26,6 +25,10 @@ urlpatterns = [
     path("api/update-post-data/<int:id>", views.updatePostData, name="updatePostData"),
     path("api/get-deleted-posts/", views.getDeletedPosts, name="getDeletedPosts"),
     path("api/update-user/<int:id>", views.updateUser, name="updateUser"),
-    path("service/authors/<str:author_id>/", views.authorDetail, name="authorDetail"),
-    re_path (r"^service/authors/?", views.getAuthors, name="authorList"), 
+    path("service/authors/<str:author_id>/", views.authorReqHandler, name="authorReqHandler"),
+    path("service/authors/", views.getAuthors, name="authorList"),
+    path("service/authors/<str:author_id>/followers/", views.getFollowers, name="getFollowers"),
+    path("service/authors/<str:author_id>/followers/<str:foreign_author_id>/", views.followerReqHandler, name="followerReqHandler"),
+    path("service/authors/<str:author_id>/posts/<str:post_id>/", views.postReqHandler, name="postReqHandler"),
+    path("service/authors/<str:author_id>/posts/", views.postCreationReqHandler, name="postCreationReqHandler"),
 ]
