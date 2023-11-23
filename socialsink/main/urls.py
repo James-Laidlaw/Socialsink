@@ -10,6 +10,7 @@ urlpatterns = [
     path('docs/', TemplateView.as_view(template_name='docs.html', extra_context={'schema_url':'api_schema'}), name='swagger-ui'),
     path("login/", views.login, name="login"),
     path("register/", views.register, name="register"),
+    path("posts/<str:id>", views.displayPost, name="displayPost"),
     path("", views.homepage, name="homepage"),
     path("api/login/", views.loginRequest, name="loginRequest"),
     path("api/logout/", views.logoutRequest, name="logoutRequest"),
