@@ -2,23 +2,13 @@
 {% block content %}
     {% include 'main/includes/navbar.html' %}
     <div class="home-wrapper">
-        <div class="left-bar">
-            {% include 'main/includes/profilebar.html' %}
-        </div>
         <div class="main-area">
-            {% include 'main/includes/createpost.html' %}
             <div id="post-container">
-                {% for post in posts %}
-                    {% include 'main/includes/feedpost.html' with post=post %}
-                {% endfor %}
+
             </div>
         </div>
-        <div class="right-bar">
-            {% include 'main/includes/followrequests.html' %}
-            {% include 'main/includes/findauthorsbar.html' %}
-        </div>
     </div>
-    
+
     <div id="delete-post-dialog" class="popup-modal">
         <p>Are you sure you want to permanantly delete this post?</p>
         <div class="button-wrap">
@@ -41,12 +31,6 @@
             postElement.classList.add("feed-post", "existing-post");
             postElement.id = "post-block-" + id;
             postElement.setAttribute('data-post-id', id);
-
-            if (post['unlisted'] === true) {
-                unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${id}</p></a>`
-            } else {
-                unlisted = ``
-            }
 
             var likeButton = ''
             if (post['liked'] === 1) {
@@ -91,7 +75,6 @@
                     <div class="post-body">
                         <p id="post-username-${id}">${post['author']['displayName']}</p>
                         <time id="post-timestamp-${id}">${readableDate} ${readableTime}</time>
-                        ${unlisted}
                         <p id="post-title-${id}">${post['title']}</p>
                         <p id="post-description-${id}">${post['description']}</p>
                         <p id="post-categories-${id}">${post['categories']}</p>
@@ -113,18 +96,7 @@
             }
         }
 
-        $(document).on('click', '.dropdown-toggle', function () {
-            var dropdown = $(this).siblings('.dropdown-menu');
-            $('.dropdown-menu').not(dropdown).removeClass('show');
-            dropdown.toggleClass('show');
-        });
-    
-        // Close dropdown when clicking outside
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('.dropdown').length) {
-                $('.dropdown-menu').removeClass('show');
-            }
-        });
+        addPost(JSON.parse("{{ post | escapejs }}"))
 
         function editPost(id, contentType) {
             if ($(`#like-button-${id}`).hasClass('hide') === false) {
@@ -280,8 +252,7 @@
                 url: `/service/authors/{{author.id}}/posts/${id}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        $(`#post-block-${id}`).remove()
-                        postIDs = postIDs.filter(item => item[0] !== `${id}`);
+                        window.location.href = "/"
                     }
                 },
                 error: function (error) {
@@ -289,59 +260,6 @@
                 }
             })
         }
-
-        //If the document is freshly loaded
-        $(document).ready(function() {
-            function initInbox() {
-                $.ajax({
-                    type: "GET",
-                    url: "/api/get-old-inbox-info/",
-                    dataType: 'json',
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            for (const post in response) {
-                                if (response[post]['type'] === 'post') {
-                                    addPost(response[post])
-                                } else {
-                                    console.log("NOT POST")
-                                }
-                            }
-                            oldPostsRetrieved = true
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
-                    }
-                })
-            }
-
-            initInbox();
-        })
-
-        function retrievePosts() {
-            if (oldPostsRetrieved) {
-                $.ajax({
-                    type: "GET",
-                    url: "/api/get-new-inbox-info/",
-                    dataType: 'json',
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            for (const post in response) {
-                                if (response[post]['type'] === 'post') {
-                                    addPost(response[post])
-                                } else {
-                                    console.log("NOT POST")
-                                }
-                            }
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
-                    }
-                })
-            }
-        }
-        setInterval(retrievePosts, 2000)
 
         function likePost(postID, authorID, origin) {
             var csrf_token = "{{ csrf_token }}";
@@ -385,6 +303,7 @@
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${origin}')`)
+                        
                         updatePostData([[postID, authorID, origin]])
                     }
                 },
@@ -394,12 +313,20 @@
             })
         }
 
-        function updateAllPosts() {
+        function updatePost() {
             updatePostData(postIDs)
         }
-        setInterval(updateAllPosts, 2000) //2 second refresh
+        setInterval(updatePost, 2000) //2 second refresh
 
         function checkForDeletedPosts() {
+
+            url = new URL(window.location.href)
+            if (url.port !== '') {
+                loc = url.protocol + '//' + url.hostname + ':' + url.port + '/'
+            } else {
+                loc = url.protocol + '//' + url.hostname + '/'
+            }
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -413,14 +340,14 @@
                 url: `/api/get-deleted-posts/`,
                 data: JSON.stringify({
                     'ids': postIDs,
-                    'location': `${window.location.href}`
+                    'location': loc
                 }),
                 contentType: 'application/json',
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
+                        console.log(response)
                         for (const post in response) {
-                            $(`#post-block-${response[post]}`).remove()
-                            postIDs = postIDs.filter(item => item[0] !== `${response[post]}`);
+                            window.location.href = "/"
                         }
                     }
                 },
@@ -429,9 +356,17 @@
                 }
             })
         }
-        setInterval(checkForDeletedPosts, 2000) //5 second refresh
+        setInterval(checkForDeletedPosts, 2000) //2 second refresh
 
         function updatePostData(postIDs) {
+
+            url = new URL(window.location.href)
+            if (url.port !== '') {
+                loc = url.protocol + '//' + url.hostname + ':' + url.port + '/'
+            } else {
+                loc = url.protocol + '//' + url.hostname + '/'
+            }
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -445,7 +380,7 @@
                 url: `/api/get-post-data/`,
                 data: JSON.stringify({
                     'ids': postIDs,
-                    'location': `${window.location.href}`
+                    'location': loc
                 }),
                 contentType: 'application/json',
                 success: function (response, textStatus, http) {

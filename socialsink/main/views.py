@@ -9,6 +9,8 @@ from .serizlizers import AuthorSerializer, PostSerializer
 from datetime import datetime, timedelta, date, time
 import pytz
 from django.contrib import messages
+from django.urls import reverse
+
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -18,6 +20,7 @@ from django.core.files.base import ContentFile
 import base64
 from PIL import Image
 from io import BytesIO
+import json
 
 # Create your views here.
 @login_required
@@ -38,6 +41,42 @@ def register(request):
     return render(request=request,
                   template_name='main/register.html',
                   context={})
+
+def displayPost(request, id):
+    user = request.user
+    if user.is_authenticated:
+
+        author = Author.objects.get(user=user)
+        
+        post = Post.objects.filter(id=id).first()
+        if post == None:
+            return redirect('/')
+
+        permission = False
+        following = author.following.all()
+        for f in following:
+            if f.followee == post.author and f.friendship == True:
+                permission = True
+
+        if post.publicity == 1 and not permission:
+            return redirect('/')
+
+        liked = author.likes.filter(post=post)
+        if len(liked) == 0:
+            liked = 0
+        else:
+            liked = 1
+
+        post_serializer = PostSerializer(post, context={'request': request})
+
+        return render(request=request,
+                      template_name='main/post.html',
+                      context={'post': json.dumps(post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}),
+                               'author': author})
+        
+    else:
+        return redirect('/login/')
+
 
 @api_view(['PUT'])
 def createAccount(request):
@@ -95,72 +134,6 @@ def logoutRequest(request):
     return Response(status=200)
 
 @api_view(['GET'])
-def getOldAvailablePosts(request):
-    print("Get available posts request received")
-
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-        
-        posts = Post.objects.all().order_by('created_at')[:10] #Change the 10 if we want more possible posts per feed
-
-        data = {}
-        i = 0
-        for post in posts:
-            liked = author.likes.filter(post=post)
-
-            if len(liked) == 0:
-                liked = 0
-            else:
-                liked = 1
-
-            isOwnPost = 0
-            if post.author == author:
-                isOwnPost = 1
-
-            #Image code
-            image = post.image
-            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
-            if image != None and image != "undefined":
-                image_data = base64.b64encode(image.read()).decode('utf-8')
-                image_extension = image.name.split('.')[-1]
-                image = f"data:image/{image_extension};base64,{image_data}"
-            else:
-                image = None
-
-            if post.publicity == 0:
-                data[i] = [
-                    post.id, 
-                    post.author.user.username, 
-                    f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
-                    post.content, 
-                    len(post.likes.all()), 
-                    liked, 
-                    isOwnPost, 
-                    post.edited,
-                    image]
-
-                i += 1
-            elif post.publicity == 1:
-                if author in post.private_to:
-                    data[i] = [
-                        post.id, 
-                        post.author.user.username, 
-                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
-                        post.content, 
-                        len(post.likes.all()), 
-                        liked, 
-                        isOwnPost, 
-                        post.edited,
-                        image]
-                    i += 1
-
-        return Response(data, status=200)
-
-    else:
-        return Response(status=401)
-
-@api_view(['GET'])
 def getOldInboxInfo(request):
     print("Get available posts request received")
 
@@ -197,9 +170,7 @@ def getOldInboxInfo(request):
                 else:
                     liked = 1
 
-                if post.unlisted == True:
-                    continue
-                elif post.publicity == 0 or (post.publicity == 1 and aid == primary_author.id):
+                if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and aid == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
                     post_serializer = PostSerializer(post, context={'request': request})
                     data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
                     i += 1
@@ -264,9 +235,8 @@ def getNewInboxInfo(request):
                 else:
                     liked = 1
 
-                if post.unlisted == True:
-                    continue
-                elif post.publicity == 0 or (post.publicity == 1 and aid == primary_author.id):
+                
+                if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and aid == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
                     post_serializer = PostSerializer(post, context={'request': request})
                     data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
                     i += 1
@@ -290,72 +260,6 @@ def getNewInboxInfo(request):
         
         #print(data)
         return Response(data, status=200)
-    else:
-        return Response(status=401)
-
-@api_view(['GET'])
-def getNewAvailablePosts(request):
-    print("Get available posts request received")
-
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-
-        oldDate = datetime.now(pytz.timezone('America/Edmonton')) - timedelta(seconds=5)
-        
-        posts = Post.objects.filter(created_at__gte=oldDate).order_by('created_at')[:10] #Change the 10 if we want more possible posts per feed
-
-        data = {}
-        i = 0
-        for post in posts:
-            liked = author.likes.filter(post=post)
-            if len(liked) == 0:
-                liked = 0
-            else:
-                liked = 1
-
-            isOwnPost = 0
-            if post.author == author:
-                isOwnPost = 1
-
-            #Image code
-            image = post.image
-            # Check if image is not undefined, otherwise getting 500 errors trying to grab image named undefined, crashing the entire feed
-            if image != None and image != "undefined":
-                image_data = base64.b64encode(image.read()).decode('utf-8')
-                image_extension = image.name.split('.')[-1]
-                image = f"data:image/{image_extension};base64,{image_data}"
-            else:
-                image = None
-
-            if post.publicity == 0:
-
-                data[i] = [
-                        post.id, 
-                        post.author.user.username, 
-                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
-                        post.content, 
-                        len(post.likes.all()), 
-                        liked, 
-                        isOwnPost, 
-                        post.edited,
-                        image]
-                i += 1
-            elif post.publicity == 1:
-                if author in post.private_to:
-                    data[i] = [
-                        post.id, 
-                        post.author.user.username, 
-                        f"{post.created_at.date().strftime('%Y-%m-%d')} {post.created_at.time().strftime('%H:%M:%S')}", 
-                        post.content, 
-                        len(post.likes.all()), 
-                        liked, 
-                        isOwnPost, 
-                        post.edited,
-                        image]
-
-        return Response(data, status=200)
-
     else:
         return Response(status=401)
 
@@ -475,9 +379,7 @@ def getPostData(request):
                     else:
                         liked = 1
 
-                    if post.unlisted == True:
-                        continue
-                    elif post.publicity == 0 or (post.publicity == 1 and author.id == primary_author.id):
+                    if ((post.publicity == 0) or (post.publicity == 1 and author.id == primary_author.id)):
                         post_serializer = PostSerializer(post, context={'request': request})
                         data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
                         i += 1
@@ -793,6 +695,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def postReqHandler(request, author_id, post_id):
     if post_id == None:
+        print("service: no post id, returning 400 ***********************************************")
         return Response(status=400)
     
     if request.method == 'GET': 
@@ -827,18 +730,19 @@ def getPost(request, post_id):
 
 def updatePost(request, post_id):
     post = Post.objects.get(id=post_id)
-    if post == None:
+    if post is None:
         return Response(status=404)
     
     try:
-        post.title = request.data['title']
-        post.description = request.data['description']
-        post.categories = request.data['categories']
-        post.content = request.data['content']
+        post.title = request.data.get('title', post.title)
+        post.description = request.data.get('description', post.description)
+        post.categories = request.data.get('categories', post.categories)
+        post.content = request.data.get('content', post.content)
         post.save()
 
         return Response(status=200)
-    except:
+    except Exception as e:
+        print(e, "***********************************************")
         return Response(status=400)
 
 #_1 is to avoid name conflict with the deletePost function above
@@ -895,15 +799,17 @@ def createPost(request, author_id):
     if author == None:
         return Response(status=404)
     
+
+    default_origin = f'http://{request.get_host()}/author/{author_id}/'
     #try:
-    title = request.data['title']
-    description = request.data['description']
-    categories = request.data['categories']
-    content = request.data['content']
-    contentType = request.data['contentType']
-    publicity = request.data['publicity']
-    origin = request.data['origin']
-    image = request.data['image']
+    title = request.data.get('title')
+    description = request.data.get('description')
+    categories = request.data.get('categories', '')
+    content = request.data.get('content')
+    contentType = request.data.get('contentType', 'text/plain')
+    publicity = request.data.get('publicity')
+    origin = request.data.get('origin', default_origin)
+    image = request.data.get('image')
 
     if image:
         contentType = content.split(",")[0].split(":")[1]
