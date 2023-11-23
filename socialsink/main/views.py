@@ -9,6 +9,8 @@ from .serizlizers import AuthorSerializer, PostSerializer
 from datetime import datetime, timedelta, date, time
 import pytz
 from django.contrib import messages
+from django.urls import reverse
+
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -793,6 +795,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def postReqHandler(request, author_id, post_id):
     if post_id == None:
+        print("service: no post id, returning 400 ***********************************************")
         return Response(status=400)
     
     if request.method == 'GET': 
@@ -827,18 +830,19 @@ def getPost(request, post_id):
 
 def updatePost(request, post_id):
     post = Post.objects.get(id=post_id)
-    if post == None:
+    if post is None:
         return Response(status=404)
     
     try:
-        post.title = request.data['title']
-        post.description = request.data['description']
-        post.categories = request.data['categories']
-        post.content = request.data['content']
+        post.title = request.data.get('title', post.title)
+        post.description = request.data.get('description', post.description)
+        post.categories = request.data.get('categories', post.categories)
+        post.content = request.data.get('content', post.content)
         post.save()
 
         return Response(status=200)
-    except:
+    except Exception as e:
+        print(e, "***********************************************")
         return Response(status=400)
 
 #_1 is to avoid name conflict with the deletePost function above
@@ -895,15 +899,17 @@ def createPost(request, author_id):
     if author == None:
         return Response(status=404)
     
+
+    default_origin = f'http://{request.get_host()}/author/{author_id}/'
     #try:
-    title = request.data['title']
-    description = request.data['description']
-    categories = request.data['categories']
-    content = request.data['content']
-    contentType = request.data['contentType']
-    publicity = request.data['publicity']
-    origin = request.data['origin']
-    image = request.data['image']
+    title = request.data.get('title')
+    description = request.data.get('description')
+    categories = request.data.get('categories', '')
+    content = request.data.get('content')
+    contentType = request.data.get('contentType', 'text/plain')
+    publicity = request.data.get('publicity')
+    origin = request.data.get('origin', default_origin)
+    image = request.data.get('image')
 
     if image:
         contentType = content.split(",")[0].split(":")[1]

@@ -58,7 +58,8 @@ class PostSerializer(serializers.ModelSerializer):
         super_result['visibility'] = visibility_options[instance.publicity]
         super_result['unlisted'] = instance.unlisted
 
-        categories = instance.categories.split("#")
+        # get categories, if no categories, set to empty list
+        categories = instance.categories.split("#") if instance.categories else []
         super_result['categories'] = ' '.join(["#"+i.strip() for i in categories if i != ''])
         
         return super_result
