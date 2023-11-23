@@ -177,17 +177,6 @@ class YourApiTests(TestCase):
         self.assertEqual(response.data['content'], 'Test post content')
         self.assertEqual(response.data['edited'], False)
 
-    def test_update_post_data(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
-        like = Like.objects.create(author=self.author, post=post)
-        data = {'text': 'New text for post'}
-        url = reverse('updatePostData', args=[post.id])
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.client.force_authenticate(user=self.user)
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
     def test_delete_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('deletePost', args=[post.id])

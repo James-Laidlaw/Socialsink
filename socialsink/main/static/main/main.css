@@ -534,7 +534,7 @@ main {
 
 .feed-post.create-new {
     width: calc(100% - 9px);
-    min-height: 148px;
+    min-height: 348px;
     margin-right: auto;
     transition: min-height 500ms ease 0s;
 }

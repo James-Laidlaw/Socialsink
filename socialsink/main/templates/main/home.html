@@ -30,49 +30,45 @@
     <script>
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
-        var posts = 10 //Change this value if we want more posts
         var postIDs = []
 
         function addPost(post) {
-            postIDs.push(post[0])
-
-            if (posts === 0) {
-                container.removeChild(container.lastChild)
-                postIDs.shift()
-                posts = posts + 1
-            }
+            console.log(post)
+            id = post['id'].split('/').at(-2)
+            authorId = post['author']['id'].split('/').at(-2)
+            postIDs.push([id, authorId, post['origin']])
 
             const postElement = document.createElement("div");
             postElement.classList.add("feed-post", "existing-post");
-            postElement.id = "post-block-" + post[0];
-            postElement.setAttribute('data-post-id', post[0]);
+            postElement.id = "post-block-" + id;
+            postElement.setAttribute('data-post-id', id);
 
             var likeButton = ''
-            if (post[5] === 1) {
-                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
+            if (post['liked'] === 1) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
             } else {
-                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
             }
 
-            if (post[6] === 1) {
-                deleteButton = `<button type="button" class="btn" id="delete-button-${post[0]}" onclick="showDeleteConfirmation(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
-                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${post[0]})">Edit Post</div>`
+            if (authorId === "{{author.id}}") {
+                deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
+                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
             } else {
                 deleteButton = ""
                 dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
             }
-
-            if (post[7] === true) {
-                edited = ` - Edited`
+            
+            if (post['contentType'] === 'image/jpeg;base64' || post['contentType'] === 'image/png;base64') {
+                content = `<p id="post-content-${id}"><img id="image-preview" src="${post['content']}" alt="img"></p>`
             } else {
-                edited = ''
+                content = `<p id="post-content-${id}">${post['content']}</p>`
             }
 
-            if (post[8] !== null) {
-                img = `<img src="${post[8]}" alt="${post[0]}-image">`
-            } else {
-                img = ``
-            }
+            const timestamp = post['published'];
+            const date = new Date(timestamp);
+
+            const readableDate = date.toDateString();
+            const readableTime = date.toLocaleTimeString();
 
             // Construct the post content using the provided data
             // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
@@ -80,7 +76,7 @@
                 <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
                 <div class="post-content">
                     <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${post[0]}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa-solid fa-ellipsis"></i>
                         </button>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -88,14 +84,16 @@
                         </div>
                     </div>
                     <div class="post-body">
-                        <p id="post-username-${post[0]}">${post[1]}</p>
-                        <time id="post-timestamp-${post[0]}">${post[2]}${edited}</time>
-                        <p id="post-content-${post[0]}">${post[3]}</p>
-                        <div id="post-image-container-${post[0]}">${img}</div>
+                        <p id="post-username-${id}">${post['author']['displayName']}</p>
+                        <time id="post-timestamp-${id}">${readableDate} ${readableTime}</time>
+                        <p id="post-title-${id}">${post['title']}</p>
+                        <p id="post-description-${id}">${post['description']}</p>
+                        <p id="post-categories-${id}">${post['categories']}</p>
+                        ${content}
                     </div>
-                    <div class="post-btn-wrap" id="post-btn-wrap-${post[0]}">
+                    <div class="post-btn-wrap" id="post-btn-wrap-${id}">
                         ${likeButton}
-                        <button type="submit" id="share-button-${post[0]}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        <button type="submit" id="share-button-${id}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                         ${deleteButton}
                     </div>
                 </div>
@@ -107,8 +105,6 @@
             } else {
                 feedContainer.appendChild(postElement)
             }
-            
-            posts = posts - 1
         }
 
         $(document).on('click', '.dropdown-toggle', function () {
@@ -124,19 +120,38 @@
             }
         });
 
-        function editPost(id) {
+        function editPost(id, contentType) {
             if ($(`#like-button-${id}`).hasClass('hide') === false) {
-                currentText = $(`#post-content-${id}`).text()
+                contentText = $(`#post-content-${id}`).text()
+                titleText = $(`#post-title-${id}`).text()
+                descriptionText = $(`#post-description-${id}`).text()
+                categoriesText = $(`#post-categories-${id}`).text()
 
+                $(`#post-title-${id}`).text("")
+                $(`#post-description-${id}`).text("")
+                $(`#post-categories-${id}`).text("")
                 $(`#post-content-${id}`).text("")
 
-                editBox = `<input type="text" id="edit-post-text-${id}" class="form-control" aria-label="What's happening?" name="status" value="">`
+                titleBox = `<input type="text" id="edit-post-title-${id}" class="form-control" value="">`
+                descriptionBox = `<input type="text" id="edit-post-description-${id}" class="form-control" value="">`
+                categoriesBox = `<input type="text" id="edit-post-categories-${id}" class="form-control" value="">`
                 
-                $(`#post-content-${id}`).append(editBox)
-                $(`#edit-post-text-${id}`).val(currentText)
+                contentBox = ``
+                if (contentType === 'text/plain' || contentType === 'text/markdown') {
+                    contentBox = `<input type="text" id="edit-post-content-${id}" class="form-control" value="">`
+                    $(`#post-content-${id}`).append(contentBox)
+                    $(`#edit-post-content-${id}`).val(contentText)
+                }
 
-                saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id})"><i class="fa-solid fa-check"></i>Save</button>`
-                cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${currentText}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
+                $(`#post-title-${id}`).append(titleBox)
+                $(`#post-description-${id}`).append(descriptionBox)
+                $(`#post-categories-${id}`).append(categoriesBox)
+                $(`#edit-post-title-${id}`).val(titleText)
+                $(`#edit-post-description-${id}`).val(descriptionText)
+                $(`#edit-post-categories-${id}`).val(categoriesText)
+
+                saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id}, '${contentType}')"><i class="fa-solid fa-check"></i>Save</button>`
+                cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${titleText}', '${descriptionText}', '${categoriesText}', '${contentText}', '${contentType}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
                 $(`#post-btn-wrap-${id}`).append(saveButton)
                 $(`#post-btn-wrap-${id}`).append(cancelButton)
                 
@@ -147,49 +162,72 @@
             }
         }
 
-        function saveEditPost(id) {
-            currentText = $(`#edit-post-text-${id}`).val()
+        function saveEditPost(id, contentType) {
+            contentText = $(`#edit-post-content-${id}`).val()
+            titleText = $(`#edit-post-title-${id}`).val()
+            descriptionText = $(`#edit-post-description-${id}`).val()
+            categoriesText = $(`#edit-post-categories-${id}`).val()
 
-            var csrf_token = "{{ csrf_token }}";
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+
+            if (titleText.length > 200 || descriptionText.length > 200 || categoriesText.length > 200) {
+                alert("Title/Description/Categories must all be < 200 characters")
+            } else {
+                authorID = "{{author.id}}"
+                var csrf_token = "{{ csrf_token }}";
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
                     }
-                }
-            });
-            $.ajax({
-                type: "PUT",
-                url: `/api/update-post-data/${id}`,
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    'text': currentText,
-                }),
-                success: function (response, textStatus, http) {
-                    if (http.status === 200) {
-                        $(`#save-button-${id}`).remove()
-                        $(`#cancel-button-${id}`).remove()
-                        $(`#edit-post-text-${id}`).remove()
-                        $(`#post-content-${id}`).text(currentText)
+                });
+                $.ajax({
+                    type: "POST",
+                    url: `/service/authors/${authorID}/posts/${id}/`,
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        'title': titleText,
+                        'description': descriptionText,
+                        'categories': categoriesText,
+                        'content': contentText,
+                    }),
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            $(`#save-button-${id}`).remove()
+                            $(`#cancel-button-${id}`).remove()
+                            $(`#edit-post-text-${id}`).remove()
+                            $(`#post-title-${id}`).text(titleText)
+                            $(`#post-description-${id}`).text(descriptionText)
+                            $(`#post-categories-${id}`).text(categoriesText)
+                            $(`#post-content-${id}`).text(contentText)
 
-                        $(`#like-button-${id}`).removeClass('hide')
-                        $(`#share-button-${id}`).removeClass('hide')
-                        $(`#delete-button-${id}`).removeClass('hide')
-
-                        current = $(`#post-timestamp-${id}`).text()
-                        $(`#post-timestamp-${id}`).text(`${current} - Edited`)
+                            $(`#like-button-${id}`).removeClass('hide')
+                            $(`#share-button-${id}`).removeClass('hide')
+                            $(`#delete-button-${id}`).removeClass('hide')
+                        }
+                    },
+                    error: function (error) {
+                        console.error(error);
                     }
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
+                })
+            }
         }
 
-        function cancelEditPost(id, currentText) {
+        function cancelEditPost(id, titleText, descriptionText, categoriesText, contentText, contentType) {
+            $(`#post-title-${id}`).show()
+            $(`#post-description-${id}`).show()
+            $(`#post-categories-${id}`).show()
             $(`#post-content-${id}`).show()
-            $(`#edit-post-text-${id}`).remove()
-            $(`#post-content-${id}`).text(currentText)
+
+            $(`#edit-post-title-${id}`).remove()
+            $(`#edit-post-description-${id}`).remove()
+            $(`#edit-post-categories-${id}`).remove()
+            $(`#edit-post-content-${id}`).remove()
+
+            $(`#post-title-${id}`).text(titleText)
+            $(`#post-description-${id}`).text(descriptionText)
+            $(`#post-categories-${id}`).text(categoriesText)
+            $(`#post-content-${id}`).text(contentText)
 
             $(`#save-button-${id}`).remove()
             $(`#cancel-button-${id}`).remove()
@@ -221,7 +259,7 @@
             $("body").toggleClass("has-popup-modal");
         });
 
-        function deletePost(postID) {
+        function deletePost(id) {
 
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
@@ -233,11 +271,12 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/api/delete-post/${postID}`,
+                url: `/service/authors/{{author.id}}/posts/${id}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        $(`#post-block-${postID}`).remove()
-                        postIDs = postIDs.filter(item => item !== postID);
+                        $(`#post-block-${id}`).remove()
+                        postIDs = postIDs.filter(item => item[0] !== `${id}`);
+                        console.log(postIDs)
                     }
                 },
                 error: function (error) {
@@ -248,15 +287,20 @@
 
         //If the document is freshly loaded
         $(document).ready(function() {
-            function displayOldPosts() {
+            function initInbox() {
                 $.ajax({
                     type: "GET",
-                    url: "/api/get-old-available-posts/",
+                    url: "/api/get-old-inbox-info/",
                     dataType: 'json',
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
+                            console.log(response)
                             for (const post in response) {
-                                addPost(response[post])
+                                if (response[post]['type'] === 'post') {
+                                    addPost(response[post])
+                                } else {
+                                    console.log("NOT POST")
+                                }
                             }
                             oldPostsRetrieved = true
                         }
@@ -267,19 +311,23 @@
                 })
             }
 
-            displayOldPosts();
+            initInbox();
         })
 
         function retrievePosts() {
             if (oldPostsRetrieved) {
                 $.ajax({
                     type: "GET",
-                    url: "/api/get-new-available-posts/",
+                    url: "/api/get-new-inbox-info/",
                     dataType: 'json',
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
                             for (const post in response) {
-                                addPost(response[post])
+                                if (response[post]['type'] === 'post') {
+                                    addPost(response[post])
+                                } else {
+                                    console.log("NOT POST")
+                                }
                             }
                         }
                     },
@@ -289,9 +337,9 @@
                 })
             }
         }
-        setInterval(retrievePosts, 5000)
+        setInterval(retrievePosts, 2000)
 
-        function likePost(postID) {
+        function likePost(postID, authorID, origin) {
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -306,8 +354,9 @@
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
-                        updatePostData(postID)
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${origin}')`)
+                        
+                        updatePostData([[postID, authorID, origin]])
                     }
                 },
                 error: function (error) {
@@ -316,7 +365,7 @@
             })
         }
 
-        function unlikePost(postID) {
+        function unlikePost(postID, authorID, origin) {
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -331,8 +380,8 @@
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
-                        updatePostData(postID)
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${origin}')`)
+                        updatePostData([[postID, authorID, origin]])
                     }
                 },
                 error: function (error) {
@@ -342,25 +391,32 @@
         }
 
         function updateAllPosts() {
-            for (const postID in postIDs) {
-                updatePostData(postIDs[postID])
-            }
+            updatePostData(postIDs)
         }
-        setInterval(updateAllPosts, 5000) //5 second refresh
+        setInterval(updateAllPosts, 2000) //2 second refresh
 
         function checkForDeletedPosts() {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
             $.ajax({
-                type: "GET",
+                type: "POST",
                 url: `/api/get-deleted-posts/`,
+                data: JSON.stringify({
+                    'ids': postIDs,
+                    'location': `${window.location.href}`
+                }),
                 contentType: 'application/json',
-                data: {
-                    ids: postIDs
-                },
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         for (const post in response) {
                             $(`#post-block-${response[post]}`).remove()
-                            postIDs = postIDs.filter(item => item !== response[post]);
+                            postIDs = postIDs.filter(item => item[0] !== `${response[post]}`);
                         }
                     }
                 },
@@ -369,21 +425,45 @@
                 }
             })
         }
-        setInterval(checkForDeletedPosts, 5000) //5 second refresh
+        setInterval(checkForDeletedPosts, 2000) //5 second refresh
 
-        function updatePostData(postID) {
+        function updatePostData(postIDs) {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
             $.ajax({
-                type: "GET",
-                url: `/api/get-post-data/${postID}`,
+                type: "POST",
+                url: `/api/get-post-data/`,
+                data: JSON.stringify({
+                    'ids': postIDs,
+                    'location': `${window.location.href}`
+                }),
+                contentType: 'application/json',
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>`
-                        if ($(`#post-content-${postID}`).children().length === 0) {
-                            $(`#post-content-${postID}`).text(response['content'])
-                        }
-                        current = $(`#post-timestamp-${postID}`).text()
-                        if (response['edited'] === true && current.includes("Edited") === false) {
-                            $(`#post-timestamp-${postID}`).text(`${current} - Edited`)
+                        for (const index in response) {
+                            post = response[index] 
+                            id = post['id'].split('/').at(-2)
+
+                            if ($(`#like-button-${id}`).is(":visible")) {
+                                authorId = post['author']['id'].split('/').at(-2)
+                                document.getElementById(`like-button-${id}`).innerHTML = `${post['like-count']} <i class="fa-solid fa-heart"></i>`
+                            
+                                $(`#post-title-${id}`).text(post['title'])
+                                $(`#post-description-${id}`).text(post['description'])
+                                $(`#post-categories-${id}`).text(post['categories'])
+
+                                if (post['contentType'] === 'image/jpeg;base64' || post['contentType'] === 'image/png;base64') {
+                                    $(`#image-previews`).attr('src', post['content'])
+                                } else {
+                                    $(`#post-content-${id}`).text(post['content'])
+                                }
+                            }
                         }
                     }
                 },

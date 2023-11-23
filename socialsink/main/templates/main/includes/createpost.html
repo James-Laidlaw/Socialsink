@@ -101,16 +101,6 @@
         }
     }
 
-    function getFileData(file) {
-        var reader = new FileReader()
-
-        reader.onload = function(e) {
-            return e.target.result
-        }
-
-        reader.readAsDataURL(file)
-    }
-
     function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
@@ -149,10 +139,6 @@
                 alert("There was an error making your post, please try again")
             }
         })
-    }
-
-    function setPublicity() {
-
     }
 
     photoAttachment.addEventListener('change', function () {
