@@ -94,51 +94,6 @@ def logoutRequest(request):
     auth_logout(request)
     return Response(status=200)
 
-@api_view(['POST'])
-def makePost(request):
-    print("Make-post request received")
-
-    user = request.user
-    if user.is_authenticated:
-        text = request.data['text']
-        publicity = request.data['publicity']
-        image = request.data['image']
-
-        if publicity == 'public':
-            publicity = 0
-        elif publicity == 'friends':
-            publicity = 1
-        elif publicity == 'private':
-            publicity = 2
-        else:
-            publicity = -1 #Unknown publicity
-
-        author = Author.objects.get(user=user)
-        if publicity == 1:
-            author = Author.objects.get(user=user)
-            friends = author.friend_set.all()
-            post = Post(
-                author=author, 
-                content=text,  
-                image=image,
-                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
-                publicity=publicity, 
-                private_to=friends)
-        else:
-            post = Post(
-                author=author, 
-                content=text, 
-                image=image,
-                created_at=datetime.now(pytz.timezone('America/Edmonton')), 
-                publicity=publicity)
-
-        post.save()
-
-        return Response(status=201)
-    
-    else:
-        return Response(status=401)
-
 @api_view(['GET'])
 def getOldAvailablePosts(request):
     print("Get available posts request received")
@@ -202,6 +157,139 @@ def getOldAvailablePosts(request):
 
         return Response(data, status=200)
 
+    else:
+        return Response(status=401)
+
+@api_view(['GET'])
+def getOldInboxInfo(request):
+    print("Get available posts request received")
+
+    user = request.user
+    if user.is_authenticated:
+        data = {}
+
+        #Get the author id for inbox
+        aids = []
+        primary_author = Author.objects.get(user=user)
+        aids.append(primary_author.id)
+        #Get the list of authors
+        authors = Author.objects.all()
+        #Get the list of following/friends
+        following = primary_author.following.all()
+        fids = [f.followee.id for f in following]
+
+        for a in authors:
+            if a.id in fids:
+                aids.append(a.id)
+        #Get all posts associated
+
+        #1 Get the posts
+        #TODO
+        i = 0
+        for aid in aids:
+            author = Author.objects.get(id=aid)
+            posts = author.posts.all()
+            for post in posts:
+
+                liked = primary_author.likes.filter(post=post)
+                if len(liked) == 0:
+                    liked = 0
+                else:
+                    liked = 1
+
+                if post.unlisted == True:
+                    continue
+                elif post.publicity == 0 or (post.publicity == 1 and aid == primary_author.id):
+                    post_serializer = PostSerializer(post, context={'request': request})
+                    data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                    i += 1
+                elif post.publicity == 1:
+                    follow = Follower.objects.get(follower=primary_author, followee=author)
+                    if follow.friendship == True:
+                        post_serializer = PostSerializer(post, context={'request': request})
+                        data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                        i += 1
+
+        #2 Get the likes
+        #TODO - use future outwards facing API for posts and comments
+
+        #2.1 get the likes for posts
+        #2.2 get the likes for comments
+
+        #3 Get the comments
+        #TODO - comments isnt even done
+
+        #TODO - Sort the data (posts, likes, comments) by timestamp
+        
+        #print(data)
+        return Response(data, status=200)
+    else:
+        return Response(status=401)
+
+@api_view(['GET'])
+def getNewInboxInfo(request):
+    print("Get available posts request received")
+
+    user = request.user
+    if user.is_authenticated:
+        data = {}
+
+        #Get the author id for inbox
+        aids = []
+        primary_author = Author.objects.get(user=user)
+        aids.append(primary_author.id)
+        #Get the list of authors
+        authors = Author.objects.all()
+        #Get the list of following/friends
+        following = primary_author.following.all()
+        fids = [f.followee.id for f in following]
+
+        for a in authors:
+            if a.id in fids:
+                aids.append(a.id)
+        #Get all posts associated
+
+        #1 Get the posts
+        #TODO
+        i = 0
+        oldDate = datetime.now(pytz.timezone('America/Edmonton')) - timedelta(seconds=2)
+        for aid in aids:
+            author = Author.objects.get(id=aid)
+            posts = author.posts.filter(created_at__gte=oldDate).all()
+            for post in posts:
+
+                liked = primary_author.likes.filter(post=post)
+                if len(liked) == 0:
+                    liked = 0
+                else:
+                    liked = 1
+
+                if post.unlisted == True:
+                    continue
+                elif post.publicity == 0 or (post.publicity == 1 and aid == primary_author.id):
+                    post_serializer = PostSerializer(post, context={'request': request})
+                    data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                    i += 1
+                elif post.publicity == 1:
+                    follow = Follower.objects.get(follower=primary_author, followee=author)
+                    if follow.friendship == True:
+                        post_serializer = PostSerializer(post, context={'request': request})
+                        data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                        i += 1
+
+        #2 Get the likes
+        #TODO - use future outwards facing API for posts and comments
+
+        #2.1 get the likes for posts
+        #2.2 get the likes for comments
+
+        #3 Get the comments
+        #TODO - comments isnt even done
+
+        #TODO - Sort the data (posts, likes, comments) by timestamp
+        
+        #print(data)
+        return Response(data, status=200)
     else:
         return Response(status=401)
 
@@ -294,34 +382,6 @@ def deleteAccount(request):
 
     else:
         return Response(status=401)
-    
-
-@api_view(['PUT'])
-def updatePostData(request, id):
-    print("Update post request received")
-
-    user = request.user
-    
-    if user.is_authenticated:
-        try:
-            author = Author.objects.get(user=user)
-            post = Post.objects.get(id=id, author=author)
-            post.content = request.data['text']
-            post.updated_at = datetime.now(pytz.timezone('America/Edmonton'))
-            post.edited = True
-
-            post.save()
-
-            return Response(status=200)
-        except Post.DoesNotExist:
-            messages.error(request, "Post does not exist")    
-            return Response(status=404)
-        except Exception as e: 
-            return Response(status=500)
-
-    else:
-        return Response(status=401)
-
 
 @api_view(['DELETE'])
 def deletePost(request, id):
@@ -385,39 +445,83 @@ def unlikePost(request, id):
         return Response(status=401)
 
 
-@api_view(['GET'])
-def getPostData(request, id):
+@api_view(['POST'])
+def getPostData(request):
     print("Get Like Count request received")
 
     user = request.user
     if user.is_authenticated:
-    
-        try:
-            post = Post.objects.get(id=id)
-            count = len(post.likes.all())
 
-            data = {'count': count, 'content': post.content, 'edited': post.edited}
+        primary_author = Author.objects.get(user=user)
 
-            return Response(data, status=200)
-        except Post.DoesNotExist:
-            return Response(status=404)
+        ids = request.data['ids']
+        location = request.data['location']
+
+        data = {}
+        i = 0
+        for post in ids:
+            parts = post[2].split('/')
+            origin = f'{parts[0]}//{parts[2]}/'
+
+            if origin == location:
+                author = Author.objects.get(id=post[1])
+
+                if Post.objects.filter(id=post[0]):
+                    post = Post.objects.get(id=post[0])
+
+                    liked = primary_author.likes.filter(post=post)
+                    if len(liked) == 0:
+                        liked = 0
+                    else:
+                        liked = 1
+
+                    if post.unlisted == True:
+                        continue
+                    elif post.publicity == 0 or (post.publicity == 1 and author.id == primary_author.id):
+                        post_serializer = PostSerializer(post, context={'request': request})
+                        data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                        i += 1
+                    elif post.publicity == 1:
+                        follow = Follower.objects.get(follower=primary_author, followee=author)
+                        if follow.friendship == True:
+                            post_serializer = PostSerializer(post, context={'request': request})
+                            data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                            i += 1
+
+            else:
+                #TODO - need to get the updated resource from external node
+                pass
+
+        return Response(data, status=200)
     else:
         return Response(status=401)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def getDeletedPosts(request):
     print("Get Deleted Posts request received")
 
     user = request.user
     if user.is_authenticated:
         
-        ids = list(request.query_params.getlist('ids[]'))
-        data = {}
-        for i in range(len(ids)):
-            if not Post.objects.filter(id=int(ids[i])):
-                data[i] = int(ids[i])
+        ids = request.data['ids']
+        location = request.data['location']
 
+        data = {}
+        i = 0
+        for post in ids:
+            parts = post[2].split('/')
+            origin = f'{parts[0]}//{parts[2]}/'
+
+            if origin == location:
+                if not Post.objects.filter(id=int(post[0])):
+                    data[i] = int(post[0])
+                    i += 1
+            else:
+                #TODO - need to check external origin for post (check if 404 or not)
+                pass
+        
+        print(data)
         return Response(data, status=200)
     else:
         return Response(status=401)
@@ -433,6 +537,7 @@ def getFollowing(request):
         for i, follow in enumerate(following):
             data[i] = {'id': follow.followee.id, 'user': follow.followee.user.username, 'accepted': follow.accepted, 'friendship': follow.friendship}
         return Response(data, status=200)
+    return Response(status=401)
 
 
 @api_view(['GET'])
@@ -446,6 +551,7 @@ def getFollowRequests(request):
         for i, follow_request in enumerate(follow_requests):
             data[i] = {'id': follow_request.follower.id, 'user': follow_request.follower.user.username}
         return Response(data, status=200)
+    return Response(status=401)
 
 
 @api_view(['POST', 'PUT', 'DELETE'])
@@ -511,6 +617,7 @@ def handleFollow(request):
 
             finally:
                 return Response(status=200)
+    return Response(status=401)
                 
 @api_view(['PUT'])
 def updateUser(request, id):
@@ -692,20 +799,24 @@ def postReqHandler(request, author_id, post_id):
         print("service: Get post request received")
         return getPost(request, post_id)
     
-    elif request.method == 'POST':
-        print("service: Update post request received")
-        return updatePost(request, post_id)
+    user = request.user
+    if user.is_authenticated:
+        if request.method == 'POST':
+            print("service: Update post request received")
+            return updatePost(request, post_id)
 
-    elif request.method == 'PUT':
-        print("service: Create specific post request received")
-        return createSpecificPost(request, author_id, post_id)
-    
-    elif request.method == 'DELETE':
-        print("service: Delete post request received")
-        return deletePost_1(request, post_id)
-    
+        elif request.method == 'PUT':
+            print("service: Create specific post request received")
+            return createSpecificPost(request, author_id, post_id)
+        
+        elif request.method == 'DELETE':
+            print("service: Delete post request received")
+            return deletePost_1(request, post_id)
+
+        else:
+            return Response(status=405)
     else:
-        return Response(status=405)
+        return Response(status=401)
 
 def getPost(request, post_id):
     found_post = Post.objects.filter(id=post_id).first()
@@ -715,20 +826,19 @@ def getPost(request, post_id):
     return Response(post_serializer.data)
 
 def updatePost(request, post_id):
-    found_post = Post.objects.get(id=post_id)
-    if found_post == None:
+    post = Post.objects.get(id=post_id)
+    if post == None:
         return Response(status=404)
     
-    #check authorization
-    if found_post.author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
-        return Response(status=401)
+    try:
+        post.title = request.data['title']
+        post.description = request.data['description']
+        post.categories = request.data['categories']
+        post.content = request.data['content']
+        post.save()
 
-    post_serializer = PostSerializer(found_post, data=request.data, partial=True)
-    if post_serializer.is_valid():
-        post_serializer.save()
         return Response(status=200)
-    else:
+    except:
         return Response(status=400)
 
 #_1 is to avoid name conflict with the deletePost function above
@@ -747,11 +857,6 @@ def createSpecificPost(request, author_id, post_id):
     # check if post id is in use
     if Post.objects.filter(id=post_id).exists():
         return Response(status=409) #409 = conflict
-    
-    #check authorization
-    if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
-        return Response(status=401)
 
     #slot in id
     request.data['id'] = post_id
@@ -768,14 +873,21 @@ def createSpecificPost(request, author_id, post_id):
 #not a great name, but it follows the spec
 @api_view(['GET', 'POST'])
 def postCreationReqHandler(request, author_id):
-    if request.method == 'POST':
-        print("service: Create post request received")
-        return createPost(request, author_id)
-    elif request.method == 'GET':
-        print("service: Get posts request received")
-        return getAuthorPosts(request, author_id)
+    
+    user = request.user
+    if user.is_authenticated:
+
+        if request.method == 'POST':
+            print("service: Create post request received")
+            return createPost(request, author_id)
+        elif request.method == 'GET':
+            print("service: Get posts request received")
+            return getAuthorPosts(request, author_id)
+        else:
+            return Response(status=405)
+    
     else:
-        return Response(status=405)
+        return Response(status=401)
     
 #like create specific post, but without the post_id
 def createPost(request, author_id):
@@ -783,18 +895,53 @@ def createPost(request, author_id):
     if author == None:
         return Response(status=404)
     
-    post_serializer = PostSerializer(data=request.data, context={'request': request})
+    #try:
+    title = request.data['title']
+    description = request.data['description']
+    categories = request.data['categories']
+    content = request.data['content']
+    contentType = request.data['contentType']
+    publicity = request.data['publicity']
+    origin = request.data['origin']
+    image = request.data['image']
 
-    #check authorization
-    if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
-        return Response(status=401)
+    if image:
+        contentType = content.split(",")[0].split(":")[1]
 
-    if post_serializer.is_valid():
-        post_serializer.save()
-        return Response(status=200)
+    unlisted = False
+    if publicity == 'public':
+        publicity = 0
+    elif publicity == 'friends':
+        publicity = 1
+    elif publicity == 'unlisted':
+        publicity = 0
+        unlisted = True
     else:
-        return Response(status=400)
+        publicity = -1 #Unknown publicity
+
+    post = Post(
+            author=author, 
+            title=title,
+            description=description,
+            categories=categories,
+            contentType=contentType,
+            content=content,
+            origin=origin,
+            publicity=publicity,
+            unlisted=unlisted,
+            created_at=datetime.now(pytz.timezone('America/Edmonton'))
+        )
+
+    post.save()
+
+    origin += f'posts/{post.id}'
+    post.origin = origin
+
+    post.save()
+
+    return Response(status=201)
+    #except:
+    #    return Response(status=400)
     
 def getAuthorPosts(request, author_id):
     pageNum = request.GET.get('page', 1)

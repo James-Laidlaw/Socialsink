@@ -53,16 +53,15 @@ class Post(models.Model):
     description = models.CharField(max_length=200, null=True)
     author = models.ForeignKey(Author, related_name='posts', on_delete=models.CASCADE)
     contentType = models.CharField(max_length=200, default="text/plain")
-    content = models.CharField(max_length=600)
+    content = models.TextField()
     source = models.CharField(max_length=200, null=True) #Where did reposter get post from
     origin = models.CharField(max_length=200, null=True) #Where post is actually from
     categories = models.CharField(max_length=200, null=True) #comma separated list of categories
     image = models.ImageField(null=True, upload_to="images/")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
-    edited = models.BooleanField(default=False)
     publicity = models.IntegerField(default=0) # 2 = private, 1 = friends, 0 = public
-    private_to = models.ForeignKey(Author, related_name='readable_by', null=True, on_delete=models.SET_NULL) # only used if publicity = 0
+    unlisted = models.BooleanField(default=False)
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)

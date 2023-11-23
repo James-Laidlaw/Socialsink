@@ -489,14 +489,29 @@ main {
     appearance: none;
 }
 
-.post-content .select-wrap {
+.post-content .publicity-select-wrap {
     position: relative;
 }
 
-.post-content .select-wrap:after {
+.post-content .content-type-select-wrap {
+    position: relative;
+}
+
+.post-content .publicity-select-wrap:after {
     color: var(--button-text);
     font-family: "Font Awesome 6 Free";
     content: "\f06e";
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.post-content .content-type-select-wrap:after {
+    color: var(--button-text);
+    font-family: "Font Awesome 6 Free";
+    content: "\f15c";
     position: absolute;
     top: 50%;
     right: 20px;
@@ -519,7 +534,7 @@ main {
 
 .feed-post.create-new {
     width: calc(100% - 9px);
-    min-height: 148px;
+    min-height: 348px;
     margin-right: auto;
     transition: min-height 500ms ease 0s;
 }

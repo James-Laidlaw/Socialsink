@@ -42,7 +42,7 @@ visibility_options = {0: "PUBLIC", 1: "FRIENDS", 2: "PRIVATE"}
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
-        fields = ['title', 'description', 'contentType', 'content', 'source', 'origin']
+        fields = ['title', 'description', 'contentType', 'content', 'source', 'origin', 'categories']
 
     def to_representation(self, instance):
         request: Request = self.context.get('request')
@@ -56,7 +56,10 @@ class PostSerializer(serializers.ModelSerializer):
         super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
         super_result['published'] = instance.created_at.isoformat()
         super_result['visibility'] = visibility_options[instance.publicity]
-        super_result['unlisted'] = instance.publicity == 2 #TODO Not sure if this is correct
+        super_result['unlisted'] = instance.unlisted
+
+        categories = instance.categories.split("#")
+        super_result['categories'] = ' '.join(["#"+i.strip() for i in categories if i != ''])
         
         return super_result
     
