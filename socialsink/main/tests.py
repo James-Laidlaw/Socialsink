@@ -278,7 +278,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.check_post(post, response.json())
     
-    #POST /service/authors/<str:author_id>/posts/ (update post (for some reason))
+    #POST /service/authors/<str:author_id>/posts/<str:post_id> (update post (for some reason))
     def test_update_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postReqHandler', args=[self.author.id, post.id])
@@ -296,6 +296,7 @@ class YourApiTests(TestCase):
     def test_delete_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postReqHandler', args=[self.author.id, post.id])
+        self.client.force_authenticate(user=self.user)
         response: JsonResponse = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
@@ -316,6 +317,7 @@ class YourApiTests(TestCase):
     def test_get_posts(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postCreationReqHandler', args=[self.author.id])
+        self.client.force_authenticate(user=self.user)
         response: JsonResponse = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         print(response.json())
