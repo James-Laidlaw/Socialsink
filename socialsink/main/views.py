@@ -3,8 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like, Follower, ServerSettings
-from .serizlizers import AuthorSerializer, PostSerializer
+from .models import Author, Post, Like, Follower, ServerSettings, Comment
+from .serizlizers import AuthorSerializer, PostSerializer, CommentSerializer, LikeSerializer
 
 from datetime import datetime, timedelta, date, time
 import pytz
@@ -742,7 +742,7 @@ def updatePost(request, post_id):
 
         return Response(status=200)
     except Exception as e:
-        print(e, "***********************************************")
+        print(e)
         return Response(status=400)
 
 #_1 is to avoid name conflict with the deletePost function above
@@ -877,3 +877,138 @@ def getAuthorPosts(request, author_id):
 
     serialized_posts = post_serializer.data
     return Response(serialized_posts)
+
+#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/comments
+@api_view(['GET', 'POST'])
+def commentReqHandler(request, author_id, post_id):
+    if post_id == None:
+        return Response(status=400)
+    
+    if request.method == 'GET': 
+        print("service: Get comments request received")
+        return getComments(request, post_id)
+    
+    user = request.user
+    if user.is_authenticated:
+        if request.method == 'POST':
+            print("service: Create comment request received")
+            return createComment(request, author_id, post_id)
+
+        else:
+            return Response(status=405)
+    else:
+        return Response(status=401)
+    
+def getComments(request, post_id):
+    found_post = Post.objects.filter(id=post_id).first()
+    if found_post == None:
+        return Response(status=404)
+    
+    comments = found_post.comments.all().order_by('created_at')
+
+    comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
+
+    serialized_comments = comment_serializer.data
+    return Response(serialized_comments)
+
+def createComment(request, author_id, post_id):
+    author = Author.objects.get(id=author_id)
+    if author == None:
+        return Response(status=404)
+    
+    found_post = Post.objects.filter(id=post_id).first()
+    if found_post == None:
+        return Response(status=404)
+    #slot in post ID
+    request.data['post_id'] = post_id
+    comment_serializer = CommentSerializer(data=request.data, context={'request': request})
+    comment_serializer.create(request.data)
+    if comment_serializer.is_valid():
+        comment_serializer.save()
+        return Response(status=200)
+    else:
+        return Response(status=400)
+    
+#TODO THIS IS TECHNICALLY THE PARTIALLY DONE INBOX API BUT RIGHT NOW IT JUST REGISTERS SENT LIKES
+# /service/authors/{AUTHOR_ID}/inbox/
+@api_view(['POST'])
+def inboxReqHandler(request, author_id):
+    if request.method == 'POST':
+        print("service: Inbox POST request received")
+        return inboxPOSTHandler(request)
+    else:
+        return Response(status=405)
+    
+def inboxPOSTHandler(request):
+    data = request.data
+    if data['type'] == 'like':
+        #TODO write to inbox
+        likeSerializer = LikeSerializer(data=data, context={'request': request})
+        if likeSerializer.is_valid():
+            likeSerializer.save()
+            return Response(status=200)
+        else:
+            print("invalid like", likeSerializer.errors)
+            return Response(status=400)
+    else:
+        return Response(status=400)
+
+#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/likes    
+@api_view(['GET'])
+def getPostLikes(request, author_id, post_id):
+    print("service: Get post likes request received")
+    if request.method != 'GET':
+        return Response(status=405)
+
+    if post_id == None:
+        return Response(status=400)
+    
+    found_post = Post.objects.filter(id=post_id).first()
+
+    if found_post == None:
+        return Response(status=404)
+    
+    likes = found_post.likes.all().order_by('created_at')
+    like_serializer = LikeSerializer(likes, many=True, context={'request': request})
+    serialized_likes = like_serializer.data
+    return Response(serialized_likes)
+
+#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
+@api_view(['GET'])
+def getCommentLikes(request, author_id, post_id, comment_id):
+    print("service: Get comment likes request received")
+    if request.method != 'GET':
+        return Response(status=405)
+
+    if post_id == None or comment_id == None:
+        return Response(status=400)
+    
+    found_comment = Comment.objects.filter(id=comment_id).first()
+
+    if found_comment == None:
+        return Response(status=404)
+    
+    likes = found_comment.likes.all().order_by('created_at')
+    like_serializer = LikeSerializer(likes, many=True, context={'request': request})
+    serialized_likes = like_serializer.data
+    return Response(serialized_likes)
+
+#/service/authors/{AUTHOR_ID}/liked
+@api_view(['GET'])
+def getAuthorLiked(request, author_id):
+    print("service: Get author liked request received")
+    if request.method != 'GET':
+        return Response(status=405)
+
+    if author_id == None:
+        return Response(status=400)
+    
+    found_author = Author.objects.filter(id=author_id).first()
+
+    if found_author == None:
+        return Response(status=404)
+    
+    likes = found_author.likes.all().order_by('created_at')
+    like_serializer = LikeSerializer(likes, many=True, context={'request': request})
+    serialized_likes = like_serializer.data
+    return Response(serialized_likes)
