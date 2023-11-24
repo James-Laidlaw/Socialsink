@@ -42,6 +42,12 @@
             postElement.id = "post-block-" + id;
             postElement.setAttribute('data-post-id', id);
 
+            if (post['source'] !== null) {
+                shared = `<i style="height: 20px; width: 20px;" class="fa-solid fa-retweet"></i> `
+            } else {
+                shared = ``
+            }
+
             if (post['unlisted'] === true) {
                 unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${id}</p></a>`
             } else {
@@ -57,9 +63,13 @@
 
             if (authorId === "{{author.id}}") {
                 deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
-                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
             } else {
                 deleteButton = ""
+            }
+
+            if (authorId === "{{author.id}}" && post['source'] === null) {
+                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
+            } else {
                 dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
             }
             
@@ -89,7 +99,7 @@
                         </div>
                     </div>
                     <div class="post-body">
-                        <p id="post-username-${id}">${post['author']['displayName']}</p>
+                        <p id="post-username-${id}">${shared}${post['author']['displayName']}</p>
                         <time id="post-timestamp-${id}">${readableDate} ${readableTime}</time>
                         ${unlisted}
                         <p id="post-title-${id}">${post['title']}</p>
@@ -99,7 +109,7 @@
                     </div>
                     <div class="post-btn-wrap" id="post-btn-wrap-${id}">
                         ${likeButton}
-                        <button type="submit" id="share-button-${id}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                         ${deleteButton}
                     </div>
                 </div>
@@ -243,6 +253,35 @@
             $(`#delete-button-${id}`).removeClass('hide')
         }
 
+        function sharePost(postID, authorID, origin, source) {
+            if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
+                console.log("SHAREABLE")
+                var csrf_token = "{{ csrf_token }}";
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: `/service/authors/{{ author.id }}/posts/`,
+                    data: JSON.stringify({
+                        'source': `${window.location.href}`,
+                        'post_id': postID,
+                    }),
+                    contentType: 'application/json',
+                    error: function (error) {
+                        console.error(error);
+                        alert("There was an error making your post, please try again")
+                    }
+                })
+            } else {
+                alert("You cannot share this post twice")
+            }
+        }
+
         function showDeleteConfirmation(postID) {
             // Set a global variable to store the post ID to be deleted
             window.postToDelete = postID;
@@ -300,6 +339,7 @@
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
                             for (const post in response) {
+                                console.log(response[post])
                                 if (response[post]['type'] === 'post') {
                                     addPost(response[post])
                                 } else {
