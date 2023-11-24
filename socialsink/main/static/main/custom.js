@@ -16,6 +16,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    $(document).on('click', '.dropdown-toggle', function () {
+        var dropdown = $(this).siblings('.dropdown-menu');
+        $('.dropdown-menu').not(dropdown).removeClass('show');
+        dropdown.toggleClass('show');
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown-menu').removeClass('show');
+        }
+    });
+
     $("#show-feed-activity").click(function() {
         $("#show-feed-activity").addClass("active-feed");
         $("#show-git-activity").removeClass("active-feed");
