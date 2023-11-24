@@ -1019,14 +1019,14 @@ body.has-popup-modal:before {
     color: var(--bright-blue); 
 }
 
-.popup-modal button#confirm-edit-profile-yes:hover,
-.popup-modal button#confirm-edit-profile-yes:focus {
-    color: var(--pastel-green);
+.popup-modal button.confirm-red:hover,
+.popup-modal button.confirm-red:focus {
+    color: var(--hot-pink);
 }
 
-.popup-modal button#confirm-edit-profile-no:hover,
-.popup-modal button#confirm-edit-profile-no:focus {
-    color: var(--hot-pink);
+.popup-modal button.confirm-green:hover,
+.popup-modal button.confirm-green:focus {
+    color: var(--pastel-green);
 }
 
 #edit-profile-dialog.popup-modal .user-bg:hover,

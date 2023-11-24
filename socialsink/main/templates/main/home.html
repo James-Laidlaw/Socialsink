@@ -32,8 +32,16 @@
     <div id="delete-post-dialog" class="popup-modal">
         <p>Are you sure you want to permanantly delete this post?</p>
         <div class="button-wrap">
-            <button id="confirm-delete-post-yes">Yes</button>
+            <button id="confirm-delete-post-yes" class="confirm-red">Yes</button>
             <button id="confirm-delete-post-no">No</button>
+        </div>
+    </div>
+
+    <div id="reshare-post-dialog" class="popup-modal">
+        <p>Are you sure you want to re-share this post?</p>
+        <div class="button-wrap">
+            <button id="confirm-reshare-post-yes" class="confirm-red">Yes</button>
+            <button id="confirm-reshare-post-no">No</button>
         </div>
     </div>
 
@@ -119,7 +127,7 @@
                     </div>
                     <div class="post-btn-wrap" id="post-btn-wrap-${id}">
                         ${likeButton}
-                        <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        <button type="submit" id="share-button-${id}" onclick="showReshareConfirmation(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                         ${deleteButton}
                     </div>
                 </div>
@@ -263,6 +271,34 @@
             $(`#delete-button-${id}`).removeClass('hide')
         }
 
+        // -------------------------------------------------------------------------------------------
+
+        function showReshareConfirmation(postID, authorID, origin, source) {
+            
+            // Set a global variable to store the post ID to be reshared
+            window.ResharePostID = postID;
+            window.ReshareAuthorID = authorID;
+            window.ReshareOrigin = origin;
+            window.ReshareSource = source;
+
+            // Show the custom confirmation dialog
+            $("#reshare-post-dialog").addClass("show");
+            $("body").toggleClass("has-popup-modal");
+        }
+
+        $("#confirm-reshare-post-yes").click(function() {
+            // Execute the post reshare logic when the user clicks "Yes"
+            sharePost(window.ResharePostID, window.ReshareAuthorID, window.ReshareOrigin, window.ReshareSource);
+            $("#reshare-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
+        });
+
+        $("#confirm-reshare-post-no").click(function() {
+            // Cancel the post reshare action when the user clicks "No"
+            $("#reshare-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
+        });
+
         function sharePost(postID, authorID, origin, source) {
             if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
                 console.log("SHAREABLE")
@@ -291,6 +327,8 @@
                 alert("You cannot share this post twice")
             }
         }
+
+        // -------------------------------------------------------------------------------------------
 
         function showDeleteConfirmation(postID) {
             // Set a global variable to store the post ID to be deleted
@@ -338,6 +376,8 @@
                 }
             })
         }
+
+        // -------------------------------------------------------------------------------------------
 
         //If the document is freshly loaded
         $(document).ready(function() {
