@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.contrib.auth.models import User
-from .models import Author, Post, Like, Follower, ServerSettings, Comment
-from .serizlizers import AuthorSerializer, PostSerializer, CommentSerializer, LikeSerializer
+from django.db.models import Q
+from .models import Author, Post, Like, Follower, ServerSettings, Comment, Inbox
+from .serizlizers import AuthorSerializer, PostSerializer, CommentSerializer, LikeSerializer, InboxSerializer, get_object_id_from_url
 
 from datetime import datetime, timedelta, date, time
 import pytz
@@ -766,7 +767,7 @@ def postCreationReqHandler(request, author_id):
     
 #like create specific post, but without the post_id
 def createPost(request, author_id):
-    author = Author.objects.get(id=author_id)
+    author = Author.objects.filter(id=author_id).first()
     if author == None:
         return Response(status=404)
     
@@ -774,7 +775,7 @@ def createPost(request, author_id):
     #try:
 
     source = request.data.get('source')
-    if source == '':
+    if source == '' or source == None:
         title = request.data.get('title')
         description = request.data.get('description')
         categories = request.data.get('categories', '')
@@ -823,7 +824,7 @@ def createPost(request, author_id):
     else:
         id = request.data.get('post_id')
         
-        post = Post.objects.get(id=id)
+        post = Post.objects.filter(id=id).first()
         if post == None:
             return Response(status=404)
 
@@ -932,27 +933,104 @@ def createComment(request, author_id, post_id):
     else:
         return Response(status=400)
     
-#TODO THIS IS TECHNICALLY THE PARTIALLY DONE INBOX API BUT RIGHT NOW IT JUST REGISTERS SENT LIKES
+
 # /service/authors/{AUTHOR_ID}/inbox/
-@api_view(['POST'])
+@api_view(['POST', 'GET', 'DELETE'])
 def inboxReqHandler(request, author_id):
     if request.method == 'POST':
         print("service: Inbox POST request received")
-        return inboxPOSTHandler(request)
+        return inboxPOSTHandler(request, author_id)
+    elif request.method == 'GET':
+        print("service: Inbox GET request received")
+        pageNum = request.GET.get('page', 1)
+        pageSize = request.GET.get('size', 50)
+        author = Author.objects.filter(id=author_id).first()
+
+        if author == None:
+            return Response(status=404)
+        
+        if not request.user.is_authenticated or request.user != author.user:
+            return Response(status=401)
+
+        author_serializer = AuthorSerializer(author, context={'request': request})
+        author_url_id = author_serializer.data.get('id')
+
+        inbox_items = Inbox.objects.filter(author_id=author_id).order_by('-created_at')
+
+        paginatedItems = Paginator(inbox_items, pageSize)
+
+        #paginator crashes if page number is out of range
+        try: 
+            page = paginatedItems.page(pageNum)
+        except:
+            return Response(status=404)
+
+
+        inbox_serializer = InboxSerializer(page, many=True, context={'request': request})
+        serialized_inbox_items = inbox_serializer.data
+        serialized_inbox = {'type': 'inbox', "author": author_url_id, 'items': serialized_inbox_items}
+        return Response(serialized_inbox)
+    elif request.method == 'DELETE':
+        print("service: Inbox DELETE request received")
+        author = Author.objects.filter(id=author_id).first()
+        if author == None:
+            return Response(status=404)
+
+        inbox_items = Inbox.objects.filter(author_id=author_id).order_by('created_at')
+        inbox_items.delete()
+        return Response(status=200)
     else:
         return Response(status=405)
     
-def inboxPOSTHandler(request):
+def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
-    if data['type'] == 'like':
-        #TODO write to inbox
+    if data['type'] == 'Like':
         likeSerializer = LikeSerializer(data=data, context={'request': request})
-        if likeSerializer.is_valid():
-            likeSerializer.save()
-            return Response(status=200)
-        else:
+        if not likeSerializer.is_valid():
             print("invalid like", likeSerializer.errors)
             return Response(status=400)
+        
+        
+        object_url = data.get('object')
+        object_id = get_object_id_from_url(object_url)
+
+        #ensure item being liked exists
+        if not Post.objects.filter(id=object_id).exists() and not Comment.objects.filter(id=object_id).exists():
+            return Response(status=404)
+        
+        #ensure not duplicate like
+        from_author_url_id = data.get('author').get('id') #will be in URL format
+        from_author_id = get_object_id_from_url(from_author_url_id)
+
+        #check for duplicate likes from the same author (local)
+        if Like.objects.filter(Q(author_id=from_author_id) & (Q(post_id=object_id) | Q(comment_id=object_id))).exists():
+            return Response(status=409)
+        
+        #check for duplicate likes from the same author (remote author)
+        if Like.objects.filter(Q(foreign_author_id=from_author_url_id) & (Q(post_id=object_id) | Q(comment_id=object_id))).exists():
+            return Response(status=409)
+
+        #save like
+        likeSerializer.save()
+
+        #create inbox object
+        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+        return Response(status=200)
+    
+
+    elif data['type'] == 'Post':
+        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+        return Response(status=200)
+    
+    elif data['type'] == 'Comment':
+        #TODO should this make a comment object? or is it just sharing the comment / notifying the author?
+        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+        return Response(status=200)
+
+    elif data['type'] == 'Follow':
+        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+        return Response(status=200)
+
     else:
         return Response(status=400)
 
