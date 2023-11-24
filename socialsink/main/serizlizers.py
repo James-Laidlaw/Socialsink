@@ -1,10 +1,13 @@
 from rest_framework import serializers
-from .models import Author, Post, Comment, Like
+from .models import Author, Post, Comment, Like, Inbox
 from django.urls import reverse, resolve
 from rest_framework.request import Request
-
+import json
+import pprint
 #should also be able to handle passing in a correct id
 def get_object_id_from_url(url):
+    #not the most robust URL parsing but it might be good enough 
+    # TODO consider improving/figuring out how django does this
     stripped_url = url.rstrip('/')#remove trailing slash
     return stripped_url.split('/')[-1]
 
@@ -95,15 +98,21 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         request: Request = self.context.get('request')
-
         super_result = super().to_representation(instance)
-        author_id = instance.author.id
         post_id = instance.post.id
+
+        post = Post.objects.get(id=post_id)
+        author_id = post.author.id
         comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[author_id, post_id])) + str(instance.id)
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
-        super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+
+        if instance.is_foreign:
+            #TODO consider querying the foreign author and returning the whole object
+            super_result['author'] = instance.foreign_author_id
+        else:
+            super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
         super_result['published'] = instance.created_at.isoformat()
         super_result['comment'] = instance.content
         super_result['contentType'] = "text/plain" #Spec wants us to specify content type but doens't say we have to support anything other than plaintext
@@ -112,7 +121,25 @@ class CommentSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         request: Request = self.context.get('request')
-        validated_data['author_id'] = Author.objects.get(user=request.user).id
+        
+        #author can be a JSON representation or the model object, for reasons i hate
+        author = self.initial_data.get('author', None)
+        authorRawID = None
+        if isinstance(author, Author):
+            authorRawID = str(author.id)
+        else:
+            authorRawID = author.get('id', None)  
+
+        host_url = request.build_absolute_uri("/")
+        is_foreign = (host_url not in authorRawID)
+        validated_data['is_foreign'] = is_foreign
+
+        if is_foreign:
+            validated_data['foreign_author_id'] = authorRawID
+        else:
+            validated_data['author_id'] = get_object_id_from_url(authorRawID)
+            validated_data['author'] = Author.objects.get(id=validated_data['author_id'])
+
         validated_data['post_id'] = self.initial_data.get('post_id', None)
         
         if 'comment' in validated_data:
@@ -131,37 +158,61 @@ class LikeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         request: Request = self.context.get('request')
-
         super_result = super().to_representation(instance)
-        author_id = instance.author.id
 
         super_result['type'] = "like"
-        super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+        if instance.is_foreign:
+            #TODO consider querying the foreign author and returning the whole object
+            super_result['author'] = instance.foreign_author_id 
+        else:
+            super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
 
         if instance.post != None:
-            post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, instance.post.id]))
+            post_url = PostSerializer(instance.post, context={'request': request}).data['id']
             super_result['object'] = post_url
             super_result['summary'] = f"{instance.author.user.username} liked a post"
         elif instance.comment != None:
-            comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[author_id, instance.comment.post.id]))
+            comment_url = CommentSerializer(instance.comment, context={'request': request}).data['id']
             super_result['object'] = comment_url + str(instance.comment.id)
             super_result['summary'] = f"{instance.author.user.username} liked a Comment"
 
+        super_result['@context'] = instance.context
         return super_result
     
     def create(self, validated_data):
+        request: Request = self.context.get('request')
+
         authorJSON = self.initial_data.get('author', None)
-        authorRawID = authorJSON.get('id', None)       
-        author_id = get_object_id_from_url(authorRawID)
-        validated_data['author_id'] = author_id
+        authorRawID = authorJSON.get('id', None)    
+
+        host_url = request.build_absolute_uri("/")
+        is_foreign = (host_url not in authorRawID)
+        validated_data['is_foreign'] = is_foreign
+
+        if is_foreign:
+            validated_data['foreign_author_id'] = authorRawID
+        else:
+            validated_data['author_id'] = get_object_id_from_url(authorRawID)
+            validated_data['author'] = Author.objects.get(id=validated_data['author_id'])
+
+
         # Extract the id from the "object" input URL
         object_url = self.initial_data.get('object', None)
         if object_url:
-            #not the most robust URL parsing but it might be good enough TODO consider improving/figuring out how django does this
             object_id = get_object_id_from_url(object_url)
             validated_data['post_id'] = object_id if 'post' in object_url else None
             validated_data['comment_id'] = object_id if 'comment' in object_url else None
-
+        
+        validated_data['context'] = self.initial_data.get('@context', None)
         return super().create(validated_data)
+    
 
+class InboxSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Inbox
+        fields = []
 
+    def to_representation(self, instance):
+        result = json.loads(instance.content)
+        return result
+    
