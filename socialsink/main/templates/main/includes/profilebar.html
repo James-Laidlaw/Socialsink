@@ -8,6 +8,7 @@
         <h3 id="profile-username" class="username">{{ user.username}}</h3>
         <p id="profile-email" class="useremail">{{ user.email }}</p>
         <p id="profile-bio" class="userbio">{% if author.bio %}{{ author.bio }}{% endif %}</p>
+        <p id="profile-github" class="usergithub">{% if author.github %}GitHub: {{ author.github }}{% endif %}</p>
     </div>
     <div class="follow-box">
         <div>
@@ -35,8 +36,10 @@
             <p class="useremail">{{ user.email }}</p>
             <label for="edit-username">Username</label>
             <input type="text" id="edit-username" class="username form-control" placeholder="{{ user.username }}"/>
-            <label for="edit-username">Bio</label>
+            <label for="edit-userbio">Bio</label>
             <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ author.bio }}"/>
+            <label for="edit-usergithub">GitHub</label>
+            <input type="text" id="edit-usergithub" class="usergithub form-control" placeholder="{{ author.github }}"/>
         </div>
     </div>
     <div class="button-wrap">
@@ -85,12 +88,16 @@
         // Execute the edit profile logic when the user clicks "Yes"
         var username = $("#edit-username").val()
         var bio = $("#edit-userbio").val()
-        if (username.length === 0 && bio.length === 0) {
-            alert("No changes have been made, fields are empty")
+        var github = $("#edit-usergithub").val()
+
+        if (username.length === 0 && bio.length === 0 && github.length === 0) {
+            alert("No changes have been made, fields are empty");
             $("#edit-profile-dialog").removeClass("show");
             $("body").toggleClass("has-popup-modal");
         } else if (bio.length > 200) {
-            alert("Bio is too long, must be under 200 characters")
+            alert("Bio is too long, must be under 200 characters");
+        } else if (github.length > 200) {
+            alert("GitHub is too long, must be under 200 characters");
         } else {
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
@@ -106,7 +113,8 @@
                 contentType: 'application/json',
                 data: JSON.stringify({
                     'username': username,
-                    'bio': bio
+                    'bio': bio,
+                    'github': github,
                 }),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {

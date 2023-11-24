@@ -357,7 +357,8 @@ main {
     border-radius: var(--card-round-border);
 }
 
-#post-container .feed-post:last-of-type {
+#post-container .feed-post:last-of-type,
+#git-container .feed-post:last-of-type {
     margin-bottom: 0;
 }
 
@@ -367,7 +368,13 @@ main {
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+    box-shadow: 0 1px 6px rgba(0,0,0,.95);
+    transition: box-shadow 300ms ease 0s;
+}
+
+.feed-post img.profile-img:hover,
+.feed-post img.profile-img:focus {
+    box-shadow: 0 1px 12px rgba(0,0,0,1);
 }
 
 .feed-post img {
@@ -701,7 +708,6 @@ main {
     flex-basis: 50%;
     overflow-y: overlay;
     scrollbar-gutter: stable;
-    padding-right: 5px;
 }
 
 #find-author-bar .heading,
@@ -958,7 +964,7 @@ body.has-popup-modal:before {
 /* Edit Profile Begins -------------------- */
 
 #edit-profile-dialog.popup-modal {
-    padding: 50px 150px;
+    padding: 35px 150px;
     max-width: 600px;
 }
 
