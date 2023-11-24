@@ -2,33 +2,13 @@
 {% block content %}
     {% include 'main/includes/navbar.html' %}
     <div class="home-wrapper">
-        <div class="left-bar">
-            {% include 'main/includes/profilebar.html' %}
-        </div>
         <div class="main-area">
-            <div id="top-options-container">
-                <div id="nav-feed-tabs" class="nav-feed-tabs">
-                    <button id="show-feed-activity" class="btn active-feed" onclick="showFeedActivity()"><i class="fa-solid fa-message"></i>Feed</button>
-                    <button id="show-git-activity" class="btn" onclick="showGitActivity()"><i class="fa-brands fa-github"></i>Git</button>
-                </div>
-                <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
+            <div id="post-container">
+
             </div>
-            {% include 'main/includes/createpost.html' %}
-            <div id="post-container" class="active-container">
-                {% for post in posts %}
-                    {% include 'main/includes/feedpost.html' with post=post %}
-                {% endfor %}
-            </div>
-            <!-- This includes the html for gitfeed and the outer div has id="git-container" -->
-            {% include 'main/includes/gitcontainer.html' %}
-            <!-- --------------------------------------------------------------------------- -->
-        </div>
-        <div class="right-bar">
-            {% include 'main/includes/followrequests.html' %}
-            {% include 'main/includes/findauthorsbar.html' %}
         </div>
     </div>
-    
+
     <div id="delete-post-dialog" class="popup-modal">
         <p>Are you sure you want to permanantly delete this post?</p>
         <div class="button-wrap">
@@ -52,18 +32,6 @@
             postElement.id = "post-block-" + id;
             postElement.setAttribute('data-post-id', id);
 
-            if (post['source'] !== null) {
-                shared = `<i style="height: 20px; width: 20px;" class="fa-solid fa-retweet"></i> `
-            } else {
-                shared = ``
-            }
-
-            if (post['unlisted'] === true) {
-                unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${id}</p></a>`
-            } else {
-                unlisted = ``
-            }
-
             var likeButton = ''
             if (post['liked'] === 1) {
                 likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
@@ -73,13 +41,9 @@
 
             if (authorId === "{{author.id}}") {
                 deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
-            } else {
-                deleteButton = ""
-            }
-
-            if (authorId === "{{author.id}}" && post['source'] === null) {
                 dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
             } else {
+                deleteButton = ""
                 dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
             }
             
@@ -109,9 +73,8 @@
                         </div>
                     </div>
                     <div class="post-body">
-                        <p id="post-username-${id}">${shared}${post['author']['displayName']}</p>
-                        <time id="post-timestamp-${id}">${readableDate} at ${readableTime}</time>
-                        ${unlisted}
+                        <p id="post-username-${id}">${post['author']['displayName']}</p>
+                        <time id="post-timestamp-${id}">${readableDate} ${readableTime}</time>
                         <p id="post-title-${id}">${post['title']}</p>
                         <p id="post-description-${id}">${post['description']}</p>
                         <p id="post-categories-${id}">${post['categories']}</p>
@@ -119,7 +82,7 @@
                     </div>
                     <div class="post-btn-wrap" id="post-btn-wrap-${id}">
                         ${likeButton}
-                        <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                        <button type="submit" id="share-button-${id}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                         ${deleteButton}
                     </div>
                 </div>
@@ -133,18 +96,7 @@
             }
         }
 
-        $(document).on('click', '.dropdown-toggle', function () {
-            var dropdown = $(this).siblings('.dropdown-menu');
-            $('.dropdown-menu').not(dropdown).removeClass('show');
-            dropdown.toggleClass('show');
-        });
-    
-        // Close dropdown when clicking outside
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('.dropdown').length) {
-                $('.dropdown-menu').removeClass('show');
-            }
-        });
+        addPost(JSON.parse("{{ post | escapejs }}"))
 
         function editPost(id, contentType) {
             if ($(`#like-button-${id}`).hasClass('hide') === false) {
@@ -263,35 +215,6 @@
             $(`#delete-button-${id}`).removeClass('hide')
         }
 
-        function sharePost(postID, authorID, origin, source) {
-            if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
-                console.log("SHAREABLE")
-                var csrf_token = "{{ csrf_token }}";
-                $.ajaxSetup({
-                    beforeSend: function(xhr, settings) {
-                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
-                        }
-                    }
-                });
-                $.ajax({
-                    type: "POST",
-                    url: `/service/authors/{{ author.id }}/posts/`,
-                    data: JSON.stringify({
-                        'source': `${window.location.href}`,
-                        'post_id': postID,
-                    }),
-                    contentType: 'application/json',
-                    error: function (error) {
-                        console.error(error);
-                        alert("There was an error making your post, please try again")
-                    }
-                })
-            } else {
-                alert("You cannot share this post twice")
-            }
-        }
-
         function showDeleteConfirmation(postID) {
             // Set a global variable to store the post ID to be deleted
             window.postToDelete = postID;
@@ -329,8 +252,7 @@
                 url: `/service/authors/{{author.id}}/posts/${id}`,
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        $(`#post-block-${id}`).remove()
-                        postIDs = postIDs.filter(item => item[0] !== `${id}`);
+                        window.location.href = "/"
                     }
                 },
                 error: function (error) {
@@ -338,60 +260,6 @@
                 }
             })
         }
-
-        //If the document is freshly loaded
-        $(document).ready(function() {
-            function initInbox() {
-                $.ajax({
-                    type: "GET",
-                    url: "/api/get-old-inbox-info/",
-                    dataType: 'json',
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            for (const post in response) {
-                                console.log(response[post])
-                                if (response[post]['type'] === 'post') {
-                                    addPost(response[post])
-                                } else {
-                                    console.log("NOT POST")
-                                }
-                            }
-                            oldPostsRetrieved = true
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
-                    }
-                })
-            }
-
-            initInbox();
-        })
-
-        function retrievePosts() {
-            if (oldPostsRetrieved) {
-                $.ajax({
-                    type: "GET",
-                    url: "/api/get-new-inbox-info/",
-                    dataType: 'json',
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            for (const post in response) {
-                                if (response[post]['type'] === 'post') {
-                                    addPost(response[post])
-                                } else {
-                                    console.log("NOT POST")
-                                }
-                            }
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
-                    }
-                })
-            }
-        }
-        setInterval(retrievePosts, 2000)
 
         function likePost(postID, authorID, origin) {
             var csrf_token = "{{ csrf_token }}";
@@ -435,6 +303,7 @@
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${origin}')`)
+                        
                         updatePostData([[postID, authorID, origin]])
                     }
                 },
@@ -444,12 +313,20 @@
             })
         }
 
-        function updateAllPosts() {
+        function updatePost() {
             updatePostData(postIDs)
         }
-        setInterval(updateAllPosts, 2000) //2 second refresh
+        setInterval(updatePost, 2000) //2 second refresh
 
         function checkForDeletedPosts() {
+
+            url = new URL(window.location.href)
+            if (url.port !== '') {
+                loc = url.protocol + '//' + url.hostname + ':' + url.port + '/'
+            } else {
+                loc = url.protocol + '//' + url.hostname + '/'
+            }
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -463,14 +340,14 @@
                 url: `/api/get-deleted-posts/`,
                 data: JSON.stringify({
                     'ids': postIDs,
-                    'location': `${window.location.href}`
+                    'location': loc
                 }),
                 contentType: 'application/json',
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
+                        console.log(response)
                         for (const post in response) {
-                            $(`#post-block-${response[post]}`).remove()
-                            postIDs = postIDs.filter(item => item[0] !== `${response[post]}`);
+                            window.location.href = "/"
                         }
                     }
                 },
@@ -479,9 +356,17 @@
                 }
             })
         }
-        setInterval(checkForDeletedPosts, 2000) //5 second refresh
+        setInterval(checkForDeletedPosts, 2000) //2 second refresh
 
         function updatePostData(postIDs) {
+
+            url = new URL(window.location.href)
+            if (url.port !== '') {
+                loc = url.protocol + '//' + url.hostname + ':' + url.port + '/'
+            } else {
+                loc = url.protocol + '//' + url.hostname + '/'
+            }
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -495,7 +380,7 @@
                 url: `/api/get-post-data/`,
                 data: JSON.stringify({
                     'ids': postIDs,
-                    'location': `${window.location.href}`
+                    'location': loc
                 }),
                 contentType: 'application/json',
                 success: function (response, textStatus, http) {

@@ -71,6 +71,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
+#our node has to store all likes on things it hosts, AND all likes from authors it hosts (including to other nodes)
 class Like(models.Model): 
     id = models.AutoField(primary_key=True)
     author = models.ForeignKey(Author, related_name='likes', on_delete=models.CASCADE)

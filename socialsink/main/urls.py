@@ -10,6 +10,7 @@ urlpatterns = [
     path('docs/', TemplateView.as_view(template_name='docs.html', extra_context={'schema_url':'api_schema'}), name='swagger-ui'),
     path("login/", views.login, name="login"),
     path("register/", views.register, name="register"),
+    path("posts/<str:id>", views.displayPost, name="displayPost"),
     path("", views.homepage, name="homepage"),
     path("api/login/", views.loginRequest, name="loginRequest"),
     path("api/logout/", views.logoutRequest, name="logoutRequest"),
@@ -32,4 +33,9 @@ urlpatterns = [
     path("service/authors/<str:author_id>/followers/<str:foreign_author_id>/", views.followerReqHandler, name="followerReqHandler"),
     path("service/authors/<str:author_id>/posts/<str:post_id>/", views.postReqHandler, name="postReqHandler"),
     path("service/authors/<str:author_id>/posts/", views.postCreationReqHandler, name="postCreationReqHandler"),
+    path("service/authors/<str:author_id>/posts/<str:post_id>/comments/", views.commentReqHandler, name="commentReqHandler"),
+    path("service/authors/<str:author_id>/inbox/", views.inboxReqHandler, name="inboxReqHandler"),
+    path("service/authors/<str:author_id>/posts/<str:post_id>/likes/", views.getPostLikes, name="likeReqHandler"),
+    path("service/authors/<str:author_id>/posts/<str:post_id>/comments/<str:comment_id>/likes/", views.getCommentLikes, name="commentLikeReqHandler"),
+    path("service/authors/<str:author_id>/liked/", views.getAuthorLiked, name="authorLikedReqHandler"),
 ]
