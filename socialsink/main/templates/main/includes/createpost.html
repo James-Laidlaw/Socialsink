@@ -1,41 +1,44 @@
 {% block content %}
-<div class="feed-post create-new">
-    <form class="post-content" onsubmit="submitPost(event)">
-        {% csrf_token %}
-        <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
-        <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
-        <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
-        <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
-        <div class="hide" id="image-preview-container">
-            <img id="image-preview" src="#" alt="preview">
-            <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="post-btn-wrap">
-            <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
-            <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
-            <div class="content-type-select-wrap">
-                <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
-                    <option value="text/plain">Plaintext</option>
-                    <option value="text/markdown">Markdown</option>
-                </select>
+<div id="create-accordion" class="crete-new-active">
+    <div id="create-new-post-card" class="feed-post create-new">
+        <form class="post-content" onsubmit="submitPost(event)">
+            {% csrf_token %}
+            <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
+            <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
+            <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
+            <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
+            <div class="hide" id="image-preview-container">
+                <img id="image-preview" src="#" alt="preview">
+                <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="publicity-select-wrap">
-                <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
-                    <option value="public">Public</option>
-                    <option value="friends">Friends</option>
-                    <option value="unlisted">Unlisted</option>
-                </select>
+            <div class="post-btn-wrap">
+                <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
+                <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
+                <div class="content-type-select-wrap">
+                    <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
+                        <option value="text/plain">Plaintext</option>
+                        <option value="text/markdown">Markdown</option>
+                    </select>
+                </div>
+                <div class="publicity-select-wrap">
+                    <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
+                        <option value="public">Public</option>
+                        <option value="friends">Friends</option>
+                        <option value="unlisted">Unlisted</option>
+                    </select>
+                </div>
+                <div>
+                    <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
+                    <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
             </div>
-            <div>
-                <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
-                <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
-            </div>
-            <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>
+
     photoAttachment = document.getElementById("photo-attachment")
 
     function submitPost(e) {

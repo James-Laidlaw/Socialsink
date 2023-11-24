@@ -17,7 +17,7 @@
     --medium-grey: #28343e;
     --light-grey: #606e7a;
     --button-text: #9ba9b6;
-    --design-padding: 30px;
+    --design-padding: 20px;
     --card-round-border: 14px;
 }
 
@@ -97,7 +97,7 @@ button {
 .site-header {
     display: inline-flex;
     flex-direction: row;
-    height: 80px;
+    height: 60px;
     padding: 20px 25px 0;
     background: none;
     box-sizing: border-box;
@@ -279,10 +279,13 @@ main {
     /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
+/* Main Containers and Bars Starts ----------------- */
+
 .main-area {
+    position: relative;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* overflow: hidden; */
     flex-grow: 1;
     flex-basis: 50%;
     margin-left: 9px;
@@ -313,12 +316,28 @@ main {
 /* Main Containers and Bars Ends ------------------- */
 
 #post-container {
+    display: none;
+}
+
+#post-container.active-container {
+    display: initial;
     overflow-y: overlay;
     scrollbar-gutter: stable;
     border-radius: 16px;
     padding-right: 5px;
 }
 
+#git-container {
+    display: none;
+}
+
+#git-container.active-container {
+    display: initial;
+    overflow-y: overlay;
+    scrollbar-gutter: stable;
+    border-radius: 16px;
+    padding-right: 5px;
+}
 /* Feed Posts Begins ------------------------------- */
 
 .feed-post {
@@ -333,7 +352,7 @@ main {
     border-radius: var(--card-round-border);
 }
 
-.feed-post:last-of-type {
+#post-container .feed-post:last-of-type {
     margin-bottom: 0;
 }
 
@@ -532,11 +551,23 @@ main {
 
 /* Create Post Begins -------------------------- */
 
+/* #create-accordion {
+    position: relative;
+} */
+
+#create-accordion .feed-post {
+    display: none;
+}
+
+#create-accordion.expanded .feed-post {
+    display: flex;
+}
+
 .feed-post.create-new {
     width: calc(100% - 9px);
-    min-height: 348px;
+    min-height: 346px;
     margin-right: auto;
-    transition: min-height 500ms ease 0s;
+    transition: min-height 500ms ease 0s, height 500ms ease 0s;
 }
 
 .feed-post.create-new.upload-img {
@@ -1061,3 +1092,54 @@ body.has-popup-modal:before {
 }
 
 /* Edit Profile Ends ---------------------- */
+
+/* Nav Feed Tabs Begins ------------------- */
+
+#top-options-container {
+    display: flex;
+    justify-content: space-between;
+    width: calc(100% - 9px);
+    margin: 0 auto 16px 0;
+    align-items: flex-start;
+}
+
+#toggle-create-window,
+#nav-feed-tabs button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    color: var(--button-text);
+    background: none;
+    border-radius: var(--card-round-border);
+    border: 2px solid var(--medium-grey);
+    min-width: 140px;
+    min-height: 50px;
+    transition: all 500ms ease 0s;
+    letter-spacing: 0.25px;
+    padding: 0 20px;
+}
+
+#toggle-create-window:hover,
+#toggle-create-window:focus,
+#nav-feed-tabs button:hover,
+#nav-feed-tabs button:focus {
+    color: var(--button-text);
+    background: var(--dark-gray);
+    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+    opacity: 1;
+}
+
+#nav-feed-tabs {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+}
+
+#nav-feed-tabs button.active-feed {
+    background: var(--dark-gray);
+    opacity: 1;
+}
+
+/* Nav Feed Tabs Ends --------------------- */
