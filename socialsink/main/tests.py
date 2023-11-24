@@ -121,13 +121,12 @@ class YourApiTests(TestCase):
         self.assertEqual(json['unlisted'], False)
         self.assertEqual(json['comments'], 'http://testserver/service/authors/' + str(post.author.id) + '/posts/' + str(post.id) + '/comments')
 
-# TODO uncomment before commit
-    # def test_sign_up(self):
-    #     url = reverse('createAccount')
-    #     # EMAIL MUST BE UNIQUE (CANNOT EXIST ALREADY)
-    #     data = {'username': 'unique_testuser', 'email': 'unique_test_email@mail.com', 'password': 'testpassword'}
-    #     response = self.client.put(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+    def test_sign_up(self):
+        url = reverse('createAccount')
+        # EMAIL MUST BE UNIQUE (CANNOT EXIST ALREADY)
+        data = {'username': 'unique_testuser', 'email': 'unique_test_email@mail.com', 'password': 'testpassword'}
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_login_request(self):
         url = reverse('loginRequest')
@@ -141,14 +140,13 @@ class YourApiTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-# TODO uncomment before commit
-    # def test_get_old_available_posts(self):
-    #     url = reverse('getOldAvailablePosts')
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    #     self.client.force_authenticate(user=self.user)
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_get_old_available_posts(self):
+        url = reverse('getOldAvailablePosts')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_account(self):
         url = reverse('deleteAccount')
@@ -167,19 +165,18 @@ class YourApiTests(TestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-# TODO uncomment before commit
-    # def test_get_post_data(self):
-    #     post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
-    #     like = Like.objects.create(author=self.author, post=post)
-    #     url = reverse('getPostData', args=[post.id])
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-    #     self.client.force_authenticate(user=self.user)
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(int(response.data['count']), 1)
-    #     self.assertEqual(response.data['content'], 'Test post content')
-    #     self.assertEqual(response.data['edited'], False)
+    def test_get_post_data(self):
+        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        like = Like.objects.create(author=self.author, post=post)
+        url = reverse('getPostData', args=[post.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(int(response.data['count']), 1)
+        self.assertEqual(response.data['content'], 'Test post content')
+        self.assertEqual(response.data['edited'], False)
 
     def test_delete_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
