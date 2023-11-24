@@ -25,7 +25,6 @@ import json
 # Create your views here.
 @login_required
 def homepage(request):
-    print(request.user)
     author = Author.objects.get(user=request.user)
     return render(request=request,
                   template_name='main/home.html',
@@ -80,8 +79,6 @@ def displayPost(request, id):
 
 @api_view(['PUT'])
 def createAccount(request):
-    print("Registration request received")
-
     username = request.data['username']
     email = request.data['email']
     password = request.data['password']
@@ -109,8 +106,6 @@ def createAccount(request):
 
 @api_view(['POST'])
 def loginRequest(request):
-    print("Login request received")
-
     username = request.data['username']
     password = request.data['password']
 
@@ -128,15 +123,11 @@ def loginRequest(request):
 
 @api_view(['GET'])
 def logoutRequest(request):
-    print("Logout request received")
-    
     auth_logout(request)
     return Response(status=200)
 
 @api_view(['GET'])
 def getOldInboxInfo(request):
-    print("Get available posts request received")
-
     user = request.user
     if user.is_authenticated:
         data = {}
@@ -159,27 +150,26 @@ def getOldInboxInfo(request):
         #1 Get the posts
         #TODO
         i = 0
-        for aid in aids:
-            author = Author.objects.get(id=aid)
-            posts = author.posts.all()
-            for post in posts:
+        authors = Author.objects.filter(id__in=aids)
+        posts = Post.objects.filter(author__in=authors).order_by('created_at')
+        for post in posts:
 
-                liked = primary_author.likes.filter(post=post)
-                if len(liked) == 0:
-                    liked = 0
-                else:
-                    liked = 1
+            liked = primary_author.likes.filter(post=post)
+            if len(liked) == 0:
+                liked = 0
+            else:
+                liked = 1
 
-                if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and aid == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
+            if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and post.author.id == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
+                post_serializer = PostSerializer(post, context={'request': request})
+                data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                i += 1
+            elif post.publicity == 1:
+                follow = Follower.objects.get(follower=primary_author, followee=post.author)
+                if follow.friendship == True:
                     post_serializer = PostSerializer(post, context={'request': request})
                     data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
                     i += 1
-                elif post.publicity == 1:
-                    follow = Follower.objects.get(follower=primary_author, followee=author)
-                    if follow.friendship == True:
-                        post_serializer = PostSerializer(post, context={'request': request})
-                        data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
-                        i += 1
 
         #2 Get the likes
         #TODO - use future outwards facing API for posts and comments
@@ -192,15 +182,12 @@ def getOldInboxInfo(request):
 
         #TODO - Sort the data (posts, likes, comments) by timestamp
         
-        #print(data)
         return Response(data, status=200)
     else:
         return Response(status=401)
 
 @api_view(['GET'])
 def getNewInboxInfo(request):
-    print("Get available posts request received")
-
     user = request.user
     if user.is_authenticated:
         data = {}
@@ -224,28 +211,26 @@ def getNewInboxInfo(request):
         #TODO
         i = 0
         oldDate = datetime.now(pytz.timezone('America/Edmonton')) - timedelta(seconds=2)
-        for aid in aids:
-            author = Author.objects.get(id=aid)
-            posts = author.posts.filter(created_at__gte=oldDate).all()
-            for post in posts:
+        authors = Author.objects.filter(id__in=aids)
+        posts = Post.objects.filter(author__in=authors, created_at__gte=oldDate).order_by('created_at')
+        for post in posts:
 
-                liked = primary_author.likes.filter(post=post)
-                if len(liked) == 0:
-                    liked = 0
-                else:
-                    liked = 1
-
-                
-                if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and aid == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
+            liked = primary_author.likes.filter(post=post)
+            if len(liked) == 0:
+                liked = 0
+            else:
+                liked = 1
+            
+            if ((post.publicity == 0 and post.unlisted == False) or (post.publicity == 1 and aid == primary_author.id)) or (post.unlisted == True and post.author == primary_author):
+                post_serializer = PostSerializer(post, context={'request': request})
+                data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
+                i += 1
+            elif post.publicity == 1:
+                follow = Follower.objects.get(follower=primary_author, followee=post.author)
+                if follow.friendship == True:
                     post_serializer = PostSerializer(post, context={'request': request})
                     data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
                     i += 1
-                elif post.publicity == 1:
-                    follow = Follower.objects.get(follower=primary_author, followee=author)
-                    if follow.friendship == True:
-                        post_serializer = PostSerializer(post, context={'request': request})
-                        data[i] = post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}
-                        i += 1
 
         #2 Get the likes
         #TODO - use future outwards facing API for posts and comments
@@ -258,7 +243,6 @@ def getNewInboxInfo(request):
 
         #TODO - Sort the data (posts, likes, comments) by timestamp
         
-        #print(data)
         return Response(data, status=200)
     else:
         return Response(status=401)
@@ -289,8 +273,6 @@ def deleteAccount(request):
 
 @api_view(['DELETE'])
 def deletePost(request, id):
-    print("Delete post request received")
-
     user = request.user
     
     if user.is_authenticated:
@@ -311,8 +293,6 @@ def deletePost(request, id):
 
 @api_view(['POST'])
 def likePost(request, id):
-    print("Like post request received")
-
     user = request.user
     if user.is_authenticated:
     
@@ -331,8 +311,6 @@ def likePost(request, id):
 
 @api_view(['DELETE'])
 def unlikePost(request, id):
-    print("Unlike Post request received")
-
     user = request.user 
     if user.is_authenticated:
     
@@ -351,8 +329,6 @@ def unlikePost(request, id):
 
 @api_view(['POST'])
 def getPostData(request):
-    print("Get Like Count request received")
-
     user = request.user
     if user.is_authenticated:
 
@@ -401,8 +377,6 @@ def getPostData(request):
 
 @api_view(['POST'])
 def getDeletedPosts(request):
-    print("Get Deleted Posts request received")
-
     user = request.user
     if user.is_authenticated:
         
@@ -423,7 +397,6 @@ def getDeletedPosts(request):
                 #TODO - need to check external origin for post (check if 404 or not)
                 pass
         
-        print(data)
         return Response(data, status=200)
     else:
         return Response(status=401)
@@ -523,8 +496,6 @@ def handleFollow(request):
                 
 @api_view(['PUT'])
 def updateUser(request, id):
-    print("Update User request received")
-
     user = request.user
     if user.is_authenticated and user.id == id:
         
@@ -799,53 +770,85 @@ def createPost(request, author_id):
     if author == None:
         return Response(status=404)
     
-
     default_origin = f'http://{request.get_host()}/author/{author_id}/'
     #try:
-    title = request.data.get('title')
-    description = request.data.get('description')
-    categories = request.data.get('categories', '')
-    content = request.data.get('content')
-    contentType = request.data.get('contentType', 'text/plain')
-    publicity = request.data.get('publicity')
-    origin = request.data.get('origin', default_origin)
-    image = request.data.get('image')
 
-    if image:
-        contentType = content.split(",")[0].split(":")[1]
+    source = request.data.get('source')
+    if source == '':
+        title = request.data.get('title')
+        description = request.data.get('description')
+        categories = request.data.get('categories', '')
+        content = request.data.get('content')
+        contentType = request.data.get('contentType', 'text/plain')
+        publicity = request.data.get('publicity')
+        origin = request.data.get('origin', default_origin)
+        image = request.data.get('image')
 
-    unlisted = False
-    if publicity == 'public':
-        publicity = 0
-    elif publicity == 'friends':
-        publicity = 1
-    elif publicity == 'unlisted':
-        publicity = 0
-        unlisted = True
+        if image:
+            contentType = content.split(",")[0].split(":")[1]
+
+        unlisted = False
+        if publicity == 'public':
+            publicity = 0
+        elif publicity == 'friends':
+            publicity = 1
+        elif publicity == 'unlisted':
+            publicity = 0
+            unlisted = True
+        else:
+            publicity = -1 #Unknown publicity
+
+        post = Post(
+                author=author,
+                title=title,
+                description=description,
+                categories=categories,
+                contentType=contentType,
+                content=content,
+                origin=origin,
+                publicity=publicity,
+                unlisted=unlisted,
+                created_at=datetime.now(pytz.timezone('America/Edmonton'))
+            )
+
+        post.save()
+
+        origin += f'posts/{post.id}'
+
+        post.origin = origin
+
+        post.save()
+
+        return Response(status=201)
     else:
-        publicity = -1 #Unknown publicity
+        id = request.data.get('post_id')
+        
+        post = Post.objects.get(id=id)
+        if post == None:
+            return Response(status=404)
 
-    post = Post(
+        new_post = Post(
             author=author, 
-            title=title,
-            description=description,
-            categories=categories,
-            contentType=contentType,
-            content=content,
-            origin=origin,
-            publicity=publicity,
-            unlisted=unlisted,
-            created_at=datetime.now(pytz.timezone('America/Edmonton'))
+            title=post.title,
+            description=post.description,
+            categories=post.categories,
+            contentType=post.contentType,
+            content=post.content,
+            source=source,
+            origin=post.origin,
+            publicity=post.publicity,
+            unlisted=post.unlisted,
+            created_at=post.created_at
         )
 
-    post.save()
+        new_post.save()
 
-    origin += f'posts/{post.id}'
-    post.origin = origin
+        source += f"posts/{new_post.id}"
+        new_post.source = source
 
-    post.save()
+        new_post.save()
 
-    return Response(status=201)
+        return Response(status=201)
     #except:
     #    return Response(status=400)
     
