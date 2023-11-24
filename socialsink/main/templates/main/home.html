@@ -29,21 +29,9 @@
         </div>
     </div>
     
-    <div id="delete-post-dialog" class="popup-modal">
-        <p>Are you sure you want to permanantly delete this post?</p>
-        <div class="button-wrap">
-            <button id="confirm-delete-post-yes" class="confirm-red">Yes</button>
-            <button id="confirm-delete-post-no">No</button>
-        </div>
-    </div>
-
-    <div id="reshare-post-dialog" class="popup-modal">
-        <p>Are you sure you want to re-share this post?</p>
-        <div class="button-wrap">
-            <button id="confirm-reshare-post-yes" class="confirm-red">Yes</button>
-            <button id="confirm-reshare-post-no">No</button>
-        </div>
-    </div>
+    <!-- Includes the popup modals, like confirm delete and confirm share post -->
+    {% include 'main/includes/popupmodals.html' %}
+    <!-- --------------------------------------------------------------------- -->
 
     <script>
         const feedContainer = document.getElementById("post-container");
@@ -79,6 +67,7 @@
                 likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
             }
 
+            // showDeleteConfirmation function can be found in the popupmodals.html file under scripts
             if (authorId === "{{author.id}}") {
                 deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
             } else {
@@ -105,6 +94,8 @@
 
             // Construct the post content using the provided data
             // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+
+            // showReshareConfirmation function can be found in the popupmodals.html file under scripts
             postElement.innerHTML = `
                 <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
                 <div class="post-content">
@@ -271,34 +262,6 @@
             $(`#delete-button-${id}`).removeClass('hide')
         }
 
-        // -------------------------------------------------------------------------------------------
-
-        function showReshareConfirmation(postID, authorID, origin, source) {
-            
-            // Set a global variable to store the post ID to be reshared
-            window.ResharePostID = postID;
-            window.ReshareAuthorID = authorID;
-            window.ReshareOrigin = origin;
-            window.ReshareSource = source;
-
-            // Show the custom confirmation dialog
-            $("#reshare-post-dialog").addClass("show");
-            $("body").toggleClass("has-popup-modal");
-        }
-
-        $("#confirm-reshare-post-yes").click(function() {
-            // Execute the post reshare logic when the user clicks "Yes"
-            sharePost(window.ResharePostID, window.ReshareAuthorID, window.ReshareOrigin, window.ReshareSource);
-            $("#reshare-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
-        $("#confirm-reshare-post-no").click(function() {
-            // Cancel the post reshare action when the user clicks "No"
-            $("#reshare-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
         function sharePost(postID, authorID, origin, source) {
             if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
                 console.log("SHAREABLE")
@@ -327,31 +290,7 @@
                 alert("You cannot share this post twice")
             }
         }
-
-        // -------------------------------------------------------------------------------------------
-
-        function showDeleteConfirmation(postID) {
-            // Set a global variable to store the post ID to be deleted
-            window.postToDelete = postID;
-
-            // Show the custom confirmation dialog
-            $("#delete-post-dialog").addClass("show");
-            $("body").toggleClass("has-popup-modal");
-        }
-
-        $("#confirm-delete-post-yes").click(function() {
-            // Execute the post deletion logic when the user clicks "Yes"
-            deletePost(window.postToDelete);
-            $("#delete-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
-        $("#confirm-delete-post-no").click(function() {
-            // Cancel the post deletion action when the user clicks "No"
-            $("#delete-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
+        
         function deletePost(id) {
 
             var csrf_token = "{{ csrf_token }}";
@@ -376,8 +315,6 @@
                 }
             })
         }
-
-        // -------------------------------------------------------------------------------------------
 
         //If the document is freshly loaded
         $(document).ready(function() {
