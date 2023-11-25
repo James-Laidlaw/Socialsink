@@ -1,42 +1,75 @@
 {% block content %}
-<div class="feed-post create-new">
-    <form class="post-content" onsubmit="submitPost(event)">
-        {% csrf_token %}
-        <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
-        <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
-        <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
-        <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
-        <div class="hide" id="image-preview-container">
-            <img id="image-preview" src="#" alt="preview">
-            <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="post-btn-wrap">
-            <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
-            <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
-            <div class="content-type-select-wrap">
-                <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
-                    <option value="text/plain">Plaintext</option>
-                    <option value="text/markdown">Markdown</option>
-                </select>
+<div id="create-accordion" class="crete-new-active">
+    <div id="create-new-post-card" class="feed-post create-new">
+        <form class="post-content" onsubmit="submitPost(event)">
+            {% csrf_token %}
+            <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
+            <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
+            <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
+            <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
+            <div class="hide" id="image-preview-container">
+                <img id="image-preview" src="#" alt="preview">
+                <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="publicity-select-wrap">
-                <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
-                    <option value="public">Public</option>
-                    <option value="friends">Friends</option>
-                    <option value="unlisted">Unlisted</option>
-                </select>
+            <div class="flex-btn-wrap">
+                <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
+                <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
+                <div class="content-type-select-wrap">
+                    <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
+                        <option value="text/plain">Plaintext</option>
+                        <option value="text/markdown">Markdown</option>
+                    </select>
+                </div>
+                <div class="publicity-select-wrap">
+                    <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
+                        <option value="public">Public</option>
+                        <option value="friends">Friends</option>
+                        <option value="unlisted">Unlisted</option>
+                    </select>
+                </div>
+                <div>
+                    <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
+                    <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
             </div>
-            <div>
-                <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
-                <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
-            </div>
-            <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>
+
     photoAttachment = document.getElementById("photo-attachment")
+
+    var hosts = []
+    async function getHosts() {
+        await $.ajax({
+            type: "GET",
+            url: `/api/get-node-hosts/`,
+            success: function (response, textStatus, http) {
+                hosts = response
+            },
+            error: function (error) {
+                console.error(error)
+            }
+        })
+    }
+    getHosts()
+
+    function getHostFromUrl(input) {
+        var parts = input.split('/')
+        var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+        return hostURL
+    }
+
+    function getAuth(input) {
+        for (const item in hosts) {
+            if (hosts[item][0] === input) {
+                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+            }
+        }
+    }
+    
 
     function submitPost(e) {
         e.preventDefault()
@@ -77,6 +110,7 @@
                         'content': `${e.target.result}`,
                         'contentType': contentType.value,
                         'publicity': publicity.value,
+                        'source': '',
                         'origin': origin,
                         'image': true,
                     }))
@@ -92,6 +126,7 @@
                     'content': content.value,
                     'contentType': contentType.value,
                     'publicity': publicity.value,
+                    'source': '',
                     'origin': origin,
                     'image': false,
                 }))
@@ -100,7 +135,6 @@
             }
         }
     }
-
     function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
@@ -115,6 +149,7 @@
             url: `/service/authors/${author_id}/posts/`,
             data: formData,
             contentType: 'application/json',
+            headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 
@@ -128,6 +163,56 @@
                     
                     if (photoAttachment.files[0]) {
                         removePhoto()
+                    }
+
+                    const post = response
+                    console.log(post)
+
+                    //THIS IS FOR POSTING TO THIS USERS INBOX
+                    $.ajax({
+                        type: "POST",
+                        url: `/service/authors/${author_id}/inbox/`,
+                        data: post,
+                        contentType: 'application/json',
+                        headers: getAuth(window.location.href),
+                        success: function (response, textStatus, http) {
+                            console.log(response)
+                        },
+                        error: function(error) {
+                            console.error(error)
+                        }
+                    })
+
+                    postJson = JSON.parse(post)
+                    if (postJson['unlisted'] === false) {
+                        for (const host in hosts) {
+                            $.ajax({
+                                type: "GET",
+                                url: `${hosts[host][0]}/service/authors/${author_id}/followers`,
+                                headers: getAuth(hosts[host][0]),
+                                success: function (response, textStatus, http) {
+                                    for (const follower in response['items']) {
+                                        const id = response['items'][follower]['id'].split('/').at(-2)
+                                        $.ajax({
+                                            type: "POST",
+                                            url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                            data: post,
+                                            contentType: 'application/json',
+                                            headers: getAuth(hosts[host][0]),
+                                            success: function (response, textStatus, http) {
+                                                console.log(response)
+                                            },
+                                            error: function(error) {
+                                                console.error(error)
+                                            }
+                                        })
+                                    }
+                                },
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
+                        }
                     }
                 }
             },

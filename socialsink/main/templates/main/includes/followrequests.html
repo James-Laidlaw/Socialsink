@@ -1,4 +1,4 @@
-<div id="follow-requests-bar" style="overflow: hidden;">
+<div id="follow-requests-bar">
     <h4 class="heading">Follow Requests</h4>
     <div class="request-box">
         <!-- CONTENT ENTERS HERE -->
@@ -72,9 +72,9 @@
                                         <div>
                                             <p class="author-username">${username}</p>
                                         </div>
-                                        <div>
-                                            <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept')">Accept</button>
-                                            <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss')">Dismiss</button>
+                                        <div class="flex-btn-wrap">
+                                            <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept')"><i class="fa-regular fa-circle-check"></i></button>
+                                            <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss')"><i class="fa-regular fa-circle-xmark"></i></button>
                                         </div>
                                     </div>`;
         return follow_request;
@@ -86,7 +86,7 @@
             url: "api/follow-requests/",
             contentType: 'application/json',
             success: function (response, textStatus, http) {
-                console.log(response)
+                //console.log(response)
             },
             error: function (error) {
                 console.error(error);

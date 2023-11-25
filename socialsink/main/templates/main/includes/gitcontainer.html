@@ -1,0 +1,85 @@
+<div id="git-container">        
+    <div class="git-activity-feed"></div>
+</div>
+
+<script>
+
+    function updateGitActivity() {
+        // Set the CSRF token for AJAX requests
+        var csrf_token = "{{ csrf_token }}";
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+
+        var gitActivityFeed = $("#git-container .git-activity-feed");
+        var gitHubUsername = "{{ author.github }}"
+        
+        // Check if the user has provided a GitHub username
+        if (gitHubUsername !== "None") {
+            console.log(gitHubUsername)
+            console.log("Updating git activity feed");
+            
+            // Make a GET request to the GitHub API to get the user's activity feed
+            $.ajax({
+                type: "GET",
+                url: `https://api.github.com/users/${gitHubUsername}/events`,
+                contentType: 'application/json',
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        console.log(response);
+
+                        // For each activity item, create a post element and append it to git-activity-feed
+                        response.forEach(function(activity) {
+
+                            // Convert the created_at date to a readable format
+                            const date = new Date(activity.created_at);
+                            const readableDate = date.toDateString();
+                            const readableTime = date.toLocaleTimeString();
+
+                            // Create HTML elements for each activity item with the relevant information
+                            var activityHtml = `
+                                <div class="feed-post existing-post">
+                                    <a href="https://github.com/${gitHubUsername}" target="_blank"><img src="${activity.actor.avatar_url}" class="profile-img"></a>
+                                    <div class="post-content">    
+                                        <div class="post-body">
+                                            <p>${gitHubUsername}</p>
+                                            <time>Time: ${readableDate} at ${readableTime}</time>
+                                            <p>Type: ${activity.type}</p>
+                                            <p>Repository: ${activity.repo.name}</p>                             
+                                        </div>
+                                    </div>
+                                </div>`;
+                            
+                            // Append the HTML to git-activity-feed
+                            gitActivityFeed.append(activityHtml);
+                        });
+                    }
+                },
+                error: function(error) {
+                    console.log("Error:", error);
+                }
+            });
+        } else {
+            // No GitHub username provided, display a message to the user
+            var activityHtml = `
+                <div class="feed-post existing-post">
+                    <div class="post-content">
+                        <h4>No GitHub Username provided</h3>
+                        <p style="color:var(--button-text);">Provide a GitHub username in the edit user panel to display your GitHub activity feed.</p>
+                    </div>
+                </div>`;
+                            
+            gitActivityFeed.append(activityHtml);
+        }
+    }
+
+    // setInterval(updateGitActivity, 10000);
+    // There is a rate limit on the GitHub API, so we can't update too often
+    // unless authenticated requests is implemented (which is not a priority) - Yevhen 
+    updateGitActivity();
+
+</script>
