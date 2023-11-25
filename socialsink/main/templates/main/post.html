@@ -21,29 +21,61 @@
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
         var postIDs = []
+        var postNum = 0
 
-        function addPost(post) {
+        function getHostFromUrl(input) {
+            var parts = input.split('/')
+            var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+            return hostURL
+        }
+
+        function getAuth(input) {
+            for (const item in hosts) {
+                if (hosts[item][0] === input) {
+                    return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                }
+            }
+        }
+
+        function addPost(post, likeCount, likedPost) {
             id = post['id'].split('/').at(-2)
             authorId = post['author']['id'].split('/').at(-2)
-            postIDs.push([id, authorId, post['origin']])
+            postIDs.push([id, authorId, post['id']])
+            id = postNum
 
             const postElement = document.createElement("div");
-            postElement.classList.add("feed-post", "existing-post");
+            postElement.classList.add("feed-post-wrapper", "existing-post");
             postElement.id = "post-block-" + id;
             postElement.setAttribute('data-post-id', id);
 
-            var likeButton = ''
-            if (post['liked'] === 1) {
-                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
+            if (post['source'] !== null) {
+                shared = `<i style="height: 20px; width: 20px;" class="fa-solid fa-retweet"></i> `
             } else {
-                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['origin']}')">${post['like-count']} <i class="fa-solid fa-heart"></i></button>`
+                shared = ``
+            }
+
+            if (post['unlisted'] === true) {
+                unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${id}</p></a>`
+            } else {
+                unlisted = ``
+            }
+
+            var likeButton = ''
+            if (likedPost) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+            } else {
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
             }
 
             if (authorId === "{{author.id}}") {
                 deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
-                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
             } else {
                 deleteButton = ""
+            }
+
+            if (authorId === "{{author.id}}" && post['source'] === null) {
+                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
+            } else {
                 dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
             }
             
@@ -62,28 +94,39 @@
             // Construct the post content using the provided data
             // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
             postElement.innerHTML = `
-                <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
-                <div class="post-content">
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa-solid fa-ellipsis"></i>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            ${dropdown}
+                <div class="feed-post existing-post">
+                    <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
+                    <div class="post-content">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                ${dropdown}
+                            </div>
+                        </div>
+                        <div class="post-body">
+                            <p id="post-username-${id}">${shared}${post['author']['displayName']}</p>
+                            <time id="post-timestamp-${id}">${readableDate} at ${readableTime}</time>
+                            ${unlisted}
+                            <p id="post-title-${id}">${post['title']}</p>
+                            <p id="post-description-${id}">${post['description']}</p>
+                            <p id="post-categories-${id}">${post['categories']}</p>
+                            ${content}
+                        </div>
+                        <div class="post-btn-wrap" id="post-btn-wrap-${id}">
+                            ${likeButton}
+                            <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                            ${deleteButton}
                         </div>
                     </div>
-                    <div class="post-body">
-                        <p id="post-username-${id}">${post['author']['displayName']}</p>
-                        <time id="post-timestamp-${id}">${readableDate} ${readableTime}</time>
-                        <p id="post-title-${id}">${post['title']}</p>
-                        <p id="post-description-${id}">${post['description']}</p>
-                        <p id="post-categories-${id}">${post['categories']}</p>
-                        ${content}
-                    </div>
-                    <div class="flex-btn-wrap" id="flex-btn-wrap-${id}">
-                        ${likeButton}
-                        <button type="submit" id="share-button-${id}" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
-                        ${deleteButton}
+                </div>
+                <div class="post-comment-content" id="post-comment-container-${id}">
+                    <div class="post-comment-input-wrapper">
+                        <input type="text" id="post-comment-input-${id}" placeholder="Comment" class="form-control" value="">
+                        <div class="post-btn-wrap">
+                            <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-share"><i class="fa-solid fa-comment"></i>Comment</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -94,6 +137,10 @@
             } else {
                 feedContainer.appendChild(postElement)
             }
+
+            postNum = postNum + 1
+
+            return id
         }
 
         addPost(JSON.parse("{{ post | escapejs }}"))
@@ -169,6 +216,7 @@
                         'categories': categoriesText,
                         'content': contentText,
                     }),
+                    headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
                             $(`#save-button-${id}`).remove()
@@ -250,6 +298,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/service/authors/{{author.id}}/posts/${id}`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         window.location.href = "/"
@@ -273,6 +322,7 @@
             $.ajax({
                 type: "POST",
                 url: `/api/like-post/${postID}`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
@@ -299,6 +349,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/unlike-post/${postID}`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
@@ -343,6 +394,7 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         console.log(response)
@@ -383,6 +435,7 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         for (const index in response) {

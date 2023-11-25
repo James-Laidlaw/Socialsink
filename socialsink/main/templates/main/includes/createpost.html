@@ -41,6 +41,36 @@
 
     photoAttachment = document.getElementById("photo-attachment")
 
+    var hosts = []
+    async function getHosts() {
+        await $.ajax({
+            type: "GET",
+            url: `/api/get-node-hosts/`,
+            success: function (response, textStatus, http) {
+                hosts = response
+            },
+            error: function (error) {
+                console.error(error)
+            }
+        })
+    }
+    getHosts()
+
+    function getHostFromUrl(input) {
+        var parts = input.split('/')
+        var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+        return hostURL
+    }
+
+    function getAuth(input) {
+        for (const item in hosts) {
+            if (hosts[item][0] === input) {
+                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+            }
+        }
+    }
+    
+
     function submitPost(e) {
         e.preventDefault()
 
@@ -105,7 +135,6 @@
             }
         }
     }
-
     function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
@@ -120,6 +149,7 @@
             url: `/service/authors/${author_id}/posts/`,
             data: formData,
             contentType: 'application/json',
+            headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 
@@ -133,6 +163,56 @@
                     
                     if (photoAttachment.files[0]) {
                         removePhoto()
+                    }
+
+                    const post = response
+                    console.log(post)
+
+                    //THIS IS FOR POSTING TO THIS USERS INBOX
+                    $.ajax({
+                        type: "POST",
+                        url: `/service/authors/${author_id}/inbox/`,
+                        data: post,
+                        contentType: 'application/json',
+                        headers: getAuth(window.location.href),
+                        success: function (response, textStatus, http) {
+                            console.log(response)
+                        },
+                        error: function(error) {
+                            console.error(error)
+                        }
+                    })
+
+                    postJson = JSON.parse(post)
+                    if (postJson['unlisted'] === false) {
+                        for (const host in hosts) {
+                            $.ajax({
+                                type: "GET",
+                                url: `${hosts[host][0]}/service/authors/${author_id}/followers`,
+                                headers: getAuth(hosts[host][0]),
+                                success: function (response, textStatus, http) {
+                                    for (const follower in response['items']) {
+                                        const id = response['items'][follower]['id'].split('/').at(-2)
+                                        $.ajax({
+                                            type: "POST",
+                                            url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                            data: post,
+                                            contentType: 'application/json',
+                                            headers: getAuth(hosts[host][0]),
+                                            success: function (response, textStatus, http) {
+                                                console.log(response)
+                                            },
+                                            error: function(error) {
+                                                console.error(error)
+                                            }
+                                        })
+                                    }
+                                },
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
+                        }
                     }
                 }
             },

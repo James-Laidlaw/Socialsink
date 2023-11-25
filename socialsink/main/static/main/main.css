@@ -345,6 +345,19 @@ main {
 }
 /* Feed Posts Begins ------------------------------- */
 
+.feed-post-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: var(--dark-gray);
+    border-radius: var(--card-round-border);
+}
+
 .feed-post {
     display: inline-flex;
     align-items: flex-start;
@@ -390,6 +403,39 @@ main {
     flex-direction: column;
     flex-grow: 1;
     gap: 16px;
+}
+
+.post-comment-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 16px;
+    padding: 0px 16px 16px 16px;
+    width: 100%;
+}
+
+.post-comment-input-wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.post-comment-content input {
+    color: #fff;
+    background: var(--medium-grey);
+    min-height: 50px;
+    outline: none;
+    border: none;
+    border-radius: var(--card-round-border);
+    letter-spacing: 0.5px;
+}
+
+.post-btn-wrap {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .flex-btn-wrap {
