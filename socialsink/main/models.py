@@ -69,9 +69,9 @@ class Post(models.Model):
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
     is_foreign = models.BooleanField(default=False) # true if the comment is to a remote post
-    author = models.ForeignKey(Author, related_name='comments', on_delete=models.CASCADE, null=True)
+    author_data = models.CharField(max_length=1000, default='')
     foreign_author_id = models.CharField(max_length=200, null=True) # if is_foreign is true, this is the url of the foreign author
-    post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
+    post_endpoint = models.CharField(max_length=1000, default='')
     content = models.CharField(max_length=600)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
@@ -84,8 +84,9 @@ class Like(models.Model):
     is_foreign = models.BooleanField(default=False) # true if the like is from a remote author
     author = models.ForeignKey(Author, related_name='likes', on_delete=models.CASCADE, null=True)
     foreign_author_id = models.CharField(max_length=200, null=True) # if is_foreign is true, this is the url of the foreign author
-    post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE, null=True)
-    comment = models.ForeignKey(Comment, related_name='likes', on_delete=models.CASCADE, null=True)
+    post_endpoint = models.CharField(max_length=1000, default='')
+    summary = models.CharField(max_length=200, default='')
+    comment_endpoint = models.CharField(max_length=1000, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
@@ -95,8 +96,17 @@ User._meta.get_field('email')._unique = True
 
 class Inbox(models.Model):
     id = models.AutoField(primary_key=True)
-    content = models.TextField()
+    endpoint = models.CharField(max_length=1000, default="")
+    type = models.CharField(max_length=200, default="")
     #author who received the notification
     author = models.ForeignKey(Author, related_name='inbox', on_delete=models.CASCADE) 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+
+
+class Node(models.Model):
+    id = models.AutoField(primary_key=True)
+    hostname = models.CharField(max_length=200)
+    username = models.CharField(max_length=200)
+    password = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
