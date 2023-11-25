@@ -317,14 +317,24 @@ def updateUser(request, id):
     user = request.user
     if user.is_authenticated and user.id == id:
         
-        u = User.objects.get(id=id)
-        author = Author.objects.get(user=u)
+        user_object = User.objects.get(id=id)
+        author = Author.objects.get(user=user_object)
 
-        author.bio = request.data["bio"]
+        request_username = request.data["username"]
+        request_bio = request.data["bio"]
+        request_github = request.data["github"]
+
+        if request_username:
+            user_object.username = request_username
+        
+        if request_bio:
+            author.bio = request_bio
+        
+        if request_github:
+            author.github = request_github
+
+        user_object.save()
         author.save()
-
-        u.username = request.data["username"]
-        u.save()
 
         return Response(status=200)
     else:

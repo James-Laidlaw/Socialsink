@@ -177,8 +177,8 @@
 
                 saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id}, '${contentType}')"><i class="fa-solid fa-check"></i>Save</button>`
                 cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${titleText}', '${descriptionText}', '${categoriesText}', '${contentText}', '${contentType}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
-                $(`#post-btn-wrap-${id}`).append(saveButton)
-                $(`#post-btn-wrap-${id}`).append(cancelButton)
+                $(`#flex-btn-wrap-${id}`).append(saveButton)
+                $(`#flex-btn-wrap-${id}`).append(cancelButton)
                 
                 $(`#like-button-${id}`).addClass('hide')
                 $(`#share-button-${id}`).addClass('hide')
