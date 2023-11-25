@@ -1,0 +1,230 @@
+<div id="find-author-bar" style="overflow: hidden;">
+    <h4 class="heading">Who to follow</h4>
+    <div class="author-box"></div>
+</div>
+
+<script>
+    var authorList = [];
+    const authorBox = document.querySelector('.author-box');
+
+    /*
+        Builder function for author panels
+    */
+    function createAuthorPanel(username, id, url, friends, following, requested) {
+        const authorElem = document.createElement('div');
+        authorElem.classList.add('author');
+        authorElem.id = `author-panel-${id}`;
+
+        var action;
+        var text;
+        if (friends) {
+            action = 'unfollow';
+            text = 'Friends';
+        } else if (following) {
+            action = 'unfollow';
+            text = 'Following';
+        } else if (requested) {
+            action = 'unfollow';
+            text = 'Requested';
+        } else {
+            action = 'request';
+            text = 'Follow';
+        };
+
+        authorElem.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+                                <div class="author-content">
+                                    <div>
+                                        <p class="author-username">${username}</p>
+                                    </div>
+                                    <button type="button" id="follow-${id}" class="btn-follow ${action}" onclick="followAuthor(event, '${id}', '${url}')">${text}</button>
+                                </div>`;
+        return authorElem;
+    }
+
+    function checkFollowing() {
+        return $.ajax({
+            type: "GET",
+            url: "api/following/",
+            success: function (response, textStatus, http) {
+                //console.log(response)
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        });
+    }
+
+    /*
+        Handle follow actions in the bar
+    */
+    function followAuthor(e, id, url) {
+        e.preventDefault();
+        button = document.getElementById(`follow-${id}`);
+        var csrf_token = "{{ csrf_token }}";
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                }
+            }
+        });
+        
+        // Not the most robust method but works well
+        // Checks the class list on the action to complete
+        if (button.classList.contains('request')) {
+            // Switching states
+            button.innerText = 'Requested';
+            button.classList.remove("request");
+            button.classList.add("unfollow");
+            // Send request
+            $.ajax({
+                type: "PUT",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id)
+                }),
+                success: function (response, textStatus, http) {
+                    console.log(response)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
+
+        } else if (button.classList.contains('unfollow')) {
+            // Switching states
+            button.innerText = 'Follow';
+            button.classList.remove("unfollow");
+            button.classList.add("request");
+            // Send request
+            $.ajax({
+                type: "DELETE",
+                url: "/api/follow/",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'id': parseInt(id)
+                }),
+                success: function (response, textStatus, http) {
+                    console.log(response)
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
+        }
+    }
+
+    function getHostFromUrl(input) {
+        var parts = input.split('/')
+        var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+        return hostURL
+    }
+
+    function getAuth(input) {
+        for (const item in hosts) {
+            if (hosts[item][0] === input) {
+                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+            }
+        }
+    }
+
+    function addAuthors() {
+        // Nesting two requests
+        $.ajax({
+            type: "GET",
+            url: `/api/get-node-hosts`,
+            success: function (response, textStatus, http) {
+                for (const loc in response) {
+                    if (response[loc][0] !== 'super-coding-team') {
+                        $.ajax({
+                            type: "GET",
+                            url: `${response[loc][0]}/service/authors/`,
+                            data: {
+                                page: 1,
+                                size: 50
+                            },
+                            headers: getAuth(getHostFromUrl(`${response[loc][0]}service/authors/`)),
+                            success: function (response, textStatus, http) {
+                                checkFollowing().done(function (result) {
+                                    var friends = [];
+                                    var followers = [];
+                                    var requests = [];
+                
+                                    for (i in result) {
+                                        if (result[i].friendship) {
+                                            // FRIENDSHIP
+                                            friends.push(result[i].id);
+                                        } else if (result[i].accepted) {
+                                            // FOLLOWING
+                                            followers.push(result[i].id);
+                                        } else {
+                                            // REQUESTED
+                                            requests.push(result[i].id);
+                                        }
+                                    }
+                
+                                    for (i in response) {
+                                        // had to split since its requesting from outward service api
+                                        var id = parseInt(response[i].id.split("/").reverse()[1]);
+                                        
+                                        // Add authors conditionally -> updates if the author id already in place
+                                        if (friends.includes(id)) {
+                                            if (!authorList.includes(id)) {
+                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, true, false, false));
+                                                authorList.push(id);
+                                            } else {
+                                                authorBox.replaceChild(
+                                                    createAuthorPanel(response[i].displayName, id, response[i].id, true, false, false), document.getElementById(`author-panel-${id}`))
+                                            }
+                
+                                        } else if (followers.includes(id)) {
+                                            if (!authorList.includes(id)) {
+                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, true, false));
+                                                authorList.push(id);
+                                            } else {
+                                                authorBox.replaceChild(
+                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, true, false), document.getElementById(`author-panel-${id}`));
+                                            }
+                
+                                        } else if (requests.includes(id)) {
+                                            if (!authorList.includes(id)) {
+                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, false, true));
+                                                authorList.push(id);
+                                            } else {
+                                                authorBox.replaceChild(
+                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, false, true), document.getElementById(`author-panel-${id}`));
+                                            }
+                
+                                        } else {
+                                            if (!authorList.includes(id)) {
+                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, false, false));
+                                                authorList.push(id);
+                                            } else {
+                                                authorBox.replaceChild(
+                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, false, false), document.getElementById(`author-panel-${id}`));
+                                            }
+                
+                                        }
+                                    }
+                                })
+                            },
+                            error: function (error) {
+                                console.error(error);
+                            }
+                        });
+                    }
+                }
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        });
+    }
+
+    addAuthors();
+    // Update interval
+    setInterval(addAuthors, 5000);
+
+    // TESTING
+</script>

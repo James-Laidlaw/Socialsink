@@ -10,6 +10,9 @@
             <input type="password" id="password" name="password" placeholder="Password">
             <button type="submit">Register</button>
         </form>
+        <div class="login-sign-up">
+            <p>Have an account? <a href="/">Sign In</a></p>
+        </div>
     </div>
     <div class="login-right">
         <img src="../../../static/images/login-image.jpg" />
@@ -72,6 +75,9 @@
             error: function (error) {
                 if (error.status === 401) {
                     alert("Username/Email already in use")
+                } else if (error.status === 301) {
+                    alert("Staff have been notified of your signup, please wait while they approve your account")
+                    window.location.href = "/login/"
                 } else {
                     console.error(error);
                 }

@@ -127,3 +127,11 @@ STATIC_URL = '/static/'
 
 SESSION_COOKIE_SECURE = False
 LOGIN_URL = '/login/'
+
+# fix missing trailing slash redirect
+APPEND_SLASH = True
+
+
+#MEDIA
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"

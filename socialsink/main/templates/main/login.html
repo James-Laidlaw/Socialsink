@@ -7,7 +7,7 @@
                 {% csrf_token %}
                 <input type="text" id="username" name="username" autocomplete="false" placeholder="Username">
                 <input type="password" id="password" name="password" placeholder="Password">
-                <a href="/forgot-password/" id="forgot-password">Forgot Password?</a>
+                <!-- <a href="/forgot-password/" id="forgot-password">Forgot Password?</a> -->
                 <button type="submit">Sign In</button>
             </form>
             <div class="login-sign-up">
@@ -49,6 +49,9 @@
                 error: function (error) {
                     if (error.status === 401) {
                         alert("Incorrect username or password")
+                    } else if (error.status === 301) {
+                        alert("Your account is still pending review")
+                        window.location.reload()
                     } else {
                         console.error(error);
                     }

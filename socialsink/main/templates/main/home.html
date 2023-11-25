@@ -6,83 +6,161 @@
             {% include 'main/includes/profilebar.html' %}
         </div>
         <div class="main-area">
+            <div id="top-options-container">
+                <div id="nav-feed-tabs" class="nav-feed-tabs">
+                    <button id="show-feed-activity" class="btn active-feed" onclick="showFeedActivity()"><i class="fa-solid fa-message"></i>Feed</button>
+                    <button id="show-git-activity" class="btn" onclick="showGitActivity()"><i class="fa-brands fa-github"></i>Git</button>
+                </div>
+                <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
+            </div>
             {% include 'main/includes/createpost.html' %}
-            <div id="post-container">
+            <div id="post-container" class="active-container">
                 {% for post in posts %}
                     {% include 'main/includes/feedpost.html' with post=post %}
                 {% endfor %}
             </div>
+            <!-- This includes the html for gitfeed and the outer div has id="git-container" -->
+            {% include 'main/includes/gitcontainer.html' %}
+            <!-- --------------------------------------------------------------------------- -->
         </div>
-        <div class="right-bar"></div>
+        <div class="right-bar">
+            {% include 'main/includes/followrequests.html' %}
+            {% include 'main/includes/findauthorsbar.html' %}
+        </div>
     </div>
-
-    <div id="confirm-dialog" class="popup-modal hidden">
+    
+    <div id="delete-post-dialog" class="popup-modal">
         <p>Are you sure you want to permanantly delete this post?</p>
         <div class="button-wrap">
-            <button id="confirm-yes">Yes</button>
-            <button id="confirm-no">No</button>
+            <button id="confirm-delete-post-yes">Yes</button>
+            <button id="confirm-delete-post-no">No</button>
         </div>
     </div>
 
     <script>
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
-        var posts = 10 //Change this value if we want more posts
         var postIDs = []
+        var postNum = 0
+        var hosts = []
 
-        function addPost(post) {
-            postIDs.push(post[0])
+        async function getHosts() {
+            await $.ajax({
+                type: "GET",
+                url: `/api/get-node-hosts/`,
+                success: function (response, textStatus, http) {
+                    hosts = response
+                },
+                error: function (error) {
+                    console.error(error)
+                }
+            })
+        }
 
-            if (posts === 0) {
-                container.removeChild(container.lastChild)
-                postIDs.shift()
-                posts = posts + 1
+        function getHostFromUrl(input) {
+            var parts = input.split('/')
+            var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+            return hostURL
+        }
+
+        function getAuth(input) {
+            for (const item in hosts) {
+                if (hosts[item][0] === input) {
+                    return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                }
             }
-            
-            console.log(post)
-            console.log("post-block-" + post[0])
+        }
+
+        function addPost(post, likeCount, likedPost) {
+            id = post['id'].split('/').at(-2)
+            authorId = post['author']['id'].split('/').at(-2)
+            postIDs.push([id, authorId, post['id']])
+            id = postNum
 
             const postElement = document.createElement("div");
-            postElement.classList.add("feed-post", "existing-post");
-            postElement.id = "post-block-" + post[0];
-            postElement.setAttribute('data-post-id', post[0]);
+            postElement.classList.add("feed-post-wrapper", "existing-post");
+            postElement.id = "post-block-" + id;
+            postElement.setAttribute('data-post-id', id);
 
-            var likeButton = ''
-            if (post[5] === 1) {
-                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${post[0]}" onclick="unlikePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
+            if (post['source'] !== null) {
+                shared = `<i style="height: 20px; width: 20px;" class="fa-solid fa-retweet"></i> `
             } else {
-                likeButton = `<button type="button" class="btn btn-like" id="like-button-${post[0]}" onclick="likePost(${post[0]})">${post[4]} <i class="fa-solid fa-heart"></i></button>`
+                shared = ``
             }
 
-            if (post[6] === 1) {
-                deleteButton = `<button type="button" class="btn" onclick="showDeleteConfirmation(${post[0]})"><i class="fa-solid fa-trash"></i>Delete</button>`
+            if (post['unlisted'] === true) {
+                unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${postIDs[id][0]}</p></a>`
+            } else {
+                unlisted = ``
+            }
+
+            var likeButton = ''
+            if (likedPost) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+            } else {
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+            }
+
+            if (authorId === "{{author.id}}") {
+                deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
             } else {
                 deleteButton = ""
             }
 
+            if (authorId === "{{author.id}}" && post['source'] === null) {
+                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
+            } else {
+                dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
+            }
+            
+            if (post['contentType'] === 'image/jpeg;base64' || post['contentType'] === 'image/png;base64') {
+                content = `<p id="post-content-${id}"><img id="image-preview" src="${post['content']}" alt="img"></p>`
+            } else {
+                content = `<p id="post-content-${id}">${post['content']}</p>`
+            }
+
+            const timestamp = post['published'];
+            const date = new Date(timestamp);
+
+            const readableDate = date.toDateString();
+            const readableTime = date.toLocaleTimeString();
+
             // Construct the post content using the provided data
+            // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
             postElement.innerHTML = `
-                <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
-                <div class="post-content">
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa-solid fa-ellipsis"></i>
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
+                <div class="feed-post existing-post">
+                    <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
+                    <div class="post-content">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                ${dropdown}
+                            </div>
+                        </div>
+                        <div class="post-body">
+                            <p id="post-username-${id}">${shared}${post['author']['displayName']}</p>
+                            <time id="post-timestamp-${id}">${readableDate} at ${readableTime}</time>
+                            ${unlisted}
+                            <p id="post-title-${id}">${post['title']}</p>
+                            <p id="post-description-${id}">${post['description']}</p>
+                            <p id="post-categories-${id}">${post['categories']}</p>
+                            ${content}
+                        </div>
+                        <div class="post-btn-wrap" id="post-btn-wrap-${id}">
+                            ${likeButton}
+                            <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                            ${deleteButton}
                         </div>
                     </div>
-                    <div class="post-body">
-                        <p id="post-username">${post[1]}</p>
-                        <time id="post-timestamp">${post[2]}</time>
-                        <p id="post-content">${post[3]}</p>
-                    </div>
-                    <div class="post-btn-wrap">
-                        ${likeButton}
-                        <button type="submit" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
-                        ${deleteButton}
+                </div>
+                <div class="post-comment-content" id="post-comment-container-${id}">
+                    <div class="post-comment-input-wrapper">
+                        <input type="text" id="post-comment-input-${id}" placeholder="Comment" class="form-control" value="">
+                        <div class="post-btn-wrap">
+                            <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-share"><i class="fa-solid fa-comment"></i>Comment</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -94,9 +172,290 @@
                 feedContainer.appendChild(postElement)
             }
 
-            console.log("Post added", postElement) 
-            
-            posts = posts - 1
+            postNum = postNum + 1
+
+            return id
+        }
+
+        $(document).on('click', '.dropdown-toggle', function () {
+            var dropdown = $(this).siblings('.dropdown-menu');
+            $('.dropdown-menu').not(dropdown).removeClass('show');
+            dropdown.toggleClass('show');
+        });
+    
+        // Close dropdown when clicking outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('.dropdown').length) {
+                $('.dropdown-menu').removeClass('show');
+            }
+        });
+
+        function postComment(postID, post, author) {
+            text = $(`#post-comment-input-${postID}`).val()
+            if (text.length > 200) {
+                alert("Comment exceeds maximum length (200 characters)")
+            } else if (text.length > 0) {
+                $.ajax({
+                    type: "GET",
+                    url: `${author}`,
+                    headers: getAuth(window.location.href),
+                    success: function (response, textStatus, http) {
+                        var csrf_token = "{{ csrf_token }}";
+                        $.ajaxSetup({
+                            beforeSend: function(xhr, settings) {
+                                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                                }
+                            }
+                        });
+                        $.ajax({
+                            type: "POST",
+                            url: `${post}comments/`,
+                            data: JSON.stringify({
+                                'comment': text,
+                                'author': response
+                            }),
+                            contentType: 'application/json',
+                            headers: getAuth(window.location.href),
+                            success: function(response, textStatus, http) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: `${author}inbox/`,
+                                    data: JSON.stringify(response),
+                                    contentType: 'application/json',
+                                    headers: getAuth(getHostFromUrl(`${author}inbox/`)),
+                                    success: function (response, textStatus, http) {
+                                        console.log(response)
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            },
+                            error: function (error) {
+                                console.error(error);
+                                alert("There was an error posting your comment")
+                            }
+                        })
+                    },
+                    error: function (error) {
+                        console.error(error)
+                    }
+                })
+            }
+        }
+
+        function addComment(postID, comment) {
+            commentContainer = document.getElementById(`post-comment-container-${pid}`)
+            text = comment['content']
+            id = comment['id'].split('/').at(-1)
+
+            const newComment = document.createElement("div");
+            //comment.classList.add("comment")
+            newComment.innerHTML = `
+                ${comment['author']['displayName']} - ${text}
+                <div class="post-btn-wrap">
+                    <button type="button" class="btn btn-like" id="like-comment-button-${id}" onclick="likeComment('${id}')"> <i class="fa-solid fa-heart"></i></button>
+                </div>
+            `
+            commentContainer.appendChild(newComment) 
+        }
+
+        function editPost(id, contentType) {
+            if ($(`#like-button-${id}`).hasClass('hide') === false) {
+                contentText = $(`#post-content-${id}`).text()
+                titleText = $(`#post-title-${id}`).text()
+                descriptionText = $(`#post-description-${id}`).text()
+                categoriesText = $(`#post-categories-${id}`).text()
+
+                $(`#post-title-${id}`).text("")
+                $(`#post-description-${id}`).text("")
+                $(`#post-categories-${id}`).text("")
+                $(`#post-content-${id}`).text("")
+
+                titleBox = `<input type="text" id="edit-post-title-${id}" class="form-control" value="">`
+                descriptionBox = `<input type="text" id="edit-post-description-${id}" class="form-control" value="">`
+                categoriesBox = `<input type="text" id="edit-post-categories-${id}" class="form-control" value="">`
+                
+                contentBox = ``
+                if (contentType === 'text/plain' || contentType === 'text/markdown') {
+                    contentBox = `<input type="text" id="edit-post-content-${id}" class="form-control" value="">`
+                    $(`#post-content-${id}`).append(contentBox)
+                    $(`#edit-post-content-${id}`).val(contentText)
+                }
+
+                $(`#post-title-${id}`).append(titleBox)
+                $(`#post-description-${id}`).append(descriptionBox)
+                $(`#post-categories-${id}`).append(categoriesBox)
+                $(`#edit-post-title-${id}`).val(titleText)
+                $(`#edit-post-description-${id}`).val(descriptionText)
+                $(`#edit-post-categories-${id}`).val(categoriesText)
+
+                saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id}, '${contentType}')"><i class="fa-solid fa-check"></i>Save</button>`
+                cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${titleText}', '${descriptionText}', '${categoriesText}', '${contentText}', '${contentType}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
+                $(`#post-btn-wrap-${id}`).append(saveButton)
+                $(`#post-btn-wrap-${id}`).append(cancelButton)
+                
+                $(`#like-button-${id}`).addClass('hide')
+                $(`#share-button-${id}`).addClass('hide')
+                $(`#delete-button-${id}`).addClass('hide')
+                $(".dropdown-menu").removeClass('show');
+            }
+        }
+
+        function saveEditPost(id, contentType) {
+            contentText = $(`#edit-post-content-${id}`).val()
+            titleText = $(`#edit-post-title-${id}`).val()
+            descriptionText = $(`#edit-post-description-${id}`).val()
+            categoriesText = $(`#edit-post-categories-${id}`).val()
+
+
+            if (titleText.length > 200 || descriptionText.length > 200 || categoriesText.length > 200) {
+                alert("Title/Description/Categories must all be < 200 characters")
+            } else {
+                authorID = "{{author.id}}"
+                var csrf_token = "{{ csrf_token }}";
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: `/service/authors/${authorID}/posts/${id}/`,
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        'title': titleText,
+                        'description': descriptionText,
+                        'categories': categoriesText,
+                        'content': contentText,
+                    }),
+                    headers: getAuth(window.location.href),
+                    success: function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            $(`#save-button-${id}`).remove()
+                            $(`#cancel-button-${id}`).remove()
+                            $(`#edit-post-text-${id}`).remove()
+                            $(`#post-title-${id}`).text(titleText)
+                            $(`#post-description-${id}`).text(descriptionText)
+                            $(`#post-categories-${id}`).text(categoriesText)
+                            $(`#post-content-${id}`).text(contentText)
+
+                            $(`#like-button-${id}`).removeClass('hide')
+                            $(`#share-button-${id}`).removeClass('hide')
+                            $(`#delete-button-${id}`).removeClass('hide')
+                        }
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                })
+            }
+        }
+
+        function cancelEditPost(id, titleText, descriptionText, categoriesText, contentText, contentType) {
+            $(`#post-title-${id}`).show()
+            $(`#post-description-${id}`).show()
+            $(`#post-categories-${id}`).show()
+            $(`#post-content-${id}`).show()
+
+            $(`#edit-post-title-${id}`).remove()
+            $(`#edit-post-description-${id}`).remove()
+            $(`#edit-post-categories-${id}`).remove()
+            $(`#edit-post-content-${id}`).remove()
+
+            $(`#post-title-${id}`).text(titleText)
+            $(`#post-description-${id}`).text(descriptionText)
+            $(`#post-categories-${id}`).text(categoriesText)
+            $(`#post-content-${id}`).text(contentText)
+
+            $(`#save-button-${id}`).remove()
+            $(`#cancel-button-${id}`).remove()
+
+            $(`#like-button-${id}`).removeClass('hide')
+            $(`#share-button-${id}`).removeClass('hide')
+            $(`#delete-button-${id}`).removeClass('hide')
+        }
+
+        function sharePost(postID, authorID, origin, source) {
+            if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
+                console.log("SHAREABLE")
+                var csrf_token = "{{ csrf_token }}";
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
+                $.ajax({
+                    type: "POST",
+                    url: `/service/authors/{{ author.id }}/posts/`,
+                    data: JSON.stringify({
+                        'source': `${window.location.href}`,
+                        'post_id': postID,
+                    }),
+                    contentType: 'application/json',
+                    headers: getAuth(getHostFromUrl(window.location.href)),
+                    success: async function (response, textStatus, http) {
+                        console.log(response)
+                        post = response
+
+                        // SEND THIS TO THIS INBOX
+                        $.ajax({
+                            type: "POST",
+                            url: `/service/authors/${"{{author.id}}"}/inbox/`,
+                            data: post,
+                            contentType: 'application/json',
+                            headers: getAuth(window.location.href),
+                            success: function (response, textStatus, http) {
+                                console.log(response)
+                            },
+                            error: function(error) {
+                                console.error(error)
+                            }
+                        })
+
+                        //SEND TO FOLLOWERS INBOXES
+                        postJson = JSON.parse(post)
+                        if (postJson['unlisted'] === false) {
+                            for (const host in hosts) {
+                                await $.ajax({
+                                    type: "GET",
+                                    url: `${hosts[host][0]}/service/authors/${"{{author.id}}"}/followers`,
+                                    headers: getAuth(hosts[host][0]),
+                                    success: async function (response, textStatus, http) {
+                                        for (const follower in response['items']) {
+                                            const id = response['items'][follower]['id'].split('/').at(-2)
+                                            await $.ajax({
+                                                type: "POST",
+                                                url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                                data: post,
+                                                contentType: 'application/json',
+                                                headers: getAuth(hosts[host][0]),
+                                                error: function(error) {
+                                                    console.error(error)
+                                                }
+                                            })
+                                        }
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            }
+                        }
+                    },
+                    error: function (error) {
+                        console.error(error);
+                        alert("There was an error making your post, please try again")
+                    }
+                })
+            } else {
+                alert("You cannot share this post twice")
+            }
         }
 
         function showDeleteConfirmation(postID) {
@@ -104,21 +463,24 @@
             window.postToDelete = postID;
 
             // Show the custom confirmation dialog
-            $("#confirm-dialog").removeClass("hidden");
+            $("#delete-post-dialog").addClass("show");
+            $("body").toggleClass("has-popup-modal");
         }
 
-        $("#confirm-yes").click(function() {
+        $("#confirm-delete-post-yes").click(function() {
             // Execute the post deletion logic when the user clicks "Yes"
             deletePost(window.postToDelete);
-            $("#confirm-dialog").addClass("hidden");
+            $("#delete-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
         });
 
-        $("#confirm-no").click(function() {
+        $("#confirm-delete-post-no").click(function() {
             // Cancel the post deletion action when the user clicks "No"
-            $("#confirm-dialog").addClass("hidden");
+            $("#delete-post-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
         });
 
-        function deletePost(postID) {
+        function deletePost(id) {
 
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
@@ -130,12 +492,14 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/api/delete-post/${postID}`,
+                url: `/service/authors/{{author.id}}/posts/${id}`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
-                        $(`#post-block-${postID}`).remove()
-                        postIDs = postIDs.filter(item => item !== postID);
+                        $(`#post-block-${id}`).remove()
+                        postIDs = postIDs.filter(item => item[0] !== `${id}`);
+
+                        deletePostFromInbox(id)
                     }
                 },
                 error: function (error) {
@@ -144,42 +508,138 @@
             })
         }
 
-        //If the document is freshly loaded
-        $(document).ready(function() {
-            function displayOldPosts() {
-                $.ajax({
-                    type: "GET",
-                    url: "/api/get-old-available-posts/",
-                    dataType: 'json',
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            console.log("Getting the 10 most recent posts", response)
-                            for (const post in response) {
-                                addPost(response[post])
-                            }
-                            oldPostsRetrieved = true
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
+        function deletePostFromInbox(postID) {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
                     }
-                })
-            }
+                }
+            });
+            $.ajax({
+                type: "DELETE",
+                url: `/api/delete-inbox-item/{{ author.id }}/posts/${postID}`,
+                headers: getAuth(window.location.href),
+                error: function(error) {
+                    console.error(error)
+                }
+            })
+        }
 
-            displayOldPosts();
-        })
+        async function insertPostComplete(postData) {
+            $.ajax({
+                type: "GET",
+                url: `${postData['id']}likes`,
+                headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
+                success: async function (response, textStatus, http) {
+                    liked = false
+                    for (const index in response) {
+                        if (response[index]['author']['id'] === "{{author_endpoint}}") {
+                            liked = true
+                        }
+                    }
+                    pid = addPost(postData, response.length, liked)
+                    if (postData['commentsSrc'] && postData['commentsSrc'].length > 0) {
+                        comments = postData['commentsSrc']
+                        for (const comment in comments) {
+                            addComment(pid, comments[comment])
+                        }
+                    }
+                },
+                error: function(error) {
+                    console.error(error)
+                }
+            })
+        }
 
+        authorID = "{{ author.id }}"
+        async function initInbox() {
+            await getHosts()
+
+            console.log(hosts)
+
+            authorID = "{{ author.id }}"
+            await $.ajax({
+                type: "GET",
+                url: `/service/authors/${authorID}/inbox`,
+                dataType: 'json',
+                headers: getAuth(window.location.href),
+                success: async function (response, textStatus, http) {
+                    console.log(response)
+                    if (http.status === 200) {
+                        for (const post in response['items']) {
+                            if (response['items'][post]['type'] === 'post') {
+                                await $.ajax({
+                                    type: "GET",
+                                    url: `${response['items'][post]['endpoint']}`,
+                                    headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
+                                    success: async function (response, textStatus, http) {
+                                        await insertPostComplete(response)
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            } else {
+                                console.log("NOT A POST")
+                            }
+                        }
+                    }
+                    oldPostsRetrieved = true
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+        initInbox();
+
+        // NEED THIS FUNCTION STILL?
         function retrievePosts() {
             if (oldPostsRetrieved) {
                 $.ajax({
                     type: "GET",
-                    url: "/api/get-new-available-posts/",
+                    url: `/service/authors/${authorID}/inbox`,
                     dataType: 'json',
+                    headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
+                        console.log(response)
                         if (http.status === 200) {
-                            console.log("New posts coming in", response)
-                            for (const post in response) {
-                                addPost(response[post])
+                            for (const post in response['items']) {
+                                if (response['items'][post]['type'] === 'post') {
+                                    $.ajax({
+                                        type: "GET",
+                                        url: `${response['items'][post]['endpoint']}`,
+                                        headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
+                                        success: function (response, textStatus, http) {
+                                            postData = response
+                                            $.ajax({
+                                                type: "GET",
+                                                url: `${postData['id']}likes`,
+                                                headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
+                                                success: function (response, textStatus, http) {
+                                                    liked = false
+                                                    for (const index in response) {
+                                                        console.log(response[index])
+                                                        if (response[index]['author']['id'] === "{{author_endpoint}}") {
+                                                            liked = true
+                                                        }
+                                                    }
+                                                    addPost(postData, response.length, liked)
+                                                },
+                                                error: function(error) {
+                                                    console.error(error)
+                                                }
+                                            })
+                                        },
+                                        error: function(error) {
+                                            console.error(error)
+                                        }
+                                    })
+                                } else {
+                                    console.log("NOT POST")
+                                }
                             }
                         }
                     },
@@ -189,10 +649,10 @@
                 })
             }
         }
-        setInterval(retrievePosts, 5000)
+        //setInterval(retrievePosts, 2000)
 
-        function likePost(postID) {
-            console.log("Liking post")
+        function likePost(postID, authorID, postAuthor, endpoint) {
+            console.log(postIDs[postID][0])
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -203,12 +663,37 @@
             });
             $.ajax({
                 type: "POST",
-                url: `/api/like-post/${postID}`,
+                url: `/service/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID})`)
-                        updateLikeCount(postID)
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
+                        console.log("HERE")
+                        updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
+
+                        $.ajax({
+                            type: "POST",
+                            url: `/service/authors/${"{{author.id}}"}/inbox/`,
+                            data: JSON.stringify(response),
+                            contentType: 'application/json',
+                            headers: getAuth(window.location.href),
+                            error: function(error) {
+                                console.error(error)
+                            }
+                        })
+
+                        
+                        $.ajax({
+                            type: "POST",
+                            url: `${postAuthor}inbox/`,
+                            data: JSON.stringify(response),
+                            contentType: 'application/json',
+                            headers: getAuth(getHostFromUrl(`${postAuthor}inbox/`)),
+                            error: function(error) {
+                                console.error(error)
+                            }
+                        })
                     }
                 },
                 error: function (error) {
@@ -217,8 +702,7 @@
             })
         }
 
-        function unlikePost(postID) {
-            console.log("Unliking Post")
+        function unlikePost(postID, authorID, postAuthor, endpoint) {
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -229,12 +713,14 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/api/unlike-post/${postID}`,
+                url: `/service/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID})`)
-                        updateLikeCount(postID)
+                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
+                        console.log("HERE")
+                        updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
                     }
                 },
                 error: function (error) {
@@ -244,52 +730,72 @@
         }
 
         function updateAllPosts() {
-            console.log("Fetching new like counts if theres changes")
-            for (const postID in postIDs) {
-                updateLikeCount(postIDs[postID])
-            }
+            updatePostData(postIDs)
         }
-        setInterval(updateAllPosts, 30000) //30 second refresh
+        setInterval(updateAllPosts, 2000) //2 second refresh
 
         function checkForDeletedPosts() {
-            $.ajax({
-                type: "GET",
-                url: `/api/get-deleted-posts/`,
-                contentType: 'application/json',
-                data: {
-                    ids: postIDs
-                },
-                success: function (response, textStatus, http) {
-                    if (http.status === 200) {
-                        console.log(response)
-                        for (const post in response) {
-                            $(`#post-block-${response[post]}`).remove()
-                            postIDs = postIDs.filter(item => item !== response[post]);
+            for (const index in postIDs) {
+                postInfo = postIDs[index]
+                $.ajax({
+                    type: "GET",
+                    url: `${postInfo[2]}`,
+                    contentType: 'application/json',
+                    headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
+                    error: function (error) {
+                        if (error.status === 404) {
+                            $(`#post-block-${postInfo[0]}`).remove()
+                            postIDs = postIDs.filter(item => item[0] !== `${postInfo[0]}`);
+
+                            deletePostFromInbox(postInfo[0])
                         }
                     }
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
+                })
+            }
         }
-        setInterval(checkForDeletedPosts, 5000) //30 second refresh
+        setInterval(checkForDeletedPosts, 2000) //5 second refresh
 
-        function updateLikeCount(postID) {
-            console.log("Updating like count")
-            $.ajax({
-                type: "GET",
-                url: `/api/get-like-count/${postID}`,
-                success: function (response, textStatus, http) {
-                    if (http.status === 200) {
-                        console.log(response)
-                        document.getElementById(`like-button-${postID}`).innerHTML = `${response['count']} <i class="fa-solid fa-heart"></i>`
+        async function updatePostData(postIDs) {
+
+            for (const index in postIDs) {
+                postInfo = postIDs[index]
+                id = postInfo[0]
+                await $.ajax({
+                    type: "GET",
+                    url: `${postInfo[2]}`,
+                    headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
+                    success: async function (response, textStatus, http) {
+                        if (http.status === 200) {
+                            if ($(`#like-button-${id}`).is(":visible")) {
+                                await $.ajax({
+                                    type: "GET",
+                                    url: `${postInfo[2]}likes`,
+                                    headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
+                                    success: function (response, textStatus, http) {
+                                        document.getElementById(`like-button-${id}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            
+                                $(`#post-title-${id}`).text(response['title'])
+                                $(`#post-description-${id}`).text(response['description'])
+                                $(`#post-categories-${id}`).text(response['categories'])
+
+                                if (response['contentType'] === 'image/jpeg;base64' || response['contentType'] === 'image/png;base64') {
+                                    $(`#image-previews`).attr('src', response['content'])
+                                } else {
+                                    $(`#post-content-${id}`).text(response['content'])
+                                }
+                            }
+                        }
+                    },
+                    error: function(error) {
+                        console.error(error)
                     }
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
+                })
+            }
         }
     </script>
 {% endblock content %}

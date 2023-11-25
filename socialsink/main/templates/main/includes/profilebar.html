@@ -1,19 +1,141 @@
 <div id="profile-bar" style="overflow: hidden;">
+    <button id="edit-profile-btn" class="button" onclick="showEditProfile()">
+        <i class="fa-solid fa-pencil"></i>
+    </button>
     <img src="../../../static/images/user_bg.jpg" class="user-bg" />
     <img src="../../../static/images/unknown_user.png" class="profile-img" />
     <div class="user-box">
-        <h3 class="username">{{ user.username}}</h3>
-        <p class="useremail">{{ user.email }}</p>
-        <p class="userbio">My user bio can be read here</p>
+        <h3 id="profile-username" class="username">{{ user.username}}</h3>
+        <p id="profile-email" class="useremail">{{ user.email }}</p>
+        <p id="profile-bio" class="userbio">{% if author.bio %}{{ author.bio }}{% endif %}</p>
     </div>
     <div class="follow-box">
         <div>
-            <p class="count">243</p>
+            <p id="following-count" class="count"></p>
             <p class="count-label">Following</p>
         </div>
         <div>
-            <p class="count">72</p>
+            <p id="friend-count" class="count"></p>
             <p class="count-label">Friends</p>
         </div>
     </div>
 </div>
+
+<!-- Edit profile dialog -->
+<div id="edit-profile-dialog" class="popup-modal">
+    <p>Edit your profile here</p>
+    <div id="profile-bar" style="overflow: hidden;">
+        <input type="file" id="profile-banner-attachment" style="display:none" name="photo-attachment" accept="image/*">
+        <img src="../../../static/images/user_bg.jpg" class="user-bg" onclick="chooseBannerImage()" />
+        <div class="edit-profile-image-container">
+            <input type="file" id="profile-photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+            <img src="../../../static/images/unknown_user.png" class="profile-img" onclick="chooseProfileImage()" />
+        </div>
+        <div class="user-box">
+            <p class="useremail">{{ user.email }}</p>
+            <label for="edit-username">Username</label>
+            <input type="text" id="edit-username" class="username form-control" placeholder="{{ user.username }}"/>
+            <label for="edit-username">Bio</label>
+            <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ author.bio }}"/>
+        </div>
+    </div>
+    <div class="button-wrap">
+        <button id="confirm-edit-profile-yes">Save</button>
+        <button id="confirm-edit-profile-no">Cancel</button>
+    </div>
+</div>
+<!-- Edit profile dialog -->
+
+<script>
+
+    function getFollowingCount() {
+        $.ajax({
+            type: "GET",
+            url: "api/following/",
+            success: function (response, textStatus, http) {
+                followingCount = document.getElementById('following-count');
+                friendCount = document.getElementById('friend-count');
+
+                followingCount.innerText = Object.keys(response).length;
+
+                friendCounter = 0
+                for (i in response) {
+                    if (response[i].friendship) {
+                        friendCounter += 1;
+                    }
+                }
+                friendCount.innerText = friendCounter;
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
+    }
+
+    getFollowingCount();
+    // Update interval
+    setInterval(getFollowingCount, 5000);
+
+    function showEditProfile() {
+       $("#edit-profile-dialog").addClass("show");
+       $("body").toggleClass("has-popup-modal");
+    }
+
+    $("#confirm-edit-profile-yes").click(function() {
+        // Execute the edit profile logic when the user clicks "Yes"
+        var username = $("#edit-username").val()
+        var bio = $("#edit-userbio").val()
+        if (username.length === 0 && bio.length === 0) {
+            alert("No changes have been made, fields are empty")
+            $("#edit-profile-dialog").removeClass("show");
+            $("body").toggleClass("has-popup-modal");
+        } else if (bio.length > 200) {
+            alert("Bio is too long, must be under 200 characters")
+        } else {
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+            $.ajax({
+                type: "PUT",
+                url: `/api/update-user/{{user.id}}`,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    'username': username,
+                    'bio': bio
+                }),
+                success: function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        $("#edit-profile-dialog").removeClass("show");
+                        $("body").toggleClass("has-popup-modal");
+                        window.location.reload()
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+    });
+
+    $("#confirm-edit-profile-no").click(function() {
+        // Cancel the edit profile action when the user clicks "No"
+        $("#edit-profile-dialog").removeClass("show");
+        $("body").toggleClass("has-popup-modal");
+    });
+
+    function chooseBannerImage() {
+        // Trigger the file input when the image is clicked
+        $("#profile-banner-attachment").click();
+    }
+
+    function chooseProfileImage() {
+        // Trigger the file input when the image is clicked
+        $("#profile-photo-attachment").click();
+    }
+
+</script>

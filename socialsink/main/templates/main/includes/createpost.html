@@ -1,36 +1,141 @@
 {% block content %}
-<div class="feed-post create-new">
-    <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
-    <form class="post-content" onsubmit="submitPost(event)">
-        {% csrf_token %}
-        <input type="text" id="create-post-text" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status">
-        <div class="post-btn-wrap">
-            <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
-            <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
-            <div class="select-wrap">
-                <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
-                    <option value="public">Public</option>
-                    <option value="friends">Friends</option>
-                    <option value="private">Private</option>
-                </select>
+<div id="create-accordion" class="crete-new-active">
+    <div id="create-new-post-card" class="feed-post create-new">
+        <form class="post-content" onsubmit="submitPost(event)">
+            {% csrf_token %}
+            <input type="text" id="create-post-title" class="form-control" placeholder="Title" autocomplete="off">
+            <input type="text" id="create-post-description" class="form-control" placeholder="Description" autocomplete="off">
+            <input type="text" id="create-post-categories" class="form-control" placeholder="Categories ex. #cool" autocomplete="off">
+            <input type="text" id="create-post-content" class="form-control" placeholder="What's happening?" aria-label="What's happening?" name="status" autocomplete="off">
+            <div class="hide" id="image-preview-container">
+                <img id="image-preview" src="#" alt="preview">
+                <button type="button" onclick="removePhoto()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <button type="button" class="btn btn-photo"><i class="fa-solid fa-image"></i>Photo</button>
-            <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
-        </div>
-    </form>
+            <div class="post-btn-wrap">
+                <!-- <label for="publicity-items"><i class="fa-solid fa-eye"></i>Publicity</label> -->
+                <!-- Make the drop down menu styled like the buttons but clear that it is a drop down for selecting publicity -->
+                <div class="content-type-select-wrap">
+                    <select type="button" class="form-select btn" name="content-type-items" id="content-type-drop-down" placeholder="Content Type" aria-label="Plaintext">
+                        <option value="text/plain">Plaintext</option>
+                        <option value="text/markdown">Markdown</option>
+                    </select>
+                </div>
+                <div class="publicity-select-wrap">
+                    <select type="button" class="form-select btn" name="publicity-items" id="publicity-drop-down" placeholder="Publicity" aria-label="Public">
+                        <option value="public">Public</option>
+                        <option value="friends">Friends</option>
+                        <option value="unlisted">Unlisted</option>
+                    </select>
+                </div>
+                <div>
+                    <label id="photo-attach-container" class="btn btn-photo" for="photo-attachment" style="width: 100%;"><i class="fa-solid fa-image"></i>Photo</label>
+                    <input type="file" id="photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
+                </div>
+                <button type="submit" class="btn btn-post"><i class="fa-solid fa-paper-plane"></i>Post</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
 
+    photoAttachment = document.getElementById("photo-attachment")
+
+    var hosts = []
+    async function getHosts() {
+        await $.ajax({
+            type: "GET",
+            url: `/api/get-node-hosts/`,
+            success: function (response, textStatus, http) {
+                hosts = response
+            },
+            error: function (error) {
+                console.error(error)
+            }
+        })
+    }
+    getHosts()
+
+    function getHostFromUrl(input) {
+        var parts = input.split('/')
+        var hostURL = `${parts.at(0)}//${parts.at(2)}/`
+        return hostURL
+    }
+
+    function getAuth(input) {
+        for (const item in hosts) {
+            if (hosts[item][0] === input) {
+                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+            }
+        }
+    }
+    
+
     function submitPost(e) {
         e.preventDefault()
 
-        text = document.getElementById("create-post-text")
+        title = document.getElementById("create-post-title")
+        description = document.getElementById("create-post-description")
+        categories = document.getElementById("create-post-categories")
+        content = document.getElementById("create-post-content")
+        contentType = document.getElementById("content-type-drop-down")
         publicity = document.getElementById("publicity-drop-down")
 
-        console.log(text.value)
-        console.log(publicity.value)
+        origin = `${window.location.href}`
 
+        author_id = "{{author.id}}"
+
+        var error = false
+        if (title.value.length > 200) {
+            alert("Please enter a title less than 200 characters")
+            error = true
+        } else if (description.value.length > 200) {
+            alert("Please enter a description less than 200 characters")
+            error = true
+        } else if (categories.value.length > 200) {
+            alert("Please enter categories less than 200 characters")
+            error = true
+        }
+
+        if (!error) {
+            if (photoAttachment.files[0]) {
+                var reader = new FileReader()
+
+                reader.onload = function(e) {
+                    console.log(e.target.result)
+                    createPost(JSON.stringify({
+                        'title': title.value,
+                        'description': description.value,
+                        'categories': categories.value,
+                        'content': `${e.target.result}`,
+                        'contentType': contentType.value,
+                        'publicity': publicity.value,
+                        'source': '',
+                        'origin': origin,
+                        'image': true,
+                    }))
+                }
+
+                reader.readAsDataURL(photoAttachment.files[0])
+
+            } else if (title.value.length > 0 && content.value.length > 0 && description.value.length > 0) {
+                createPost(JSON.stringify({
+                    'title': title.value,
+                    'description': description.value,
+                    'categories': categories.value,
+                    'content': content.value,
+                    'contentType': contentType.value,
+                    'publicity': publicity.value,
+                    'source': '',
+                    'origin': origin,
+                    'image': false,
+                }))
+            } else {
+                alert("Please fill in the required fields")
+            }
+        }
+    }
+    function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -41,16 +146,74 @@
         });
         $.ajax({
             type: "POST",
-            url: "/api/make-post/",
+            url: `/service/authors/${author_id}/posts/`,
+            data: formData,
             contentType: 'application/json',
-            data: JSON.stringify({
-                'text': text.value,
-                'publicity': publicity.value
-            }),
+            headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
-                    text.value = ""
-                    publicity.value = ""
+                    title.value = "" 
+                    description.value = "" 
+                    categories.value = "" 
+                    content.value = ""         
+
+                    // Reset the publicity and content-type drop down to public and text/plain
+                    $('#publicity-drop-down').val('public')
+                    $('#content-type-drop-down').val('text/plain')
+                    
+                    if (photoAttachment.files[0]) {
+                        removePhoto()
+                    }
+
+                    const post = response
+                    console.log(post)
+
+                    //THIS IS FOR POSTING TO THIS USERS INBOX
+                    $.ajax({
+                        type: "POST",
+                        url: `/service/authors/${author_id}/inbox/`,
+                        data: post,
+                        contentType: 'application/json',
+                        headers: getAuth(window.location.href),
+                        success: function (response, textStatus, http) {
+                            console.log(response)
+                        },
+                        error: function(error) {
+                            console.error(error)
+                        }
+                    })
+
+                    postJson = JSON.parse(post)
+                    if (postJson['unlisted'] === false) {
+                        for (const host in hosts) {
+                            $.ajax({
+                                type: "GET",
+                                url: `${hosts[host][0]}/service/authors/${author_id}/followers`,
+                                headers: getAuth(hosts[host][0]),
+                                success: function (response, textStatus, http) {
+                                    for (const follower in response['items']) {
+                                        const id = response['items'][follower]['id'].split('/').at(-2)
+                                        $.ajax({
+                                            type: "POST",
+                                            url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                            data: post,
+                                            contentType: 'application/json',
+                                            headers: getAuth(hosts[host][0]),
+                                            success: function (response, textStatus, http) {
+                                                console.log(response)
+                                            },
+                                            error: function(error) {
+                                                console.error(error)
+                                            }
+                                        })
+                                    }
+                                },
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
+                        }
+                    }
                 }
             },
             error: function (error) {
@@ -63,8 +226,31 @@
         })
     }
 
-    function setPublicity() {
+    photoAttachment.addEventListener('change', function () {
+        loadPhoto(photoAttachment.files[0]);
+        $(".feed-post.create-new").toggleClass("upload-img");
 
+        $("#create-post-content").hide()
+    })
+
+    function loadPhoto(file) {
+        var reader = new FileReader()
+
+        reader.onload = function(e) {
+            $("#image-preview").attr('src', e.target.result)
+            $("#image-preview-container").removeClass("hide")
+        }
+
+        reader.readAsDataURL(file)
+    }
+
+    function removePhoto() {
+        $("#image-preview-container").addClass("hide");
+        $(".feed-post.create-new").removeClass("upload-img");
+        photoAttachment.value = '';
+
+        $("#create-post-content").val("")
+        $("#create-post-content").show()
     }
 
 </script>
