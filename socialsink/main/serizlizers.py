@@ -68,7 +68,7 @@ class PostSerializer(serializers.ModelSerializer):
         super_result['comments'] = post_url + "comments"
         
         #get first 5 comments
-        post_comments = instance.comments.all()[:5]
+        post_comments = Comment.objects.filter(post_endpoint=post_url)[:5]
         comment_representations = []
         for comment in post_comments:
             comment_representations.append(CommentSerializer(comment, context={'request': request}).data)
@@ -99,11 +99,8 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
-        post_id = instance.post.id
-
-        post = Post.objects.get(id=post_id)
-        author_id = post.author.id
-        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[author_id, post_id])) + str(instance.id)
+        post_url = instance.post_endpoint
+        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-4], post_url.split('/')[-2]])) + str(instance.id)
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
@@ -112,11 +109,11 @@ class CommentSerializer(serializers.ModelSerializer):
             #TODO consider querying the foreign author and returning the whole object
             super_result['author'] = instance.foreign_author_id
         else:
-            super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+            super_result['author'] = json.loads(instance.author_data)
         super_result['published'] = instance.created_at.isoformat()
         super_result['comment'] = instance.content
         super_result['contentType'] = "text/plain" #Spec wants us to specify content type but doens't say we have to support anything other than plaintext
-        
+
         return super_result
     
     def create(self, validated_data):
@@ -167,12 +164,12 @@ class LikeSerializer(serializers.ModelSerializer):
         else:
             super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
 
-        if instance.post != None:
-            post_url = PostSerializer(instance.post, context={'request': request}).data['id']
+        if instance.post_endpoint != None:
+            post_url = instance.post_endpoint
             super_result['object'] = post_url
             super_result['summary'] = f"{instance.author.user.username} liked a post"
-        elif instance.comment != None:
-            comment_url = CommentSerializer(instance.comment, context={'request': request}).data['id']
+        elif instance.comment_endpoint != None:
+            comment_url = instance.comment_endpoint
             super_result['object'] = comment_url + str(instance.comment.id)
             super_result['summary'] = f"{instance.author.user.username} liked a Comment"
 
@@ -213,6 +210,9 @@ class InboxSerializer(serializers.ModelSerializer):
         fields = []
 
     def to_representation(self, instance):
-        result = json.loads(instance.content)
-        return result
+        data = {}
+        data['endpoint'] = instance.endpoint
+        data['type'] = instance.type
+
+        return data
     
