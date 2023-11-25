@@ -8,8 +8,8 @@
         <div class="main-area">
             <div id="top-options-container">
                 <div id="nav-feed-tabs" class="nav-feed-tabs">
-                    <button id="show-feed-activity" class="btn active-feed" onclick="showFeedActivity()"><i class="fa-solid fa-message"></i>Feed</button>
-                    <button id="show-git-activity" class="btn" onclick="showGitActivity()"><i class="fa-brands fa-github"></i>Git</button>
+                    <button id="show-feed-activity" class="btn active-feed"><i class="fa-solid fa-message"></i>Feed</button>
+                    <button id="show-git-activity" class="btn"><i class="fa-brands fa-github"></i>Git</button>
                 </div>
                 <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
             </div>
@@ -24,18 +24,14 @@
             <!-- --------------------------------------------------------------------------- -->
         </div>
         <div class="right-bar">
-            {% include 'main/includes/followrequests.html' %}
             {% include 'main/includes/findauthorsbar.html' %}
+            {% include 'main/includes/followrequests.html' %}
         </div>
     </div>
     
-    <div id="delete-post-dialog" class="popup-modal">
-        <p>Are you sure you want to permanantly delete this post?</p>
-        <div class="button-wrap">
-            <button id="confirm-delete-post-yes">Yes</button>
-            <button id="confirm-delete-post-no">No</button>
-        </div>
-    </div>
+    <!-- Includes the popup modals, like confirm delete and confirm share post -->
+    {% include 'main/includes/popupmodals.html' %}
+    <!-- --------------------------------------------------------------------- -->
 
     <script>
         const feedContainer = document.getElementById("post-container");
@@ -101,6 +97,7 @@
                 likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
             }
 
+            // showDeleteConfirmation function can be found in the popupmodals.html file under scripts
             if (authorId === "{{author.id}}") {
                 deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
             } else {
@@ -127,6 +124,8 @@
 
             // Construct the post content using the provided data
             // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
+
+            // showReshareConfirmation function can be found in the popupmodals.html file under scripts
             postElement.innerHTML = `
                 <div class="feed-post existing-post">
                     <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
@@ -293,8 +292,8 @@
 
                 saveButton = `<button type="button" class="btn btn-save" id="save-button-${id}" onclick="saveEditPost(${id}, '${contentType}')"><i class="fa-solid fa-check"></i>Save</button>`
                 cancelButton = `<button type="button" class="btn btn-cancel" id="cancel-button-${id}" onclick="cancelEditPost(${id}, '${titleText}', '${descriptionText}', '${categoriesText}', '${contentText}', '${contentType}')"><i class="fa-solid fa-xmark"></i>Cancel</button>`
-                $(`#post-btn-wrap-${id}`).append(saveButton)
-                $(`#post-btn-wrap-${id}`).append(cancelButton)
+                $(`#flex-btn-wrap-${id}`).append(saveButton)
+                $(`#flex-btn-wrap-${id}`).append(cancelButton)
                 
                 $(`#like-button-${id}`).addClass('hide')
                 $(`#share-button-${id}`).addClass('hide')
@@ -457,29 +456,7 @@
                 alert("You cannot share this post twice")
             }
         }
-
-        function showDeleteConfirmation(postID) {
-            // Set a global variable to store the post ID to be deleted
-            window.postToDelete = postID;
-
-            // Show the custom confirmation dialog
-            $("#delete-post-dialog").addClass("show");
-            $("body").toggleClass("has-popup-modal");
-        }
-
-        $("#confirm-delete-post-yes").click(function() {
-            // Execute the post deletion logic when the user clicks "Yes"
-            deletePost(window.postToDelete);
-            $("#delete-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
-        $("#confirm-delete-post-no").click(function() {
-            // Cancel the post deletion action when the user clicks "No"
-            $("#delete-post-dialog").removeClass("show");
-            $("body").toggleClass("has-popup-modal");
-        });
-
+        
         function deletePost(id) {
 
             var csrf_token = "{{ csrf_token }}";

@@ -16,10 +16,26 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
+    $(document).on('click', '.dropdown-toggle', function () {
+        var dropdown = $(this).siblings('.dropdown-menu');
+        $('.dropdown-menu').not(dropdown).removeClass('show');
+        dropdown.toggleClass('show');
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dropdown').length) {
+            $('.dropdown-menu').removeClass('show');
+        }
+    });
+
     $("#show-feed-activity").click(function() {
         $("#show-feed-activity").addClass("active-feed");
         $("#show-git-activity").removeClass("active-feed");
+
+        $("#git-container").removeClass("active-container");
         $("#post-container").addClass("active-container");
+        
         $("#create-accordion").addClass("crete-new-active");
         $("#toggle-create-window").removeClass("hide");
         $("#create-accordion").removeClass("hide");
@@ -28,7 +44,10 @@ document.addEventListener("DOMContentLoaded", function () {
     $("#show-git-activity").click(function() {
         $("#show-git-activity").addClass("active-feed");
         $("#show-feed-activity").removeClass("active-feed");
+
         $("#post-container").removeClass("active-container");
+        $("#git-container").addClass("active-container");
+
         $("#create-accordion").removeClass("crete-new-active");
         $("#toggle-create-window").addClass("hide");
         $("#create-accordion").addClass("hide");

@@ -30,6 +30,11 @@ body {
     box-sizing: border-box;
 }
 
+.scrollable-div::-webkit-scrollbar {
+    position: absolute;
+    left: -100px;
+ }
+
 /* width */
 ::-webkit-scrollbar {
     width: 4px;
@@ -365,7 +370,8 @@ main {
     border-radius: var(--card-round-border);
 }
 
-#post-container .feed-post:last-of-type {
+#post-container .feed-post:last-of-type,
+#git-container .feed-post:last-of-type {
     margin-bottom: 0;
 }
 
@@ -375,7 +381,13 @@ main {
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,.25);
+    box-shadow: 0 1px 6px rgba(0,0,0,.95);
+    transition: box-shadow 300ms ease 0s;
+}
+
+.feed-post img.profile-img:hover,
+.feed-post img.profile-img:focus {
+    box-shadow: 0 1px 12px rgba(0,0,0,1);
 }
 
 .feed-post img {
@@ -426,8 +438,15 @@ main {
     gap: 10px;
 }
 
-.post-btn-wrap .btn,
-.post-btn-wrap button {
+.flex-btn-wrap {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.flex-btn-wrap .btn,
+.flex-btn-wrap button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -444,14 +463,14 @@ main {
     padding: 0;
 }
 
-.post-btn-wrap .btn:hover,
-.post-btn-wrap .btn:focus {
+.flex-btn-wrap .btn:hover,
+.flex-btn-wrap .btn:focus {
     color: var(--button-text);
     background-color: var(--medium-grey);
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
 }
 
-.post-btn-wrap button svg {
+.flex-btn-wrap button svg {
     font-size: 1.125rem;
 } 
 
@@ -479,21 +498,21 @@ main {
     flex-direction: row;
 }
 
-.existing-post .post-btn-wrap button {
+.existing-post .flex-btn-wrap button {
     color: var(--button-text);
     background: var(--medium-grey);
     border-radius: var(--card-round-border);
     border: none;
 }
 
-.existing-post .post-btn-wrap button:hover,
-.existing-post .post-btn-wrap button:focus {
+.existing-post .flex-btn-wrap button:hover,
+.existing-post .flex-btn-wrap button:focus {
     background-color: var(--deep-blue);
 }
 
-.existing-post .post-btn-wrap button.liked svg,
-.existing-post .post-btn-wrap button.liked:hover svg,
-.existing-post .post-btn-wrap button.liked:focus svg {
+.existing-post .flex-btn-wrap button.liked svg,
+.existing-post .flex-btn-wrap button.liked:hover svg,
+.existing-post .flex-btn-wrap button.liked:focus svg {
     color: var(--hot-pink) !important;
 }
 
@@ -536,7 +555,7 @@ main {
 
 /* Visibility Button Starts --------------------------- */
 
-.post-btn-wrap .btn {
+.flex-btn-wrap .btn {
     padding: 0 20px;
 }
 
@@ -644,6 +663,7 @@ main {
     width: 100%;
     height: 130px;
     object-fit: cover;
+    border-radius: var(--card-round-border) var(--card-round-border) 0 0;
     transition: opacity 300ms ease 0s;
 }
 
@@ -722,117 +742,44 @@ main {
 
 /* Profile Bar Ends ----------------------- */
 
+/* Follow Bars Starts --------------------- */
 
-
-/* Find Author Bar Starts ----------------- */
-
-#find-author-bar {
-    display: flex;
-    flex-direction: column;
-    height: 50%;
-    background: var(--dark-gray);
-    border-radius: var(--card-round-border);
-}
-
-#find-author-bar .heading { 
-    padding: 1em 2em 0 30px;
-}
-
-#find-author-bar .author-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: left;
-    height: fit-content;
-    gap: 2em;
-    padding: 0.5em 2em 0 30px;
-}
-
-#find-author-bar img {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-    box-shadow: 0 1px 6px rgba(0,0,0,.25);
-}
-
-#find-author-bar .author {
-    display: inline-flex;
-    gap: 1em;
-}
-
-#find-author-bar .author-content {
-    display: inline-flex;
-    width: 100%;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1em;
-}
-
-#find-author-bar .author-username {
-    font-size: 18.5px;
-    font-weight: 600;
-}
-
-#find-author-bar .author-email {
-    font-size: 16.5px;
-    font-weight: 600;
-    color: var(--light-grey);
-    letter-spacing: 0;
-}
-
-#find-author-bar .author-content .request{
-    font-size: 0.8em;
-    font-weight: 700;
-    color: var(--deep-blue);
-    background: white;
-    border-radius: 50px;
-    min-width: 80px;
-    min-height: 45px;
-    transition: all 200ms ease 0s;
-    letter-spacing: 0.25px;
-    padding: 0;
-}
-
-#find-author-bar .author-content .unfollow {
-    font-size: 0.8em;
-    font-weight: 700;
-    color: white;
-    background: none;
-    border-radius: 50px;
-    border: 2px solid var(--medium-grey);
-    min-width: 80px;
-    min-height: 45px;
-    transition: all 200ms ease 0s;
-    letter-spacing: 0.25px;
-    padding: 0;
-}
-
-/* Find Author Bar End -------------------- */
-
-
-
-/* Follow Request Bar Start --------------- */
+#find-author-bar,
 #follow-requests-bar {
     display: flex;
     flex-direction: column;
-    height: 50%;
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
+    padding: 16px;
+    flex-basis: 50%;
+    overflow-y: overlay;
+    scrollbar-gutter: stable;
 }
 
+#find-author-bar .heading,
 #follow-requests-bar .heading { 
-    padding: 1em 2em 0 30px;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--light-blue);
+    margin-bottom: 0;
 }
 
-#follow-requests-bar .request-box{
+#find-author-bar .author-box,
+#follow-requests-bar .request-box {
     display: flex;
     flex-direction: column;
     justify-content: left;
     height: 100%;
-    gap: 2em;
-    padding: 0.5em 2em 0 30px;
+    gap: 26px;
+    padding: 0;
 }
 
+#find-author-bar .author-box .author:first-of-type,
+#follow-requests-bar .request-box .request:first-of-type {
+    margin-top: 20px;
+}
+
+#find-author-bar img,
 #follow-requests-bar img {
     width: 48px;
     height: 48px;
@@ -841,11 +788,13 @@ main {
     box-shadow: 0 1px 6px rgba(0,0,0,.25);
 }
 
+#find-author-bar .author,
 #follow-requests-bar .request {
     display: inline-flex;
     gap: 1em;
 }
 
+#find-author-bar .author-content,
 #follow-requests-bar .request-content {
     display: inline-flex;
     width: 100%;
@@ -854,36 +803,78 @@ main {
     gap: 1em;
 }
 
-#follow-requests-bar .author-username {
-    font-size: 16.5px;
-    font-weight: 600;
-}
-
-#follow-requests-bar .request-content .btn {
-    font-size: 0.8em;
-    font-weight: 700;
-    border-radius: 50px;
-    min-width: 80px;
+#find-author-bar .author-content .request,
+#find-author-bar .author-content .unfollow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-width: 132px;
     min-height: 45px;
-    transition: all 200ms ease 0s;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--button-text);
+    background: var(--medium-grey);
+    border-radius: 25px;
+    border: none;
     letter-spacing: 0.25px;
-    padding: 0;
+    padding: 0 20px;
+    transition: all 500ms ease 0s;
 }
 
-#follow-requests-bar .request-content .btn-accept {
+#find-author-bar .author-content .request:hover,
+#find-author-bar .author-content .request:focus {
+    color: var(--button-text);
+    background: var(--deep-blue);
+}
+
+#find-author-bar .author-content .unfollow {
     color: var(--deep-blue);
-    background: white;
+    background: var(--light-blue);
 }
 
+#find-author-bar .author-content .unfollow:hover,
+#find-author-bar .author-content .unfollow:focus {
+    color: var(--button-text);
+    background: var(--medium-grey);
+}
+
+#follow-requests-bar .request-content svg {
+    font-size: 2rem;
+}
+
+#follow-requests-bar .request-content .btn-accept,
 #follow-requests-bar .request-content .btn-dismiss {
-    color: white;
-    background: var(--dark-gray);
-    border: 2px solid var(--medium-grey);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    width: 46px;
+    height: 46px;
+    font-weight: 700;
+    color: var(--light-blue);
+    background: none;
+    border-radius: 25px;
+    border: none;
+    padding: 0;
+    transition: box-shadow 300ms ease 0s;
 }
 
+#follow-requests-bar .request-content .btn-accept:hover,
+#follow-requests-bar .request-content .btn-accept:focus {
+    color: var(--pastel-green);
+    box-shadow: 0 1px 6px rgba(0,0,0,.5);
+}
 
-/* Follow Request Bar End ----------------- */
+#follow-requests-bar .request-content .btn-dismiss:hover,
+#follow-requests-bar .request-content .btn-dismiss:focus {
+    color: var(--hot-pink);
+    box-shadow: 0 1px 6px rgba(0,0,0,.5);
+}
 
+/* Follow Bars Ends ----------------------- */
 
 /* Testing Confirm Delete ----------------- */
 
@@ -1019,7 +1010,7 @@ body.has-popup-modal:before {
 /* Edit Profile Begins -------------------- */
 
 #edit-profile-dialog.popup-modal {
-    padding: 50px 150px;
+    padding: 35px 150px;
     max-width: 600px;
 }
 
@@ -1058,14 +1049,14 @@ body.has-popup-modal:before {
     color: var(--bright-blue); 
 }
 
-.popup-modal button#confirm-edit-profile-yes:hover,
-.popup-modal button#confirm-edit-profile-yes:focus {
-    color: var(--pastel-green);
+.popup-modal button.confirm-red:hover,
+.popup-modal button.confirm-red:focus {
+    color: var(--hot-pink);
 }
 
-.popup-modal button#confirm-edit-profile-no:hover,
-.popup-modal button#confirm-edit-profile-no:focus {
-    color: var(--hot-pink);
+.popup-modal button.confirm-green:hover,
+.popup-modal button.confirm-green:focus {
+    color: var(--pastel-green);
 }
 
 #edit-profile-dialog.popup-modal .user-bg:hover,
@@ -1122,8 +1113,7 @@ body.has-popup-modal:before {
 }
 
 #edit-profile-dialog.popup-modal .user-box {
-    width: calc(100% + 20px);
-    padding: 0 10px 5px;
+    width: 100%;
 }
 
 #edit-profile-dialog.popup-modal .userbio {
