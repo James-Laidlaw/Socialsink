@@ -104,12 +104,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
-
-        if instance.is_foreign:
-            #TODO consider querying the foreign author and returning the whole object
-            super_result['author'] = instance.foreign_author_id
-        else:
-            super_result['author'] = json.loads(instance.author_data)
+        super_result['author'] = instance.author_data
         super_result['published'] = instance.created_at.isoformat()
         super_result['comment'] = instance.content
         super_result['contentType'] = "text/plain" #Spec wants us to specify content type but doens't say we have to support anything other than plaintext
@@ -158,47 +153,46 @@ class LikeSerializer(serializers.ModelSerializer):
         super_result = super().to_representation(instance)
 
         super_result['type'] = "like"
-        if instance.is_foreign:
-            #TODO consider querying the foreign author and returning the whole object
-            super_result['author'] = instance.foreign_author_id 
+
+        #TODO we might have to provide whole author object if it is a local author
+        super_result['author'] = instance.author_endpoint
+
+        author_remote = (request.build_absolute_uri("/") not in instance.author_endpoint)
+
+        author_name = None
+        if author_remote:
+            author_name = "Remote Author"
         else:
-            super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+            author_name = Author.objects.get(id=get_object_id_from_url(instance.author_endpoint)).user.username
 
         if instance.post_endpoint != None:
-            post_url = instance.post_endpoint
-            super_result['object'] = post_url
-            super_result['summary'] = f"{instance.author.user.username} liked a post"
+            super_result['object'] = instance.post_endpoint
+            super_result['summary'] = f"{author_name} liked a post"
         elif instance.comment_endpoint != None:
-            comment_url = instance.comment_endpoint
-            super_result['object'] = comment_url + str(instance.comment.id)
-            super_result['summary'] = f"{instance.author.user.username} liked a Comment"
+            super_result['object'] = instance.comment_endpoint
+            super_result['summary'] = f"{author_name} liked a Comment"
 
         super_result['@context'] = instance.context
         return super_result
     
     def create(self, validated_data):
-        request: Request = self.context.get('request')
+        #unclear if this will be object containing author id or just the id
+        authorObj = self.initial_data.get('author', None)
 
-        authorJSON = self.initial_data.get('author', None)
-        authorRawID = authorJSON.get('id', None)    
-
-        host_url = request.build_absolute_uri("/")
-        is_foreign = (host_url not in authorRawID)
-        validated_data['is_foreign'] = is_foreign
-
-        if is_foreign:
-            validated_data['foreign_author_id'] = authorRawID
+        authorURL = None
+        if isinstance(authorObj, str):
+            authorURL = authorObj
         else:
-            validated_data['author_id'] = get_object_id_from_url(authorRawID)
-            validated_data['author'] = Author.objects.get(id=validated_data['author_id'])
+            authorURL = authorObj.get('id', None)    
 
+        validated_data['author_endpoint'] = authorURL
 
         # Extract the id from the "object" input URL
         object_url = self.initial_data.get('object', None)
         if object_url:
             object_id = get_object_id_from_url(object_url)
-            validated_data['post_id'] = object_id if 'post' in object_url else None
-            validated_data['comment_id'] = object_id if 'comment' in object_url else None
+            validated_data['post_endpoint'] = object_id if 'post' in object_url else None
+            validated_data['comment_endpoint'] = object_id if 'comment' in object_url else None
         
         validated_data['context'] = self.initial_data.get('@context', None)
         return super().create(validated_data)

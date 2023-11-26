@@ -68,9 +68,9 @@ class Post(models.Model):
 #TODO do we want to store comments from deleted authors?
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
-    is_foreign = models.BooleanField(default=False) # true if the comment is to a remote post
+    is_foreign = models.BooleanField(default=False) # true if the comment is to a remote post DEPRECATED?
     author_data = models.CharField(max_length=1000, default='')
-    foreign_author_id = models.CharField(max_length=200, null=True) # if is_foreign is true, this is the url of the foreign author
+    foreign_author_id = models.CharField(max_length=200, null=True) # if is_foreign is true, this is the url of the foreign author DEPRECATED?
     post_endpoint = models.CharField(max_length=1000, default='')
     content = models.CharField(max_length=600)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -81,12 +81,10 @@ class Comment(models.Model):
 class Like(models.Model): 
     id = models.AutoField(primary_key=True)
     context = models.CharField(max_length=200, null=True) # i don't know what this is, but it's in the spec. @context
-    is_foreign = models.BooleanField(default=False) # true if the like is from a remote author
-    author = models.ForeignKey(Author, related_name='likes', on_delete=models.CASCADE, null=True)
-    foreign_author_id = models.CharField(max_length=200, null=True) # if is_foreign is true, this is the url of the foreign author
-    post_endpoint = models.CharField(max_length=1000, default='')
+    author_endpoint = models.CharField(max_length=1000, default='')
+    post_endpoint = models.CharField(max_length=1000, default='', null=True)
     summary = models.CharField(max_length=200, default='')
-    comment_endpoint = models.CharField(max_length=1000, default='')
+    comment_endpoint = models.CharField(max_length=1000, default='', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
