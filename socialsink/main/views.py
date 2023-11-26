@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 #Image Imports
 from django.core.files.base import ContentFile
@@ -91,13 +92,11 @@ def getAuthed(auth_header):
         return Response({"Unauthorized."}, status=401)
     
     token_type, _, credentials = auth_header.partition(' ')
-    
     try:
         username, password = base64.b64decode(credentials).decode().split(':')
-
-        node = Node.objects.get(username=username, password=password)
+        node = Node.objects.filter(username=username, password=password).first()
         if node == None:
-            return Response(status=401)
+            return Response("Error decoding Authorization header", status=401)
 
         if node.username == 'socialsink':
             return 'self'
@@ -133,7 +132,7 @@ def createAccount(request):
         return Response(status=201)
         
     except:
-        return Response(status=401)
+        return Response(status=500)
 
 
 @api_view(['POST'])
@@ -548,6 +547,11 @@ def updatePost(request, post_id):
     if post is None:
         return Response(status=404)
     
+    #check authorization
+    if post.author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
     try:
         post.title = request.data.get('title', post.title)
         post.description = request.data.get('description', post.description)
@@ -574,6 +578,12 @@ def createSpecificPost(request, author_id, post_id):
     if author == None:
         return Response(status=404)
     
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
+
     # check if post id is in use
     if Post.objects.filter(id=post_id).exists():
         return Response(status=409) #409 = conflict
@@ -614,6 +624,11 @@ def createPost(request, author_id):
     author = Author.objects.filter(id=author_id).first()
     if author == None:
         return Response(status=404)
+    
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
     
     default_origin = f'http://{request.get_host()}/author/{author_id}/'
     #try:
@@ -762,8 +777,10 @@ def getComments(request, post_id):
     if found_post == None:
         return Response(status=404)
     
-    comments = found_post.comments.all().order_by('created_at')
-
+    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author.id, found_post.id]))
+    
+    comments = Comment.objects.filter(post_endpoint=post_endpoint).order_by('created_at')
+    
     comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
 
     serialized_comments = comment_serializer.data
@@ -830,7 +847,7 @@ def inboxReqHandler(request, author_id):
                 author_serializer = AuthorSerializer(author, context={'request': request})
                 author_url_id = author_serializer.data.get('id')
 
-                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('created_at')
+                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('-created_at')
 
                 paginatedItems = Paginator(inbox_items, pageSize)
 
@@ -863,33 +880,24 @@ def inboxReqHandler(request, author_id):
 def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
     
-    if data['type'] == 'like':
-        #likeSerializer = LikeSerializer(data=data, context={'request': request})
-        #if not likeSerializer.is_valid():
-        #    print("invalid like", likeSerializer.errors)
-        #    return Response(status=400)
+    if data['type'].lower() == 'like':
+        likeSerializer = LikeSerializer(data=data, context={'request': request})
+        if not likeSerializer.is_valid():
+           print("invalid like", likeSerializer.errors)
+           return Response(status=400)
         
-        #object_url = data.get('object')
-        #object_id = get_object_id_from_url(object_url)
+        object_url = data.get('object')
+        object_id = get_object_id_from_url(object_url)
 
-        #ensure item being liked exists
-        #if not Post.objects.filter(id=object_id).exists() and not Comment.objects.filter(id=object_id).exists():
-        #    return Response(status=404)
-        
         #ensure not duplicate like
-        #from_author_url_id = data.get('author').get('id') #will be in URL format
-        #from_author_id = get_object_id_from_url(from_author_url_id)
+        from_author_url_id = data.get('author').get('id') #will be in URL format
 
-        #check for duplicate likes from the same author (local)
-        #if Like.objects.filter(Q(author_id=from_author_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
-        #    return Response(status=409)
-        
-        #check for duplicate likes from the same author (remote author)
-        #if Like.objects.filter(Q(foreign_author_id=from_author_url_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
-        #    return Response(status=409)
+        #check for duplicate likes from the same author
+        if Like.objects.filter(Q(author_endpoint=from_author_url_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
+           return Response(status=409)
 
         #save like
-        #likeSerializer.save()
+        likeSerializer.save()
 
         #create inbox object
         Inbox.objects.create(
@@ -899,14 +907,14 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
     
 
-    elif data['type'] == 'post':
+    elif data['type'].lower() == 'post':
         Inbox.objects.create(
             author_id=recieving_author_id, 
             endpoint=data['id'],
             type=data['type'])
         return Response(status=200)
     
-    elif data['type'] == 'comment':
+    elif data['type'].lower() == 'comment':
         #TODO should this make a comment object? or is it just sharing the comment / notifying the author?
         Inbox.objects.create(
             author_id=recieving_author_id, 
@@ -915,7 +923,8 @@ def inboxPOSTHandler(request, recieving_author_id):
         )
         return Response(status=200)
 
-    elif data['type'] == 'follow':
+    elif data['type'].lower() == 'follow':
+        #TODO this needs to be fixed, i cant think of a way for the current implementation of the inbox model to store follows - not hosted anywhere to point endpoint to
         Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
         return Response(status=200)
 
@@ -999,10 +1008,9 @@ def getCommentLikes(request, author_id, post_id, comment_id):
         if post_id == None or comment_id == None:
             return Response(status=400)
         
-        url = request.build_absolute_uri()
-        url = url[:len(url)-6]
+        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, post_id]))
 
-        likes = Like.objects.filter(post_endpoint=url).order_by('created_at')
+        likes = Like.objects.filter(post_endpoint=post_url).order_by('created_at')
         
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         serialized_likes = like_serializer.data
@@ -1027,7 +1035,8 @@ def getAuthorLiked(request, author_id):
         if found_author == None:
             return Response(status=404)
         
-        likes = found_author.likes.all().order_by('created_at')
+        author_url = request.build_absolute_uri(reverse('authorReqHandler', args=[found_author.id]))
+        likes = Like.objects.filter(author_endpoint=author_url).order_by('created_at')
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         serialized_likes = like_serializer.data
         return Response(serialized_likes)
