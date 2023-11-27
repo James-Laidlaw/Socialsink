@@ -318,11 +318,13 @@ main {
 /* Main Containers and Bars Ends ------------------- */
 
 #post-container,
+#manage-container,
 #git-container {
     display: none;
 }
 
 #post-container.active-container,
+#manage-container.active-container,
 #git-container.active-container {
     display: initial;
     overflow-y: overlay;
