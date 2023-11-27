@@ -62,7 +62,12 @@
         function getAuth(input) {
             for (const item in hosts) {
                 if (hosts[item][0] === input) {
-                    return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                    return {
+                        "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
+                        "Access-Control-Allow-Origin": '*',
+                        "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                        "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                    }
                 }
             }
         }
@@ -224,7 +229,7 @@
                                     contentType: 'application/json',
                                     headers: getAuth(getHostFromUrl(`${author}inbox/`)),
                                     success: function (response, textStatus, http) {
-                                        console.log(response)
+                                        //console.log(response)
                                     },
                                     error: function(error) {
                                         console.error(error)
@@ -333,7 +338,7 @@
                 });
                 $.ajax({
                     type: "POST",
-                    url: `/service/authors/${authorID}/posts/${id}/`,
+                    url: `/authors/${authorID}/posts/${id}/`,
                     contentType: 'application/json',
                     data: JSON.stringify({
                         'title': titleText,
@@ -390,7 +395,6 @@
 
         function sharePost(postID, authorID, origin, source) {
             if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
-                console.log("SHAREABLE")
                 var csrf_token = "{{ csrf_token }}";
                 $.ajaxSetup({
                     beforeSend: function(xhr, settings) {
@@ -401,26 +405,26 @@
                 });
                 $.ajax({
                     type: "POST",
-                    url: `/service/authors/{{ author.id }}/posts/`,
+                    url: `/authors/{{ author.id }}/posts/`,
                     data: JSON.stringify({
                         'source': `${window.location.href}`,
-                        'post_id': postID,
+                        'post_id': postIDs[postID][0],
                     }),
                     contentType: 'application/json',
                     headers: getAuth(getHostFromUrl(window.location.href)),
                     success: async function (response, textStatus, http) {
-                        console.log(response)
+                        //console.log(response)
                         post = response
 
                         // SEND THIS TO THIS INBOX
                         $.ajax({
                             type: "POST",
-                            url: `/service/authors/${"{{author.id}}"}/inbox/`,
+                            url: `/authors/${"{{author.id}}"}/inbox/`,
                             data: post,
                             contentType: 'application/json',
                             headers: getAuth(window.location.href),
                             success: function (response, textStatus, http) {
-                                console.log(response)
+                                //console.log(response)
                             },
                             error: function(error) {
                                 console.error(error)
@@ -430,20 +434,22 @@
                         //SEND TO FOLLOWERS INBOXES
                         postJson = JSON.parse(post)
                         if (postJson['unlisted'] === false) {
-                            for (const host in hosts) {
-                                await $.ajax({
+                            if (postJson['visibility'] === 'FRIENDS') {
+                                $.ajax({
                                     type: "GET",
-                                    url: `${hosts[host][0]}/service/authors/${"{{author.id}}"}/followers`,
-                                    headers: getAuth(hosts[host][0]),
-                                    success: async function (response, textStatus, http) {
-                                        for (const follower in response['items']) {
-                                            const id = response['items'][follower]['id'].split('/').at(-2)
-                                            await $.ajax({
+                                    url: `authors/${"{{author.id}}"}/friends/`,
+                                    headers: getAuth(window.location.href),
+                                    success: function (response, textStatus, http) {
+                                        for (const i in response) {
+                                            $.ajax({
                                                 type: "POST",
-                                                url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                                url: `${response[i]}inbox/`,
                                                 data: post,
                                                 contentType: 'application/json',
-                                                headers: getAuth(hosts[host][0]),
+                                                headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
+                                                success: function (response, textStatus, http) {
+                                                    console.log(response)
+                                                },
                                                 error: function(error) {
                                                     console.error(error)
                                                 }
@@ -454,6 +460,32 @@
                                         console.error(error)
                                     }
                                 })
+                            } else {
+                                for (const host in hosts) {
+                                    await $.ajax({
+                                        type: "GET",
+                                        url: `${hosts[host][0]}authors/${"{{author.id}}"}/followers`,
+                                        headers: getAuth(hosts[host][0]),
+                                        success: async function (response, textStatus, http) {
+                                            for (const follower in response['items']) {
+                                                const id = response['items'][follower]['id'].split('/').at(-2)
+                                                await $.ajax({
+                                                    type: "POST",
+                                                    url: `${hosts[host][0]}authors/${id}/inbox/`,
+                                                    data: post,
+                                                    contentType: 'application/json',
+                                                    headers: getAuth(hosts[host][0]),
+                                                    error: function(error) {
+                                                        console.error(error)
+                                                    }
+                                                })
+                                            }
+                                        },
+                                        error: function(error) {
+                                            console.error(error)
+                                        }
+                                    })
+                                }
                             }
                         }
                     },
@@ -479,7 +511,7 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/service/authors/{{author.id}}/posts/${id}`,
+                url: `/authors/{{author.id}}/posts/${id}`,
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
@@ -549,11 +581,10 @@
             authorID = "{{ author.id }}"
             await $.ajax({
                 type: "GET",
-                url: `/service/authors/${authorID}/inbox`,
+                url: `/authors/${authorID}/inbox`,
                 dataType: 'json',
                 headers: getAuth(window.location.href),
                 success: async function (response, textStatus, http) {
-                    console.log(response)
                     if (http.status === 200) {
                         for (const post in response['items']) {
                             if (response['items'][post]['type'] === 'post') {
@@ -587,11 +618,10 @@
             if (oldPostsRetrieved) {
                 $.ajax({
                     type: "GET",
-                    url: `/service/authors/${authorID}/inbox`,
+                    url: `/authors/${authorID}/inbox`,
                     dataType: 'json',
                     headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
-                        console.log(response)
                         if (http.status === 200) {
                             for (const post in response['items']) {
                                 if (response['items'][post]['type'] === 'post') {
@@ -608,7 +638,6 @@
                                                 success: function (response, textStatus, http) {
                                                     liked = false
                                                     for (const index in response) {
-                                                        console.log(response[index])
                                                         if (response[index]['author']['id'] === "{{author_endpoint}}") {
                                                             liked = true
                                                         }
@@ -639,7 +668,6 @@
         //setInterval(retrievePosts, 2000)
 
         function likePost(postID, authorID, postAuthor, endpoint) {
-            console.log(postIDs[postID][0])
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -650,18 +678,17 @@
             });
             $.ajax({
                 type: "POST",
-                url: `/service/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
-                        console.log("HERE")
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
 
                         $.ajax({
                             type: "POST",
-                            url: `/service/authors/${"{{author.id}}"}/inbox/`,
+                            url: `/authors/${"{{author.id}}"}/inbox/`,
                             data: JSON.stringify(response),
                             contentType: 'application/json',
                             headers: getAuth(window.location.href),
@@ -700,13 +727,12 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/service/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
                         document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
-                        console.log("HERE")
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
                     }
                 },

@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Add new application
     'main',
-    'fontawesomefree'
+    'fontawesomefree',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'socialsink.urls'
@@ -139,3 +141,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 #HEROKU
 django_on_heroku.settings(locals())
+
+#CORS
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",  
+    "http://localhost:8000",  # Your development frontend URL
+    "https://super-coding-team-89a5aa34a95f.herokuapp.com",
+    "https://socialsync-404-project-6469dd163e44.herokuapp.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = True
