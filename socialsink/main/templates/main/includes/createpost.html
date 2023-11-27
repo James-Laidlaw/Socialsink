@@ -149,18 +149,26 @@
                 }
             }
         });
+
+
         creds = getAuth(window.location.href)
+
+
         $.ajax({
             type: "POST",
             url: `/authors/${author_id}/posts/`,
             data: formData,
             contentType: 'application/json',
+            //headers: getAuth(window.location.href),
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            
             beforeSend: function (request)
             {
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
             },
-            //headers: getAuth(window.location.href),
+
+
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 
@@ -185,6 +193,7 @@
                         url: `/authors/${author_id}/inbox/`,
                         data: post,
                         contentType: 'application/json',
+                        headers: { "X-CSRFToken": '{{csrf_token}}' },
                         beforeSend: function (request)
                         {
                             request.withCredentials = true;
@@ -203,6 +212,7 @@
                             $.ajax({
                                 type: "GET",
                                 url: `authors/${author_id}/friends/`,
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
                                 beforeSend: function (request)
                                 {
                                     request.withCredentials = true;
@@ -217,6 +227,7 @@
                                             url: `${response[i]}inbox/`,
                                             data: post,
                                             contentType: 'application/json',
+                                            headers: { "X-CSRFToken": '{{csrf_token}}' },
                                             beforeSend: function (request)
                                             {
                                                 request.withCredentials = true;
@@ -239,6 +250,7 @@
                                 $.ajax({
                                     type: "GET",
                                     url: `${hosts[host][0]}authors/${author_id}/followers/`,
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                                     beforeSend: function (request)
                                     {
                                         request.withCredentials = true;
@@ -254,6 +266,7 @@
                                                 url: `${hosts[host][0]}authors/${id}/inbox/`,
                                                 data: post,
                                                 contentType: 'application/json',
+                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
                                                 beforeSend: function (request)
                                                 {
                                                     request.withCredentials = true;
