@@ -360,13 +360,9 @@ def getFollowers(request, author_id):
         follower_authors = []
         followers = Follower.objects.filter(followee_endpoint=url)
         for f in followers:
-            author = Author.objects.get(id=f.follower_endpoint.split('/')[-2])
-            follower_authors.append(author)
+            follower_authors.append(f.followee_data)
 
-        author_serializer = AuthorSerializer(follower_authors, many=True, context={'request': request})
-
-        serialized_followers = author_serializer.data
-        returnDict = {"type": "followers", "items": serialized_followers}
+        returnDict = {"type": "followers", "items": follower_authors}
 
         return Response(returnDict)
 
