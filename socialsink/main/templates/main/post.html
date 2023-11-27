@@ -408,7 +408,6 @@
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         for (const post in response) {
                             window.location.href = "/"
                         }
