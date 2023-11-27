@@ -92,7 +92,6 @@ def displayPost(request, id):
 def getAuthed(auth_header):
     if not len(auth_header):
         return Response({"Unauthorized."}, status=401)
-    
     token_type, _, credentials = auth_header.partition(' ')
     try:
         username, password = base64.b64decode(credentials).decode().split(':')
@@ -372,7 +371,7 @@ def getFollowers(request, author_id):
 @api_view(['GET', 'POST'])
 def getFollowRequests(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
-    if result in 'self':
+    if result in ['self']:
         url = request.build_absolute_uri()
         url = url[:len(url)-19]
 
@@ -1012,10 +1011,7 @@ def getPostLikes(request, author_id, post_id):
             end = f"{parts[5]}/{parts[6]}/"
 
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
-            
-            print(url)
-            print(likes)
-            
+
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
 
             serialized_likes = like_serializer.data

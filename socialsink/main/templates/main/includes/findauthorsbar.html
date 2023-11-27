@@ -86,6 +86,7 @@
         // Checks the class list on the action to complete
         if (button.classList.contains('request')) {
             // Send request
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "PUT",
                 url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
@@ -94,7 +95,12 @@
                     'follower_data': followerData,
                     'followee_data': authors[id]
                 }),
-                headers: getAuth(window.location.href),
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     button.innerText = 'Requested';
                     button.classList.remove("request");
@@ -107,6 +113,7 @@
 
         } else if (button.classList.contains('unfollow')) {
             // Send request
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
@@ -115,7 +122,12 @@
                     'follower_endpoint': followerData['id'],
                     'followee_endpoint': authors[id]['id']
                 }),
-                headers: getAuth(window.location.href),
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     button.innerText = 'Follow';
                     button.classList.remove("unfollow");
@@ -129,10 +141,16 @@
     }
 
     async function getAuthorData() {
+        creds = getAuth(window.location.href)
         await $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/`,
-            headers: getAuth(window.location.href),
+            beforeSend: function (request)
+            {
+                request.withCredentials = true;
+                request.setRequestHeader(creds[0], creds[1]);
+            },
+            //headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 followerData = response
             },
@@ -143,10 +161,16 @@
     }
 
     async function getFollowingStatus() {
+        creds = getAuth(window.location.href)
         await $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/following/`,
-            headers: getAuth(window.location.href),
+            beforeSend: function (request)
+            {
+                request.withCredentials = true;
+                request.setRequestHeader(creds[0], creds[1]);
+            },
+            //headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 followingStatus = response
             },
@@ -190,14 +214,16 @@
         await getFollowingStatus()
         
         for (const host in hosts) {
+            creds = getAuth(getHostFromUrl(`${hosts[host][0]}authors/`))
             await $.ajax({
                 type: "GET",
                 url: `${hosts[host][0]}authors/`,
-                data: {
-                    page: 1,
-                    size: 50
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
                 },
-                headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
+                //headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
                 success: async function (response, textStatus, http) {
                     for (i in response) {
                         if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
@@ -221,10 +247,16 @@
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
+                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
                 $.ajax({
                     type: "GET",
                     url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
-                    headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
                     success: async function (response, textStatus, http) {
                         status = followingStatus[i]['status']
                         if (status === 'requested' && response === true) {
@@ -232,6 +264,7 @@
                         } else if ((status === 'friends' || status === 'following') && response === false) {
                             newStatus = 'dismiss'
                         }
+                        creds = getAuth(window.location.href)
                         $.ajax({
                             type: "POST",
                             url: `/authors/${"{{ author.id }}"}/followers/requests/`,
@@ -241,7 +274,12 @@
                                 'status': new_status,
                                 'follower_endpoint': followingStatus[i]['followee']
                             }),
-                            headers: getAuth(window.location.href),
+                            beforeSend: function (request)
+                            {
+                                request.withCredentials = true;
+                                request.setRequestHeader(creds[0], creds[1]);
+                            },
+                            //headers: getAuth(window.location.href),
                             error: function (error) {
                                 console.error(error);
                             }
