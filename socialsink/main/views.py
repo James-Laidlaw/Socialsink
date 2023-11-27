@@ -285,7 +285,7 @@ def getAuthors(request):
         }
 
         return Response(data, status=200)
-        
+
     return result
 
 
@@ -417,6 +417,9 @@ def getFollowRequests(request, author_id):
 
                     return Response(status=204)
 
+                elif status == 'none':
+                    return Response(status=200)
+
             elif request.data['mode'] == 'update-indirect':
                 followee_endpoint = request.data['follower_endpoint']
                 
@@ -442,6 +445,9 @@ def getFollowRequests(request, author_id):
                     fr.delete()
 
                     return Response(status=204)
+
+                elif status == 'none':
+                    return Response(status=200)
             return Response('Unaccepted status', status=400)
         return Response(status=405)
     return result
@@ -511,6 +517,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
         
         if result == 'self':
             if request.method == 'PUT':
+                print(request.data)
                 follower_instance = Follower.objects.filter(
                     follower_endpoint = request.data['follower_data']['id'],
                     followee_endpoint = request.data['followee_data']['id']
@@ -985,6 +992,7 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
 
     elif data['type'].lower() == 'follow':
+        print(data)
         follow = Follower(
             follower_endpoint = data['actor']['id'],
             follower_host = data['actor']['host'],
