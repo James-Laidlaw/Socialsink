@@ -261,7 +261,7 @@ def updateUser(request, id):
 #get list of authors with pagination
 #/authors/
 def getAuthors(request):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get authors request received")
         pageNum = request.GET.get('page', 1)
@@ -289,7 +289,7 @@ def getAuthors(request):
 #/authors/{AUTHOR_ID}/
 @api_view(['GET', 'POST'])
 def authorReqHandler(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET': 
             print("service: Get author request received")
@@ -345,7 +345,7 @@ def updateAuthor(request, author_id):
 #/authors/{AUTHOR_ID}/followers/
 @api_view(['GET'])
 def getFollowers(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get followers request received")
         if author_id == None:
@@ -371,7 +371,7 @@ def getFollowers(request, author_id):
 
 @api_view(['GET', 'POST'])
 def getFollowRequests(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in 'self':
         url = request.build_absolute_uri()
         url = url[:len(url)-19]
@@ -446,7 +446,7 @@ def getFollowRequests(request, author_id):
 #/authors/{AUTHOR_ID}/following
 @api_view(['GET'])
 def getFollowing(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
         url = request.build_absolute_uri()
         url = url[:len(url)-10] 
@@ -469,7 +469,7 @@ def getFollowing(request, author_id):
 #/authors/{AUTHOR_ID}/friends
 @api_view(['GET'])
 def getFriends(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
         url = request.build_absolute_uri()
         url = url[:len(url)-8] 
@@ -488,7 +488,7 @@ def getFriends(request, author_id):
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
     print("service: Get follower-followee relationship details request received")
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if foreign_author_id == None or author_id == None:
             return Response(status=400)
@@ -562,7 +562,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
 #TODO Friend / follow request (The spec is unclear on the path for this, so leaving it for later)
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def postReqHandler(request, author_id, post_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
             print("service: no post id, returning 400 ***********************************************")
@@ -662,7 +662,7 @@ def createSpecificPost(request, author_id, post_id):
 @api_view(['GET', 'POST'])
 def postCreationReqHandler(request, author_id):
     
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET':
             print("service: Get posts request received")
@@ -811,7 +811,7 @@ def getAuthorPosts(request, author_id):
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments
 @api_view(['GET', 'POST'])
 def commentReqHandler(request, author_id, post_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
             return Response(status=400)
@@ -881,7 +881,7 @@ def inboxReqHandler(request, author_id):
     GET: Private
     DELETE: Private
     '''
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
 
         if request.method == 'POST':
@@ -1000,7 +1000,7 @@ def inboxPOSTHandler(request, recieving_author_id):
 @api_view(['GET', 'POST'])
 def getPostLikes(request, author_id, post_id):
     print("service: Get post likes request received")
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET':
             if post_id == None:
@@ -1071,7 +1071,7 @@ def getPostLikes(request, author_id, post_id):
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
 @api_view(['GET', 'POST'])
 def getCommentLikes(request, author_id, post_id, comment_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get comment likes request received")
         if request.method == 'GET':
@@ -1117,7 +1117,7 @@ def getCommentLikes(request, author_id, post_id, comment_id):
 #/authors/{AUTHOR_ID}/liked
 @api_view(['GET'])
 def getAuthorLiked(request, author_id):
-    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get author liked request received")
         if request.method != 'GET':
