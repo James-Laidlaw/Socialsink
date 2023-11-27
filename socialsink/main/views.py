@@ -279,9 +279,13 @@ def getAuthors(request):
 
         author_serializer = AuthorSerializer(page, many=True, context={'request': request})
 
-        serialized_authors = author_serializer.data
+        data = {
+            "type": "authors",
+            "items": author_serializer.data
+        }
 
-        return Response(serialized_authors)
+        return Response(data, status=200)
+        
     return result
 
 

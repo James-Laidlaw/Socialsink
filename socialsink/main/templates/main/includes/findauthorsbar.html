@@ -253,6 +253,7 @@
                 },
                 //headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
                 success: async function (response, textStatus, http) {
+                    response = response["items"]
                     for (i in response) {
                         if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
                             authors.push(response[i])
