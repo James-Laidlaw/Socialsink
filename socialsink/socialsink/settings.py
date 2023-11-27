@@ -42,10 +42,11 @@ INSTALLED_APPS = [
     # Add new application
     'main',
     'fontawesomefree',
-    #'corsheaders',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,7 +54,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'socialsink.urls'
@@ -143,13 +143,59 @@ MEDIA_ROOT = BASE_DIR / "media"
 django_on_heroku.settings(locals())
 
 #CORS
-#CORS_ALLOWED_ORIGINS = [
-#    "http://127.0.0.1:8000",  
-#    "http://localhost:8000",  # Your development frontend URL
-#    "https://super-coding-team-89a5aa34a95f.herokuapp.com",
-#    "https://socialsync-404-project-6469dd163e44.herokuapp.com",
-#]
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",  
+    "http://localhost:8000",  # Your development frontend URL
+    "https://super-coding-team-89a5aa34a95f.herokuapp.com",
+    "https://socialsync-404-project-6469dd163e44.herokuapp.com",
+]
 
-#CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
-#CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",  
+    "http://localhost:8000",  # Your development frontend URL
+    "https://super-coding-team-89a5aa34a95f.herokuapp.com",
+    "https://socialsync-404-project-6469dd163e44.herokuapp.com",
+]
+
+CORS_ALLOW_PRIVATE_NETWORK = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
+
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+        #'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.IsAdminUser',
+     ),
+    'PAGE_SIZE': 100,
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework.filters.DjangoFilterBackend',
+    ),
+}

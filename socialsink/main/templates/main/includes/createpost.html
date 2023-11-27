@@ -65,12 +65,13 @@
     function getAuth(input) {
         for (const item in hosts) {
             if (hosts[item][0] === input) {
-                return {
-                    "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
-                    "Access-Control-Allow-Origin": '*',
-                    "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
-                    "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
-                }
+                return ["Authorization", "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])]
+                //{
+                    //"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
+                    //"Access-Control-Allow-Origin": '*',
+                    //"Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                    //"Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                //}
             }
         }
     }
@@ -148,12 +149,26 @@
                 }
             }
         });
+
+
+        creds = getAuth(window.location.href)
+
+
         $.ajax({
             type: "POST",
             url: `/authors/${author_id}/posts/`,
             data: formData,
             contentType: 'application/json',
-            headers: getAuth(window.location.href),
+            //headers: getAuth(window.location.href),
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
+            
+            beforeSend: function (request)
+            {
+                request.withCredentials = true;
+                request.setRequestHeader(creds[0], creds[1]);
+            },
+
+
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 
@@ -172,12 +187,19 @@
                     const post = response
 
                     //THIS IS FOR POSTING TO THIS USERS INBOX
+                    creds = getAuth(window.location.href)
                     $.ajax({
                         type: "POST",
                         url: `/authors/${author_id}/inbox/`,
                         data: post,
                         contentType: 'application/json',
-                        headers: getAuth(window.location.href),
+                        headers: { "X-CSRFToken": '{{csrf_token}}' },
+                        beforeSend: function (request)
+                        {
+                            request.withCredentials = true;
+                            request.setRequestHeader(creds[0], creds[1]);
+                        },
+                        //headers: getAuth(window.location.href),
                         error: function(error) {
                             console.error(error)
                         }
@@ -186,18 +208,32 @@
                     postJson = JSON.parse(post)
                     if (postJson['unlisted'] === false) {
                         if (postJson['visibility'] === 'FRIENDS') {
+                            creds = getAuth(window.location.href)
                             $.ajax({
                                 type: "GET",
                                 url: `authors/${author_id}/friends/`,
-                                headers: getAuth(window.location.href),
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                beforeSend: function (request)
+                                {
+                                    request.withCredentials = true;
+                                    request.setRequestHeader(creds[0], creds[1]);
+                                },
+                                //headers: getAuth(window.location.href),
                                 success: function (response, textStatus, http) {
                                     for (const i in response) {
+                                        creds = getAuth(getHostFromUrl(`${response[i]}inbox/`))
                                         $.ajax({
                                             type: "POST",
                                             url: `${response[i]}inbox/`,
                                             data: post,
                                             contentType: 'application/json',
-                                            headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
+                                            headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                            beforeSend: function (request)
+                                            {
+                                                request.withCredentials = true;
+                                                request.setRequestHeader(creds[0], creds[1]);
+                                            },
+                                            //headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
                                             error: function(error) {
                                                 console.error(error)
                                             }
@@ -210,19 +246,33 @@
                             })
                         } else {
                             for (const host in hosts) {
+                                creds = getAuth(hosts[host][0])
                                 $.ajax({
                                     type: "GET",
                                     url: `${hosts[host][0]}authors/${author_id}/followers/`,
-                                    headers: getAuth(hosts[host][0]),
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                    beforeSend: function (request)
+                                    {
+                                        request.withCredentials = true;
+                                        request.setRequestHeader(creds[0], creds[1]);
+                                    },
+                                    //headers: getAuth(hosts[host][0]),
                                     success: function (response, textStatus, http) {
                                         for (const follower in response['items']) {
                                             const id = response['items'][follower]['id'].split('/').at(-2)
+                                            creds = getAuth(hosts[host][0])
                                             $.ajax({
                                                 type: "POST",
                                                 url: `${hosts[host][0]}authors/${id}/inbox/`,
                                                 data: post,
                                                 contentType: 'application/json',
-                                                headers: getAuth(hosts[host][0]),
+                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                                beforeSend: function (request)
+                                                {
+                                                    request.withCredentials = true;
+                                                    request.setRequestHeader(creds[0], creds[1]);
+                                                },
+                                                //headers: getAuth(hosts[host][0]),
                                                 error: function(error) {
                                                     console.error(error)
                                                 }

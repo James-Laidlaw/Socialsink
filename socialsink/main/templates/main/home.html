@@ -63,14 +63,18 @@
         }
 
         function getAuth(input) {
+            parts = input.split('/')
             for (const item in hosts) {
                 if (hosts[item][0] === input) {
-                    return {
-                        "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
-                        "Access-Control-Allow-Origin": '*',
-                        "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
-                        "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
-                    }
+                    return ["Authorization", "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])]
+                    
+                        //`${parts.at(0)}//${hosts[item][1]}:${hosts[item][2]}@${parts.at(2)}/`
+
+                        //{"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                        //"Access-Control-Allow-Origin": '*',
+                        //"Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                        //"Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                    
                 }
             }
         }
@@ -212,6 +216,7 @@
                         }
                     }
                 });
+                creds = getAuth(getHostFromUrl(`${post}comments/`))
                 $.ajax({
                     type: "POST",
                     url: `${post}comments/`,
@@ -220,15 +225,28 @@
                         'author': authorData
                     }),
                     contentType: 'application/json',
-                    headers: getAuth(window.location.href),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(window.location.href),
                     success: function(response, textStatus, http) {
                         $(`#post-comment-input-${postID}`).val("")
+                        creds = getAuth(getHostFromUrl(`${author}inbox/`))
                         $.ajax({
                             type: "POST",
                             url: `${author}inbox/`,
                             data: JSON.stringify(response),
                             contentType: 'application/json',
-                            headers: getAuth(getHostFromUrl(`${author}inbox/`)),
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
+                            beforeSend: function (request)
+                            {
+                                request.withCredentials = true;
+                                request.setRequestHeader(creds[0], creds[1]);
+                            },
+                            //headers: getAuth(getHostFromUrl(`${author}inbox/`)),
                             error: function(error) {
                                 console.error(error)
                             }
@@ -300,7 +318,7 @@
             } else {
                 destination = 'there'
             }
-
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[pid][0]}/comments/${commentIDs[cid][0]}/likes/`,
@@ -310,7 +328,13 @@
                     'author_data': authorData
                 }),
                 contentType: 'application/json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-comment-button-${cid}`).addClass('liked')
@@ -319,12 +343,19 @@
                         updateCommentLikes([commentIDs[cid]])
 
                         if (destination === 'there' && !(commentAuthor.includes(url.host)) && !(commentAuthor.split('/').at(-2) === "{{author.id}}")) {
+                            creds = getAuth(getHostFromUrl(`${commentAuthor}inbox/`))
                             $.ajax({
                                 type: "POST",
                                 url: `${commentAuthor}inbox/`,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
-                                headers: getAuth(getHostFromUrl(`${commentAuthor}inbox/`)),
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                beforeSend: function (request)
+                                {
+                                    request.withCredentials = true;
+                                    request.setRequestHeader(creds[0], creds[1]);
+                                },
+                                //headers: getAuth(getHostFromUrl(`${commentAuthor}inbox/`)),
                                 error: function(error) {
                                     console.error(error)
                                 }
@@ -399,6 +430,7 @@
                         }
                     }
                 });
+                creds = getAuth(window.location.href)
                 $.ajax({
                     type: "POST",
                     url: `/authors/${authorID}/posts/${id}/`,
@@ -409,7 +441,13 @@
                         'categories': categoriesText,
                         'content': contentText,
                     }),
-                    headers: getAuth(window.location.href),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
                             $(`#save-button-${id}`).remove()
@@ -466,6 +504,7 @@
                         }
                     }
                 });
+                creds = getAuth(window.location.href)
                 $.ajax({
                     type: "POST",
                     url: `/authors/{{ author.id }}/posts/`,
@@ -474,17 +513,30 @@
                         'post_id': postIDs[postID][0],
                     }),
                     contentType: 'application/json',
-                    headers: getAuth(getHostFromUrl(window.location.href)),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(window.location.href),
                     success: async function (response, textStatus, http) {
                         post = response
 
                         // SEND THIS TO THIS INBOX
+                        creds = getAuth(window.location.href)
                         $.ajax({
                             type: "POST",
                             url: `/authors/${"{{author.id}}"}/inbox/`,
                             data: post,
                             contentType: 'application/json',
-                            headers: getAuth(window.location.href),
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
+                            beforeSend: function (request)
+                            {
+                                request.withCredentials = true;
+                                request.setRequestHeader(creds[0], creds[1]);
+                            },
+                            //headers: getAuth(window.location.href),
                             error: function(error) {
                                 console.error(error)
                             }
@@ -494,18 +546,32 @@
                         postJson = JSON.parse(post)
                         if (postJson['unlisted'] === false) {
                             if (postJson['visibility'] === 'FRIENDS') {
+                                creds = getAuth(window.location.href)
                                 $.ajax({
                                     type: "GET",
                                     url: `authors/${"{{author.id}}"}/friends/`,
-                                    headers: getAuth(window.location.href),
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                    beforeSend: function (request)
+                                    {
+                                        request.withCredentials = true;
+                                        request.setRequestHeader(creds[0], creds[1]);
+                                    },
+                                    //headers: getAuth(window.location.href),
                                     success: function (response, textStatus, http) {
                                         for (const i in response) {
+                                            creds = getAuth(getHostFromUrl(`${response[i]}inbox/`))
                                             $.ajax({
                                                 type: "POST",
                                                 url: `${response[i]}inbox/`,
                                                 data: post,
                                                 contentType: 'application/json',
-                                                headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
+                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                                beforeSend: function (request)
+                                                {
+                                                    request.withCredentials = true;
+                                                    request.setRequestHeader(creds[0], creds[1]);
+                                                },
+                                                //headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
                                                 error: function(error) {
                                                     console.error(error)
                                                 }
@@ -518,19 +584,33 @@
                                 })
                             } else {
                                 for (const host in hosts) {
+                                    creds = getAuth(hosts[host][0])
                                     await $.ajax({
                                         type: "GET",
                                         url: `${hosts[host][0]}authors/${"{{author.id}}"}/followers`,
-                                        headers: getAuth(hosts[host][0]),
+                                        headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                        beforeSend: function (request)
+                                        {
+                                            request.withCredentials = true;
+                                            request.setRequestHeader(creds[0], creds[1]);
+                                        },
+                                        //headers: getAuth(hosts[host][0]),
                                         success: async function (response, textStatus, http) {
                                             for (const follower in response['items']) {
                                                 const id = response['items'][follower]['id'].split('/').at(-2)
+                                                creds = getAuth(hosts[host][0])
                                                 await $.ajax({
                                                     type: "POST",
                                                     url: `${hosts[host][0]}authors/${id}/inbox/`,
                                                     data: post,
                                                     contentType: 'application/json',
-                                                    headers: getAuth(hosts[host][0]),
+                                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                                    beforeSend: function (request)
+                                                    {
+                                                        request.withCredentials = true;
+                                                        request.setRequestHeader(creds[0], creds[1]);
+                                                    },
+                                                    //headers: getAuth(hosts[host][0]),
                                                     error: function(error) {
                                                         console.error(error)
                                                     }
@@ -567,10 +647,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/authors/{{author.id}}/posts/${postID}`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#post-block-${id}`).remove()
@@ -594,10 +681,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/api/delete-inbox-item/{{ author.id }}/posts/${postID}`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 error: function(error) {
                     console.error(error)
                 }
@@ -605,10 +699,17 @@
         }
 
         async function insertPostComplete(postData) {
+            creds = getAuth(getHostFromUrl(`${postData['id']}likes`))
             await $.ajax({
                 type: "GET",
                 url: `${postData['id']}likes`,
-                headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
                 success: async function (response, textStatus, http) {
                     liked = false
                     for (const index in response) {
@@ -631,10 +732,17 @@
         }
 
         async function placeComment(pid, comment) {
+            creds = getAuth(getHostFromUrl(`${comment['id']}likes`))
             await $.ajax({
                 type: "GET",
                 url: `${comment['id']}likes`,
-                headers: getAuth(getHostFromUrl(`${comment['id']}likes`)),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(getHostFromUrl(`${comment['id']}likes`)),
                 success: async function (response, textStatus, http) {
                     liked = false
                     for (const a in response) {
@@ -656,19 +764,33 @@
             await getAuthorData()
 
             authorID = "{{ author.id }}"
+            creds = getAuth(window.location.href)
             await $.ajax({
                 type: "GET",
                 url: `/authors/${authorID}/inbox`,
                 dataType: 'json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: async function (response, textStatus, http) {
                     if (http.status === 200) {
                         for (const post in response['items']) {
                             if (response['items'][post]['type'] === 'post') {
+                                creds = getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`))
                                 await $.ajax({
                                     type: "GET",
                                     url: `${response['items'][post]['endpoint']}`,
-                                    headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                    beforeSend: function (request)
+                                    {
+                                        request.withCredentials = true;
+                                        request.setRequestHeader(creds[0], creds[1]);
+                                    },
+                                    //headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
                                     success: async function (response, textStatus, http) {
                                         await insertPostComplete(response)
                                     },
@@ -689,11 +811,18 @@
         initInbox();
 
         async function getAuthorData() {
+            creds = getAuth(window.location.href)
             await $.ajax({
                 type: "GET",
                 url: `/authors/${"{{ author.id }}"}/`,
                 dataType: 'json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     authorData = response
                 },
@@ -720,6 +849,7 @@
             } else {
                 destination = 'there'
             }
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
@@ -729,7 +859,13 @@
                     'author_data': authorData
                 }),
                 contentType: 'application/json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
@@ -738,12 +874,19 @@
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
 
                         if (destination === 'there' && !(postAuthor.includes(url.host)) && !(postAuthor.split('/').at(-2) === "{{author.id}}")) {
+                            creds = getAuth(getHostFromUrl(`${postAuthor}inbox/`))
                             $.ajax({
                                 type: "POST",
                                 url: `${postAuthor}inbox/`,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
-                                headers: getAuth(getHostFromUrl(`${postAuthor}inbox/`)),
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                beforeSend: function (request)
+                                {
+                                    request.withCredentials = true;
+                                    request.setRequestHeader(creds[0], creds[1]);
+                                },
+                                //headers: getAuth(getHostFromUrl(`${postAuthor}inbox/`)),
                                 error: function(error) {
                                     console.error(error)
                                 }
@@ -768,10 +911,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
@@ -793,11 +943,18 @@
         function checkForDeletedPosts() {
             for (const index in postIDs) {
                 postInfo = postIDs[index]
+                creds = getAuth(getHostFromUrl(`${postInfo[2]}`))
                 $.ajax({
                     type: "GET",
                     url: `${postInfo[2]}`,
                     contentType: 'application/json',
-                    headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
                     error: function (error) {
                         if (error.status === 404) {
                             $(`#post-block-${postInfo[0]}`).remove()
@@ -814,10 +971,17 @@
         async function updatePostData(postIDs) {
             for (const index in postIDs) {
                 postInfo = postIDs[index]
+                creds = getAuth(getHostFromUrl(`${postInfo[2]}`))
                 await $.ajax({
                     type: "GET",
                     url: `${postInfo[2]}`,
-                    headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
                     success: async function (response, textStatus, http) {
                         if (http.status === 200) {
                             await updateFields()
@@ -833,10 +997,17 @@
         async function newComments(index, comments) {
             for (const comment in comments) {
                 if (!(commentIDs.some(sublist => sublist[0] === comments[comment]['id'].split('/').at(-2)))) {
+                    creds = getAuth(getHostFromUrl(`${comments[comment]['id']}likes`))
                     await $.ajax({
                         type: "GET",
                         url: `${comments[comment]['id']}likes`,
-                        headers: getAuth(getHostFromUrl(`${comments[comment]['id']}likes`)),
+                        headers: { "X-CSRFToken": '{{csrf_token}}' },
+                        beforeSend: function (request)
+                        {
+                            request.withCredentials = true;
+                            request.setRequestHeader(creds[0], creds[1]);
+                        },
+                        //headers: getAuth(getHostFromUrl(`${comments[comment]['id']}likes`)),
                         success: async function (response, textStatus, http) {
                             liked = false
                             for (const a in response) {
@@ -855,10 +1026,17 @@
         }
 
         async function doPostLikes(postInfo, index) {
+            creds = getAuth(getHostFromUrl(`${postInfo[2]}likes`))
             await $.ajax({
                 type: "GET",
                 url: `${postInfo[2]}likes`,
-                headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
                 success: function (response, textStatus, http) {
                     document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
                 },
@@ -897,10 +1075,17 @@
 
         function updateCommentLikes(commentIDs) {
             for (const index in commentIDs) {
+                creds = getAuth(getHostFromUrl(`${commentIDs[index][1]['id']}likes`))
                 $.ajax({
                     type: "GET",
                     url: `${commentIDs[index][1]['id']}likes`,
-                    headers: getAuth(getHostFromUrl(`${commentIDs[index][1]['id']}likes`)),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(getHostFromUrl(`${commentIDs[index][1]['id']}likes`)),
                     success: function (response, textStatus, http) {
                         document.getElementById(`like-comment-button-${index}`).innerHTML = `${response.length}<i class="fa-solid fa-heart"></i>`
                     },

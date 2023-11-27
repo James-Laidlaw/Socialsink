@@ -32,12 +32,13 @@
         function getAuth(input) {
             for (const item in hosts) {
                 if (hosts[item][0] === input) {
-                    return {
-                        "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
-                        "Access-Control-Allow-Origin": '*',
-                        "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
-                        "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
-                    }
+                    return ["Authorization", "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])]
+                    //{
+                        //"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
+                        //"Access-Control-Allow-Origin": '*',
+                        //"Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                        //"Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                    //}
                 }
             }
         }
@@ -217,6 +218,7 @@
                         }
                     }
                 });
+                creds = getAuth(window.location.href)
                 $.ajax({
                     type: "POST",
                     url: `/authors/${authorID}/posts/${id}/`,
@@ -227,7 +229,13 @@
                         'categories': categoriesText,
                         'content': contentText,
                     }),
-                    headers: getAuth(window.location.href),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                    beforeSend: function (request)
+                    {
+                        request.withCredentials = true;
+                        request.setRequestHeader(creds[0], creds[1]);
+                    },
+                    //headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
                         if (http.status === 200) {
                             $(`#save-button-${id}`).remove()
@@ -306,10 +314,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/authors/{{author.id}}/posts/${id}`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         window.location.href = "/"
@@ -330,10 +345,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
                 url: `/api/like-post/${postID}`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
@@ -357,10 +379,17 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
                 url: `/api/unlike-post/${postID}`,
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#like-button-${postID}`).removeClass('liked')
@@ -397,6 +426,7 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
                 url: `/api/get-deleted-posts/`,
@@ -405,7 +435,13 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         for (const post in response) {
@@ -437,6 +473,7 @@
                     }
                 }
             });
+            creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
                 url: `/api/get-post-data/`,
@@ -445,7 +482,13 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
-                headers: getAuth(window.location.href),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request)
+                {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         for (const index in response) {
