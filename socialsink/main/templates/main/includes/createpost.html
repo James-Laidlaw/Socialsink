@@ -65,7 +65,12 @@
     function getAuth(input) {
         for (const item in hosts) {
             if (hosts[item][0] === input) {
-                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                return {
+                    "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
+                    "Access-Control-Allow-Origin": '*',
+                    "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                    "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                }
             }
         }
     }
@@ -146,7 +151,7 @@
         });
         $.ajax({
             type: "POST",
-            url: `/service/authors/${author_id}/posts/`,
+            url: `/authors/${author_id}/posts/`,
             data: formData,
             contentType: 'application/json',
             headers: getAuth(window.location.href),
@@ -171,7 +176,7 @@
                     //THIS IS FOR POSTING TO THIS USERS INBOX
                     $.ajax({
                         type: "POST",
-                        url: `/service/authors/${author_id}/inbox/`,
+                        url: `/authors/${author_id}/inbox/`,
                         data: post,
                         contentType: 'application/json',
                         headers: getAuth(window.location.href),
@@ -185,20 +190,19 @@
 
                     postJson = JSON.parse(post)
                     if (postJson['unlisted'] === false) {
-                        for (const host in hosts) {
+                        if (postJson['visibility'] === 'FRIENDS') {
                             $.ajax({
                                 type: "GET",
-                                url: `${hosts[host][0]}/service/authors/${author_id}/followers`,
-                                headers: getAuth(hosts[host][0]),
+                                url: `authors/${author_id}/friends/`,
+                                headers: getAuth(window.location.href),
                                 success: function (response, textStatus, http) {
-                                    for (const follower in response['items']) {
-                                        const id = response['items'][follower]['id'].split('/').at(-2)
+                                    for (const i in response) {
                                         $.ajax({
                                             type: "POST",
-                                            url: `${hosts[host][0]}/service/authors/${id}/inbox/`,
+                                            url: `${response[i]}inbox/`,
                                             data: post,
                                             contentType: 'application/json',
-                                            headers: getAuth(hosts[host][0]),
+                                            headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
                                             success: function (response, textStatus, http) {
                                                 console.log(response)
                                             },
@@ -212,6 +216,35 @@
                                     console.error(error)
                                 }
                             })
+                        } else {
+                            for (const host in hosts) {
+                                $.ajax({
+                                    type: "GET",
+                                    url: `${hosts[host][0]}authors/${author_id}/followers/`,
+                                    headers: getAuth(hosts[host][0]),
+                                    success: function (response, textStatus, http) {
+                                        for (const follower in response['items']) {
+                                            const id = response['items'][follower]['id'].split('/').at(-2)
+                                            $.ajax({
+                                                type: "POST",
+                                                url: `${hosts[host][0]}authors/${id}/inbox/`,
+                                                data: post,
+                                                contentType: 'application/json',
+                                                headers: getAuth(hosts[host][0]),
+                                                success: function (response, textStatus, http) {
+                                                    console.log(response)
+                                                },
+                                                error: function(error) {
+                                                    console.error(error)
+                                                }
+                                            })
+                                        }
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            }
                         }
                     }
                 }

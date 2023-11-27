@@ -9,8 +9,9 @@
 
     const request_box = document.querySelector('.request-box');
     var requests_ids = [];
+    var requestCount = 0
 
-    function handleRequestOption(e, id, action) {
+    function handleRequestOption(e, id, action, followerEndpoint) {
         e.preventDefault();
 
         var csrf_token = "{{ csrf_token }}";
@@ -22,47 +23,32 @@
             }
         });
 
+        status = 'dismiss'
         if (action === 'accept') {
-            document.getElementById(`follow-request-${id}`).remove();
-            requests_ids.splice(requests_ids.indexOf(id), 1);
-            $.ajax({
-                type: "POST",
-                url: "/api/follow/",
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    'id': parseInt(id),
-                    'action': 'accept'
-                }),
-                success: function (response, textStatus, http) {
-                    console.log(response)
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
-
-        } else if (action === 'dismiss') {
-            document.getElementById(`follow-request-${id}`).remove();
-            requests_ids.splice(requests_ids.indexOf(id), 1);
-            $.ajax({
-                type: "POST",
-                url: "/api/follow/",
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    'id': parseInt(id),
-                    'action': 'dismiss'
-                }),
-                success: function (response, textStatus, http) {
-                    console.log(response)
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
+            status = 'accept'
         }
+
+        document.getElementById(`follow-request-${id}`).remove();
+        requests_ids.splice(requests_ids.indexOf(id), 1);
+        $.ajax({
+            type: "POST",
+            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
+            contentType: 'application/json',
+            data: JSON.stringify({
+                'status': status,
+                'follower_endpoint': followerEndpoint
+            }),
+            headers: {
+                "Authorization": "Basic " + btoa("socialsink:socialSink123_"),
+                'Access-Control-Allow-Origin': window.location.href
+            },
+            error: function (error) {
+                console.error(error);
+            }
+        })
     }
 
-    function createFollowRequestPanel(id, username) {
+    function createFollowRequestPanel(fd, id, followerEndpoint) {
         const follow_request = document.createElement('div');
         follow_request.classList.add('request')
         follow_request.id = `follow-request-${id}`
@@ -70,23 +56,28 @@
         follow_request.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
                                     <div class="request-content">
                                         <div>
-                                            <p class="author-username">${username}</p>
+                                            <p class="author-username">${fd['displayName']}</p>
                                         </div>
                                         <div class="flex-btn-wrap">
-                                            <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept')"><i class="fa-regular fa-circle-check"></i></button>
-                                            <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss')"><i class="fa-regular fa-circle-xmark"></i></button>
+                                            <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept', '${followerEndpoint}')"><i class="fa-regular fa-circle-check"></i></button>
+                                            <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss', '${followerEndpoint}')"><i class="fa-regular fa-circle-xmark"></i></button>
                                         </div>
                                     </div>`;
         return follow_request;
     }
 
-    function getFollowRequests() {
+    function updateFollowRequests() {
+        //authors/<str:author_id>/followers/requests/
         return $.ajax({
             type: "GET",
-            url: "api/follow-requests/",
+            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
             contentType: 'application/json',
-            success: function (response, textStatus, http) {
-                //console.log(response)
+            headers: {
+                "Authorization": "Basic " + btoa("socialsink:socialSink123_"),
+                'Access-Control-Allow-Origin': window.location.href
+            },
+            success: async function (response, textStatus, http) {
+                await addRequests(response)
             },
             error: function (error) {
                 console.error(error);
@@ -94,33 +85,30 @@
         });
     }
 
-    function addRequests() {
-        getFollowRequests().done(function (result) {
-            // CONDITIONALLY adding requests
-            var id_list = [];
-            for (i in result) {
-                if (!requests_ids.includes(result[i].id)) {
-                    request_box.appendChild(createFollowRequestPanel(result[i].id, result[i].user))
-                    requests_ids.push(result[i].id)
-                }
+    updateFollowRequests()
+    setInterval(updateFollowRequests, 2000) //2 Second interval
 
-                // PREP for next step
-                id_list.push(result[i].id)
+    async function addRequests(data) {
+        ids = []
+
+        for (const i in data) {
+            fd = JSON.parse(data[i])
+            if (!requests_ids.some(sublist => sublist[0] === fd['id'])) {
+                request_box.appendChild(createFollowRequestPanel(fd, requestCount, fd['id']))
+                requests_ids.push([fd['id'], requestCount])
+                requestCount = requestCount + 1
             }
+            ids.push(fd['id'])
+        }
 
-            // CHECKING for expired/deleted requests
-            for (i in requests_ids) {
-                if (!(id_list.includes(requests_ids[i]))) {
-                    document.getElementById(`follow-request-${requests_ids[i]}`).remove();
-                    requests_ids.splice(requests_ids.indexOf(requests_ids[i]), 1);
-                }
+        // CHECKING for expired/deleted requests
+        for (i in requests_ids) {
+            if (!(ids.includes(requests_ids[i][0]))) {
+                document.getElementById(`follow-request-${i}`).remove();
+                requests_ids.splice(requests_ids.indexOf(i), 1);
             }
-
-        })
+        }
     }
-
-    addRequests();
-    setInterval(addRequests, 5000);
 
 
 </script>

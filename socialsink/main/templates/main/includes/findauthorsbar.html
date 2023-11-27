@@ -5,25 +5,43 @@
 
 <script>
     var authorList = [];
+    var authorCount = 0
+    var followerData
+    var followingStatus
+    var authors = []
     const authorBox = document.querySelector('.author-box');
 
+    var hosts = []
+
+    async function getHosts() {
+        await $.ajax({
+            type: "GET",
+            url: `/api/get-node-hosts/`,
+            success: function (response, textStatus, http) {
+                hosts = response
+            },
+            error: function (error) {
+                console.error(error)
+            }
+        })
+    }
     /*
         Builder function for author panels
     */
-    function createAuthorPanel(username, id, url, friends, following, requested) {
+    function createAuthorPanel(followeeData, elementID, status) {
         const authorElem = document.createElement('div');
         authorElem.classList.add('author');
-        authorElem.id = `author-panel-${id}`;
+        authorElem.id = `author-panel-${elementID}`;
 
         var action;
         var text;
-        if (friends) {
+        if (status === 'friends') {
             action = 'unfollow';
             text = 'Friends';
-        } else if (following) {
+        } else if (status === 'following') {
             action = 'unfollow';
             text = 'Following';
-        } else if (requested) {
+        } else if (status === 'requested') {
             action = 'unfollow';
             text = 'Requested';
         } else {
@@ -34,32 +52,19 @@
         authorElem.innerHTML = `<a href="/"><img src="../../../static/images/unknown_user.png" /></a>
                                 <div class="author-content">
                                     <div>
-                                        <p class="author-username">${username}</p>
+                                        <p class="author-username">${followeeData['displayName']}</p>
                                     </div>
-                                    <button type="button" id="follow-${id}" class="btn-follow ${action}" onclick="followAuthor(event, '${id}', '${url}')">${text}</button>
+                                    <button type="button" id="follow-${elementID}" class="btn-follow ${action}" onclick="followAuthor(event, '${elementID}')">${text}</button>
                                 </div>`;
         return authorElem;
     }
 
-    function checkFollowing() {
-        return $.ajax({
-            type: "GET",
-            url: "api/following/",
-            success: function (response, textStatus, http) {
-                //console.log(response)
-            },
-            error: function (error) {
-                console.error(error);
-            }
-        });
-    }
 
-    /*
-        Handle follow actions in the bar
-    */
-    function followAuthor(e, id, url) {
+    //Handle follow actions in the bar
+    function followAuthor(e, id) {
         e.preventDefault();
         button = document.getElementById(`follow-${id}`);
+        followee_id = authors[id]['id'].split('/').at(-2)
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -72,20 +77,20 @@
         // Not the most robust method but works well
         // Checks the class list on the action to complete
         if (button.classList.contains('request')) {
-            // Switching states
-            button.innerText = 'Requested';
-            button.classList.remove("request");
-            button.classList.add("unfollow");
             // Send request
             $.ajax({
                 type: "PUT",
-                url: "/api/follow/",
+                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    'id': parseInt(id)
+                    'follower_data': followerData,
+                    'followee_data': authors[id]
                 }),
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
-                    console.log(response)
+                    button.innerText = 'Requested';
+                    button.classList.remove("request");
+                    button.classList.add("unfollow");
                 },
                 error: function (error) {
                     console.error(error);
@@ -93,20 +98,20 @@
             });
 
         } else if (button.classList.contains('unfollow')) {
-            // Switching states
-            button.innerText = 'Follow';
-            button.classList.remove("unfollow");
-            button.classList.add("request");
             // Send request
             $.ajax({
                 type: "DELETE",
-                url: "/api/follow/",
+                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
                 contentType: 'application/json',
                 data: JSON.stringify({
-                    'id': parseInt(id)
+                    'follower_endpoint': followerData['id'],
+                    'followee_endpoint': authors[id]['id']
                 }),
+                headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
-                    console.log(response)
+                    button.innerText = 'Follow';
+                    button.classList.remove("unfollow");
+                    button.classList.add("request");
                 },
                 error: function (error) {
                     console.error(error);
@@ -115,116 +120,94 @@
         }
     }
 
-    function getHostFromUrl(input) {
-        var parts = input.split('/')
-        var hostURL = `${parts.at(0)}//${parts.at(2)}/`
-        return hostURL
+    async function getAuthorData() {
+        await $.ajax({
+            type: "GET",
+            url: `/authors/${"{{ author.id }}"}/`,
+            headers: getAuth(window.location.href),
+            success: function (response, textStatus, http) {
+                followerData = response
+            },
+            error: function (error) {
+                console.error(error)
+            }
+        })
     }
 
-    function getAuth(input) {
-        for (const item in hosts) {
-            if (hosts[item][0] === input) {
-                return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+    async function getFollowingStatus() {
+        await $.ajax({
+            type: "GET",
+            url: `/authors/${"{{ author.id }}"}/following/`,
+            headers: getAuth(window.location.href),
+            success: function (response, textStatus, http) {
+                followingStatus = response
+            },
+            error: function (error) {
+                console.error(error)
             }
+        })
+    }
+
+    async function addAuthor(followeeData) {
+        var id = followeeData['id'].split("/").at(-2)
+
+        //CHECK FOR STATUSES
+        status = 'follow'
+        for (const i in followingStatus) {
+            if (followingStatus[i]['followee'] === followeeData['id']) {
+                status = followingStatus[i]['status']
+                break
+            }
+        }
+
+        if (!authorList.includes(followeeData['id'])) {
+            authorBox.appendChild(createAuthorPanel(followeeData, authorCount, status));
+            authorList.push(followeeData['id']);
+            authorCount = authorCount + 1
+        } else {
+            id = 0
+            for (const i in authorList) {
+                if (authorList[i] === followeeData['id']) {
+                    id = i
+                    break
+                }
+            }
+            authorBox.replaceChild(createAuthorPanel(followeeData, id, status), document.getElementById(`author-panel-${id}`));
         }
     }
 
-    function addAuthors() {
-        // Nesting two requests
-        $.ajax({
-            type: "GET",
-            url: `/api/get-node-hosts`,
-            success: function (response, textStatus, http) {
-                for (const loc in response) {
-                    if (response[loc][0] !== 'super-coding-team') {
-                        $.ajax({
-                            type: "GET",
-                            url: `${response[loc][0]}/service/authors/`,
-                            data: {
-                                page: 1,
-                                size: 50
-                            },
-                            headers: getAuth(getHostFromUrl(`${response[loc][0]}service/authors/`)),
-                            success: function (response, textStatus, http) {
-                                checkFollowing().done(function (result) {
-                                    var friends = [];
-                                    var followers = [];
-                                    var requests = [];
-                
-                                    for (i in result) {
-                                        if (result[i].friendship) {
-                                            // FRIENDSHIP
-                                            friends.push(result[i].id);
-                                        } else if (result[i].accepted) {
-                                            // FOLLOWING
-                                            followers.push(result[i].id);
-                                        } else {
-                                            // REQUESTED
-                                            requests.push(result[i].id);
-                                        }
-                                    }
-                
-                                    for (i in response) {
-                                        // had to split since its requesting from outward service api
-                                        var id = parseInt(response[i].id.split("/").reverse()[1]);
-                                        
-                                        // Add authors conditionally -> updates if the author id already in place
-                                        if (friends.includes(id)) {
-                                            if (!authorList.includes(id)) {
-                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, true, false, false));
-                                                authorList.push(id);
-                                            } else {
-                                                authorBox.replaceChild(
-                                                    createAuthorPanel(response[i].displayName, id, response[i].id, true, false, false), document.getElementById(`author-panel-${id}`))
-                                            }
-                
-                                        } else if (followers.includes(id)) {
-                                            if (!authorList.includes(id)) {
-                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, true, false));
-                                                authorList.push(id);
-                                            } else {
-                                                authorBox.replaceChild(
-                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, true, false), document.getElementById(`author-panel-${id}`));
-                                            }
-                
-                                        } else if (requests.includes(id)) {
-                                            if (!authorList.includes(id)) {
-                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, false, true));
-                                                authorList.push(id);
-                                            } else {
-                                                authorBox.replaceChild(
-                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, false, true), document.getElementById(`author-panel-${id}`));
-                                            }
-                
-                                        } else {
-                                            if (!authorList.includes(id)) {
-                                                authorBox.appendChild(createAuthorPanel(response[i].displayName, id, response[i].id, false, false, false));
-                                                authorList.push(id);
-                                            } else {
-                                                authorBox.replaceChild(
-                                                    createAuthorPanel(response[i].displayName, id, response[i].id, false, false, false), document.getElementById(`author-panel-${id}`));
-                                            }
-                
-                                        }
-                                    }
-                                })
-                            },
-                            error: function (error) {
-                                console.error(error);
-                            }
-                        });
+    async function updateAuthors() {
+        await getHosts()
+        await getAuthorData()
+        await getFollowingStatus()
+        
+        for (const host in hosts) {
+            await $.ajax({
+                type: "GET",
+                url: `${hosts[host][0]}authors/`,
+                data: {
+                    page: 1,
+                    size: 50
+                },
+                headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
+                success: async function (response, textStatus, http) {
+                    for (i in response) {
+                        if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
+                            authors.push(response[i])
+                            await addAuthor(response[i])
+                        }
                     }
+                },
+                error: function (error) {
+                    console.error(error);
                 }
-            },
-            error: function (error) {
-                console.error(error);
-            }
-        });
+            });
+        }
     }
 
-    addAuthors();
+    updateAuthors();
     // Update interval
-    setInterval(addAuthors, 5000);
+    setInterval(updateAuthors, 2000); //2 Second cooldown
 
     // TESTING
 </script>
