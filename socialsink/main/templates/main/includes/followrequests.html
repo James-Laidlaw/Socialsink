@@ -54,7 +54,15 @@
         follow_request.classList.add('request')
         follow_request.id = `follow-request-${id}`
 
-        follow_request.innerHTML = `<img src="../../../static/images/unknown_user.png" />
+        const userProfileImage = fd['profileImage']
+
+        if (userProfileImage !== null) {
+                profileImage = userProfileImage;
+        } else {
+            profileImage = "../../../static/images/unknown_user.png";
+        }
+
+        follow_request.innerHTML = `<img src="${profileImage}" />
                                     <div class="request-content">
                                         <div>
                                             <p class="author-username">${fd['displayName']}</p>

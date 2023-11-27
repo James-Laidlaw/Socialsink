@@ -49,7 +49,15 @@
             text = 'Follow';
         };
 
-        authorElem.innerHTML = `<img src="../../../static/images/unknown_user.png" />
+        const userProfileImage = followeeData['profileImage'];
+
+        if (userProfileImage !== null) {
+                profileImage = userProfileImage;
+        } else {
+            profileImage = "../../../static/images/unknown_user.png";
+        }
+
+        authorElem.innerHTML = `<img src="${profileImage}" />
                                 <div class="author-content">
                                     <div>
                                         <p class="author-username">${followeeData['displayName']}</p>

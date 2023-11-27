@@ -8,13 +8,17 @@
         <div class="main-area">
             <div id="top-options-container">
                 <div id="nav-feed-tabs" class="nav-feed-tabs">
-                    <button id="show-feed-activity" class="btn active-feed"><i class="fa-solid fa-message"></i>Feed</button>
+                    <button id="show-feed-activity" class="btn active-feed"><i class="fa-solid fa-envelope-open"></i>Feed</button>
+                    <button id="show-manage-posts" class="btn"><i class="fa-solid fa-file-pen"></i>Manage</button>
                     <button id="show-git-activity" class="btn"><i class="fa-brands fa-github"></i>Git</button>
                 </div>
                 <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
             </div>
             {% include 'main/includes/createpost.html' %}
             <div id="post-container" class="active-container"></div>
+            <!-- This includes the html for manageposts and the outer div has id="manage-posts-container" -->
+            {% include 'main/includes/manageposts.html' %}
+            <!-- --------------------------------------------------------------------------- -->
             <!-- This includes the html for gitfeed and the outer div has id="git-container" -->
             {% include 'main/includes/gitcontainer.html' %}
             <!-- --------------------------------------------------------------------------- -->
@@ -125,13 +129,20 @@
 
             const readableDate = date.toDateString();
             const readableTime = date.toLocaleTimeString();
+            const postProfileImage = post['author']['profileImage'];
+
+            if (postProfileImage !== null) {
+                profileImage = postProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
 
             // Construct the post content using the provided data
 
             // showReshareConfirmation function can be found in the popupmodals.html file under scripts
             postElement.innerHTML = `
                 <div class="feed-post existing-post">
-                    <img src="../../../static/images/unknown_user.png" class="profile-img" />
+                    <img src="${profileImage}" class="profile-img" />
                     <div class="post-content">
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -246,8 +257,18 @@
             } else {
                 likeButton = `<button type="button" class="btn btn-like" id="like-comment-button-${commentNum}" onclick="likeComment(${commentNum}, ${pid}, '${comment['author']['id']}')">${like_count}<i class="fa-solid fa-heart"></i></button>`
             }
+            var authorObject = JSON.parse(comment['author']);
+            const userProfileImage = authorObject['profileImage'];
+
+            if (userProfileImage !== null) {
+                profileImage = userProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
+
 
             newComment.innerHTML = `
+                <img src="${profileImage}" class="profile-img comment-img" />
                 <div class="flex-vertical-wrap">
                     <p class="comment-username">${authorObject['displayName']}</p>
                     <p class="comment-description" disabled>${text}</p>
