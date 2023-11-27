@@ -953,6 +953,7 @@ def inboxReqHandler(request, author_id):
 
 def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
+    print(data)
     
     if data['type'].lower() == 'like':
         like = Like(
