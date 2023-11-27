@@ -993,14 +993,13 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
 
     elif data['type'].lower() == 'follow':
-        print(data)
         follow = Follower(
             follower_endpoint = data['actor']['id'],
             follower_host = data['actor']['host'],
-            follower_data = data['actor'],
+            follower_data = json.dumps(data['actor']),
             followee_endpoint = data['object']['id'],
             followee_host = data['object']['host'],
-            followee_data = data['object'],
+            followee_data = json.dumps(data['object']),
             dismissed = False,
             accepted = False,
             friendship = False,

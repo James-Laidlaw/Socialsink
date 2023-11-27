@@ -56,6 +56,8 @@
     }
 
     function createFollowRequestPanel(fd, id, followerEndpoint) {
+        fd = JSON.parse(fd)
+        console.log(fd)
         const follow_request = document.createElement('div');
         follow_request.classList.add('request')
         follow_request.id = `follow-request-${id}`
@@ -83,7 +85,6 @@
 
     function updateFollowRequests() {
         //authors/<str:author_id>/followers/requests/
-            
         return $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/followers/requests/`,
