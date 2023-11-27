@@ -28,10 +28,10 @@ class Follower(models.Model):
     id = models.AutoField(primary_key=True)
     follower_endpoint = models.CharField(max_length=1000, default='')
     follower_host = models.CharField(max_length=1000, default='')
-    follower_data = models.CharField(max_length=1000, default='')
+    follower_data = models.CharField(max_length=2000, default='')
     followee_endpoint = models.CharField(max_length=1000, default='')
     followee_host = models.CharField(max_length=1000, default='')
-    followee_data = models.CharField(max_length=1000, default='')
+    followee_data = models.CharField(max_length=2000, default='')
     dismissed = models.BooleanField(default=False) # false if followee has not yet viewed and dismissed the follow request, allows for "Friend Requests" DEPRECATED
     accepted = models.BooleanField(default=False) # This flag indicates if the follow request has been accepted. DEPRECATED
     friendship = models.BooleanField(default=False) # This flag indicates if there is a bidirectional follow (friend) 
@@ -62,7 +62,7 @@ class Post(models.Model):
 #TODO do we want to store comments from deleted authors?
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
-    author_data = models.CharField(max_length=1000, default='')
+    author_data = models.CharField(max_length=2000, default='')
     post_endpoint = models.CharField(max_length=1000, default='')
     content = models.CharField(max_length=600)
     created_at = models.DateTimeField(auto_now_add=True)
