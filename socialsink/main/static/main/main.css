@@ -572,8 +572,6 @@ main {
     border-radius: 5px;
     border: none;
     transition: all 500ms ease 0s;
-    /* This drop down was not used, hidding it for now instead of deleting too much */
-    display: none;
 }
 
 .feed-post .dropdown-toggle:hover,
@@ -587,6 +585,10 @@ main {
 
 .feed-post .dropdown-menu {
     right: 0;
+}
+
+.dropdown-menu.show {
+    display: flex;
 }
 
 /* Feed Posts Ends ----------------------------- */
