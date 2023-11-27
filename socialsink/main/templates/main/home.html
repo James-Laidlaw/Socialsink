@@ -8,13 +8,17 @@
         <div class="main-area">
             <div id="top-options-container">
                 <div id="nav-feed-tabs" class="nav-feed-tabs">
-                    <button id="show-feed-activity" class="btn active-feed"><i class="fa-solid fa-message"></i>Feed</button>
+                    <button id="show-feed-activity" class="btn active-feed"><i class="fa-solid fa-envelope-open"></i>Feed</button>
+                    <button id="show-manage-posts" class="btn"><i class="fa-solid fa-file-pen"></i>Manage</button>
                     <button id="show-git-activity" class="btn"><i class="fa-brands fa-github"></i>Git</button>
                 </div>
                 <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
             </div>
             {% include 'main/includes/createpost.html' %}
             <div id="post-container" class="active-container"></div>
+            <!-- This includes the html for manageposts and the outer div has id="manage-posts-container" -->
+            {% include 'main/includes/manageposts.html' %}
+            <!-- --------------------------------------------------------------------------- -->
             <!-- This includes the html for gitfeed and the outer div has id="git-container" -->
             {% include 'main/includes/gitcontainer.html' %}
             <!-- --------------------------------------------------------------------------- -->
