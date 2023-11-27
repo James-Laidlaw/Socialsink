@@ -530,7 +530,14 @@ def followerReqHandler(request, author_id, foreign_author_id):
 
                 follow.save()
 
-                return Response(status=200)
+                data = {
+                    "type": 'Follow',
+                    'summary': f"{request.data['follower_data']['displayName']} has requested to follow {request.data['followee_data']['displayName']}",
+                    'actor': request.data['follower_data'],
+                    "object": request.data['followee_data']
+                }
+
+                return Response(data, status=200)
 
 
             elif request.method == 'DELETE':

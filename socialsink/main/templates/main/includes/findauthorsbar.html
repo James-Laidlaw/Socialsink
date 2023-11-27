@@ -87,6 +87,7 @@
         if (button.classList.contains('request')) {
             // Send request
             creds = getAuth(window.location.href)
+            console.log(authors)
             $.ajax({
                 type: "PUT",
                 url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
@@ -105,6 +106,27 @@
                     button.innerText = 'Requested';
                     button.classList.remove("request");
                     button.classList.add("unfollow");
+
+                    if (!(window.location.href.includes(getHostFromUrl(authors[id]['id'])))) {
+                        creds = getAuth(getHostFromUrl(`${authors[id]['id']}inbox/`))
+                        $.ajax({
+                            type: "POST",
+                            url: `${authors[id]['id']}inbox/`,
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                'follower_data': followerData,
+                                'followee_data': authors[id]
+                            }),
+                            beforeSend: function (request)
+                            {
+                                request.withCredentials = true;
+                                request.setRequestHeader(creds[0], creds[1]);
+                            },
+                            error: function(error) {
+                                console.error(error)
+                            }
+                        })
+                    }
                 },
                 error: function (error) {
                     console.error(error);
