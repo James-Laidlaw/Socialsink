@@ -34,7 +34,10 @@
         var oldPostsRetrieved = false
         var postIDs = []
         var postNum = 0
+        var commentNum = 0
+        var commentIDs = []
         var hosts = []
+        var authorData
 
         async function getHosts() {
             await $.ajax({
@@ -69,9 +72,8 @@
         }
 
         function addPost(post, likeCount, likedPost) {
-            id = post['id'].split('/').at(-2)
             authorId = post['author']['id'].split('/').at(-2)
-            postIDs.push([id, authorId, post['id']])
+            postIDs.push([post['id'].split('/').at(-2), authorId, post['id']])
             id = postNum
 
             const postElement = document.createElement("div");
@@ -93,7 +95,8 @@
 
             var likeButton = ''
             if (likedPost) {
-                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+                //USED IF WE WANT TO UNLIKE //likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" disabled>${likeCount} <i class="fa-solid fa-heart"></i></button>`
             } else {
                 likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
             }
@@ -190,73 +193,128 @@
             if (text.length > 200) {
                 alert("Comment exceeds maximum length (200 characters)")
             } else if (text.length > 0) {
+                var csrf_token = "{{ csrf_token }}";
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                        }
+                    }
+                });
                 $.ajax({
-                    type: "GET",
-                    url: `/authors/${"{{author.id}}"}`,
+                    type: "POST",
+                    url: `${post}comments/`,
+                    data: JSON.stringify({
+                        'comment': text,
+                        'author': authorData
+                    }),
+                    contentType: 'application/json',
                     headers: getAuth(window.location.href),
-                    success: function (response, textStatus, http) {
-                        var csrf_token = "{{ csrf_token }}";
-                        $.ajaxSetup({
-                            beforeSend: function(xhr, settings) {
-                                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
-                                }
-                            }
-                        });
+                    success: function(response, textStatus, http) {
+                        $(`#post-comment-input-${postID}`).val("")
                         $.ajax({
                             type: "POST",
-                            url: `${post}comments/`,
-                            data: JSON.stringify({
-                                'comment': text,
-                                'author': response
-                            }),
+                            url: `${author}inbox/`,
+                            data: JSON.stringify(response),
                             contentType: 'application/json',
-                            headers: getAuth(window.location.href),
-                            success: function(response, textStatus, http) {
-                                $.ajax({
-                                    type: "POST",
-                                    url: `${author}inbox/`,
-                                    data: JSON.stringify(response),
-                                    contentType: 'application/json',
-                                    headers: getAuth(getHostFromUrl(`${author}inbox/`)),
-                                    error: function(error) {
-                                        console.error(error)
-                                    }
-                                })
-                            },
-                            error: function (error) {
-                                console.error(error);
-                                alert("There was an error posting your comment")
+                            headers: getAuth(getHostFromUrl(`${author}inbox/`)),
+                            error: function(error) {
+                                console.error(error)
                             }
                         })
                     },
                     error: function (error) {
-                        console.error(error)
+                        console.error(error);
+                        alert("There was an error posting your comment")
                     }
                 })
             }
         }
 
-        function addComment(postID, comment) {
+        function addComment(pid, comment, like_count, liked) {
             commentContainer = document.getElementById(`post-comment-container-${pid}`)
             text = comment['content']
-            id = comment['id'].split('/').at(-1)
+            id = comment['id'].split('/').at(-2)
 
             const newComment = document.createElement("div");
             newComment.classList.add("post-single-comment")
 
-            var authorObject = JSON.parse(comment['author']);
+            var authorObject = comment['author'];
+
+            if (liked) {
+                likeButton = `<button type="button" class="btn btn-like liked" id="like-comment-button-${commentNum}" disabled>${like_count}<i class="fa-solid fa-heart"></i></button>`
+            } else {
+                likeButton = `<button type="button" class="btn btn-like" id="like-comment-button-${commentNum}" onclick="likeComment(${commentNum}, ${pid}, '${comment['author']['id']}')">${like_count}<i class="fa-solid fa-heart"></i></button>`
+            }
 
             newComment.innerHTML = `
                 <div class="flex-vertical-wrap">
                     <p class="comment-username">${authorObject['displayName']}</p>
-                    <p class="comment-description">${text}</p>
+                    <p class="comment-description" disabled>${text}</p>
                 </div>
                 <div class="flex-btn-wrap">
-                    <button type="button" class="btn btn-like" id="like-comment-button-${id}" onclick="likeComment('${id}')"> <i class="fa-solid fa-heart"></i></button>
+                    ${likeButton}
                 </div>
             `
             commentContainer.appendChild(newComment) 
+            commentNum = commentNum + 1
+            commentIDs.push([id, comment])
+        }
+
+        function likeComment(cid, pid, commentAuthor) {
+            comment = commentIDs[cid][1]
+            url = new URL(comment['id'])
+
+            var csrf_token = "{{ csrf_token }}";
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrf_token);
+                    }
+                }
+            });
+
+            if (window.location.href.includes(url.host)) {
+                destination = 'here'
+            } else {
+                destination = 'there'
+            }
+
+            $.ajax({
+                type: "POST",
+                url: `/authors/${"{{author.id}}"}/posts/${postIDs[pid][0]}/comments/${commentIDs[cid][0]}/likes/`,
+                data: JSON.stringify({
+                    'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
+                    'destination': destination,
+                    'author_data': authorData
+                }),
+                contentType: 'application/json',
+                headers: getAuth(window.location.href),
+                success: function (response, textStatus, http) {
+                    if (http.status === 201) {
+                        $(`#like-comment-button-${cid}`).addClass('liked')
+                        //USED IF WE WANT TO UNLIKE //document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
+                        document.getElementById(`like-comment-button-${cid}`).disabled = true
+                        updateCommentLikes([commentIDs[cid]])
+
+                        if (destination === 'there' && !(commentAuthor.includes(url.host)) && !(commentAuthor.split('/').at(-2) === "{{author.id}}")) {
+                            $.ajax({
+                                type: "POST",
+                                url: `${commentAuthor}inbox/`,
+                                data: JSON.stringify(response),
+                                contentType: 'application/json',
+                                headers: getAuth(getHostFromUrl(`${commentAuthor}inbox/`)),
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
+                        }
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
         }
 
         function editPost(id, contentType) {
@@ -397,7 +455,6 @@
                     contentType: 'application/json',
                     headers: getAuth(getHostFromUrl(window.location.href)),
                     success: async function (response, textStatus, http) {
-                        //console.log(response)
                         post = response
 
                         // SEND THIS TO THIS INBOX
@@ -407,9 +464,6 @@
                             data: post,
                             contentType: 'application/json',
                             headers: getAuth(window.location.href),
-                            success: function (response, textStatus, http) {
-                                //console.log(response)
-                            },
                             error: function(error) {
                                 console.error(error)
                             }
@@ -431,9 +485,6 @@
                                                 data: post,
                                                 contentType: 'application/json',
                                                 headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
-                                                success: function (response, textStatus, http) {
-                                                    console.log(response)
-                                                },
                                                 error: function(error) {
                                                     console.error(error)
                                                 }
@@ -533,7 +584,7 @@
         }
 
         async function insertPostComplete(postData) {
-            $.ajax({
+            await $.ajax({
                 type: "GET",
                 url: `${postData['id']}likes`,
                 headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
@@ -544,13 +595,33 @@
                             liked = true
                         }
                     }
-                    pid = addPost(postData, response.length, liked)
+                    pid = await addPost(postData, response.length, liked)
                     if (postData['commentsSrc'] && postData['commentsSrc'].length > 0) {
                         comments = postData['commentsSrc']
                         for (const comment in comments) {
-                            addComment(pid, comments[comment])
+                            await placeComment(pid, comments[comment])
                         }
                     }
+                },
+                error: function(error) {
+                    console.error(error)
+                }
+            })
+        }
+
+        async function placeComment(pid, comment) {
+            await $.ajax({
+                type: "GET",
+                url: `${comment['id']}likes`,
+                headers: getAuth(getHostFromUrl(`${comment['id']}likes`)),
+                success: async function (response, textStatus, http) {
+                    liked = false
+                    for (const a in response) {
+                        if (response[a]['author']['id'] === "{{author_endpoint}}") {
+                            liked = true
+                        }
+                    }
+                    await addComment(pid, comment, response.length, liked)
                 },
                 error: function(error) {
                     console.error(error)
@@ -561,8 +632,7 @@
         authorID = "{{ author.id }}"
         async function initInbox() {
             await getHosts()
-
-            console.log(hosts)
+            await getAuthorData()
 
             authorID = "{{ author.id }}"
             await $.ajax({
@@ -585,8 +655,6 @@
                                         console.error(error)
                                     }
                                 })
-                            } else {
-                                console.log("NOT A POST")
                             }
                         }
                     }
@@ -599,7 +667,24 @@
         }
         initInbox();
 
+        async function getAuthorData() {
+            await $.ajax({
+                type: "GET",
+                url: `/authors/${"{{ author.id }}"}/`,
+                dataType: 'json',
+                headers: getAuth(window.location.href),
+                success: function (response, textStatus, http) {
+                    authorData = response
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+
         function likePost(postID, authorID, postAuthor, endpoint) {
+            url = new URL(postIDs[postID][2])
+            
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -608,38 +693,41 @@
                     }
                 }
             });
+
+            if (window.location.href.includes(url.host)) {
+                destination = 'here'
+            } else {
+                destination = 'there'
+            }
             $.ajax({
                 type: "POST",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                data: JSON.stringify({
+                    'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
+                    'destination': destination,
+                    'author_data': authorData
+                }),
+                contentType: 'application/json',
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
+                        //USED IF WE WANT TO UNLIKE //document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
+                        document.getElementById(`like-button-${postID}`).disabled = true
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
 
-                        $.ajax({
-                            type: "POST",
-                            url: `/authors/${"{{author.id}}"}/inbox/`,
-                            data: JSON.stringify(response),
-                            contentType: 'application/json',
-                            headers: getAuth(window.location.href),
-                            error: function(error) {
-                                console.error(error)
-                            }
-                        })
-
-                        
-                        $.ajax({
-                            type: "POST",
-                            url: `${postAuthor}inbox/`,
-                            data: JSON.stringify(response),
-                            contentType: 'application/json',
-                            headers: getAuth(getHostFromUrl(`${postAuthor}inbox/`)),
-                            error: function(error) {
-                                console.error(error)
-                            }
-                        })
+                        if (destination === 'there' && !(postAuthor.includes(url.host)) && !(postAuthor.split('/').at(-2) === "{{author.id}}")) {
+                            $.ajax({
+                                type: "POST",
+                                url: `${postAuthor}inbox/`,
+                                data: JSON.stringify(response),
+                                contentType: 'application/json',
+                                headers: getAuth(getHostFromUrl(`${postAuthor}inbox/`)),
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
+                        }
                     }
                 },
                 error: function (error) {
@@ -648,6 +736,8 @@
             })
         }
 
+        // THIS FUNCTION IS NO LONGER USED
+        // USE IF WE DECIDE TO UNLIKE POSTS IN THE FUTURE
         function unlikePost(postID, authorID, postAuthor, endpoint) {
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
@@ -701,39 +791,15 @@
         setInterval(checkForDeletedPosts, 2000) //5 second refresh
 
         async function updatePostData(postIDs) {
-
             for (const index in postIDs) {
                 postInfo = postIDs[index]
-                id = postInfo[0]
                 await $.ajax({
                     type: "GET",
                     url: `${postInfo[2]}`,
                     headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
                     success: async function (response, textStatus, http) {
                         if (http.status === 200) {
-                            if ($(`#like-button-${id}`).is(":visible")) {
-                                await $.ajax({
-                                    type: "GET",
-                                    url: `${postInfo[2]}likes`,
-                                    headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
-                                    success: function (response, textStatus, http) {
-                                        document.getElementById(`like-button-${id}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
-                                    },
-                                    error: function(error) {
-                                        console.error(error)
-                                    }
-                                })
-                            
-                                $(`#post-title-${id}`).text(response['title'])
-                                $(`#post-description-${id}`).text(response['description'])
-                                $(`#post-categories-${id}`).text(response['categories'])
-
-                                if (response['contentType'] === 'image/jpeg;base64' || response['contentType'] === 'image/png;base64') {
-                                    $(`#image-previews`).attr('src', response['content'])
-                                } else {
-                                    $(`#post-content-${id}`).text(response['content'])
-                                }
-                            }
+                            await updateFields()
                         }
                     },
                     error: function(error) {
@@ -741,6 +807,88 @@
                     }
                 })
             }
+        }
+
+        async function newComments(index, comments) {
+            for (const comment in comments) {
+                if (!(commentIDs.some(sublist => sublist[0] === comments[comment]['id'].split('/').at(-2)))) {
+                    await $.ajax({
+                        type: "GET",
+                        url: `${comments[comment]['id']}likes`,
+                        headers: getAuth(getHostFromUrl(`${comments[comment]['id']}likes`)),
+                        success: async function (response, textStatus, http) {
+                            liked = false
+                            for (const a in response) {
+                                if (response[a]['author']['id'] === "{{author_endpoint}}") {
+                                    liked = true
+                                }
+                            }
+                            await addComment(index, comments[comment], response.length, liked)
+                        },
+                        error: function(error) {
+                            console.error(error)
+                        }
+                    })
+                }
+            }
+        }
+
+        async function doPostLikes(postInfo, index) {
+            await $.ajax({
+                type: "GET",
+                url: `${postInfo[2]}likes`,
+                headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
+                success: function (response, textStatus, http) {
+                    document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
+                },
+                error: function(error) {
+                    console.error(error)
+                }
+            })
+        }
+
+        async function updateFields(index) {
+            if ($(`#like-button-${index}`).is(":visible")) {
+                await doPostLikes()
+
+                if (response['commentsSrc'] && response['commentsSrc'].length > 0) {
+                    comments = response['commentsSrc']
+                    await newComments(index, comments)
+                }
+            
+                $(`#post-title-${id}`).text(response['title'])
+                $(`#post-description-${id}`).text(response['description'])
+                $(`#post-categories-${id}`).text(response['categories'])
+
+                if (response['contentType'] === 'image/jpeg;base64' || response['contentType'] === 'image/png;base64') {
+                    $(`#image-previews`).attr('src', response['content'])
+                } else {
+                    $(`#post-content-${id}`).text(response['content'])
+                }
+            }
+        }
+
+        function updateComments() {
+            updateCommentLikes(commentIDs)
+        }
+
+        setInterval(updateComments, 2000)
+
+        function updateCommentLikes(commentIDs) {
+            for (const index in commentIDs) {
+                $.ajax({
+                    type: "GET",
+                    url: `${commentIDs[index][1]['id']}likes`,
+                    headers: getAuth(getHostFromUrl(`${commentIDs[index][1]['id']}likes`)),
+                    success: function (response, textStatus, http) {
+                        document.getElementById(`like-comment-button-${index}`).innerHTML = `${response.length}<i class="fa-solid fa-heart"></i>`
+                    },
+                    error: function(error) {
+                        console.error(error)
+                    }
+                })
+            }
+
         }
     </script>
 {% endblock content %}

@@ -10,12 +10,10 @@
 
 <script>
     function logout() {
-        console.log("Logging out")
         $.ajax({
             type: "GET",
             url: "/api/logout/",
             success: function (response, textStatus, http) {
-                console.log(response)
                 if (http.status === 200) {
                     window.location.href = "/login/"
                 }

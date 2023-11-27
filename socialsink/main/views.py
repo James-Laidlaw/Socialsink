@@ -282,7 +282,7 @@ def getAuthors(request):
     return result
 
 
-#/authors/{AUTHOR_ID}
+#/authors/{AUTHOR_ID}/
 @api_view(['GET', 'POST'])
 def authorReqHandler(request, author_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -311,7 +311,7 @@ def getAuthor(request, author_id):
     author_serializer = AuthorSerializer(author, context={'request': request})
 
     serialized_author = author_serializer.data
-    return Response(serialized_author)
+    return Response(serialized_author, status=200)
 
 
 # update an author by id
@@ -934,29 +934,19 @@ def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
     
     if data['type'].lower() == 'like':
-        likeSerializer = LikeSerializer(data=data, context={'request': request})
-        if not likeSerializer.is_valid():
-           print("invalid like", likeSerializer.errors)
-           return Response(status=400)
-        
-        object_url = data.get('object')
-        object_id = get_object_id_from_url(object_url)
+        like = Like(
+            author_endpoint = data['author']['id'],
+            author_data = json.dumps(data['author']),
+            summary = data['summary']
+        )
 
-        #ensure not duplicate like
-        from_author_url_id = data.get('author').get('id') #will be in URL format
+        if data['object'].split('/')[-2] == 'post':
+            like.post_endpoint = data['object']
+        else:
+            like.comment_endpoint = data['object']
 
-        #check for duplicate likes from the same author
-        if Like.objects.filter(Q(author_endpoint=from_author_url_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
-           return Response(status=409)
+        like.save()
 
-        #save like
-        likeSerializer.save()
-
-        #create inbox object
-        Inbox.objects.create(
-            author_id=recieving_author_id, 
-            endpoint=data['object'],
-            type=data['type'])
         return Response(status=200)
     
 
@@ -965,15 +955,19 @@ def inboxPOSTHandler(request, recieving_author_id):
             author_id=recieving_author_id, 
             endpoint=data['id'],
             type=data['type'])
+
         return Response(status=200)
     
     elif data['type'].lower() == 'comment':
-        #TODO should this make a comment object? or is it just sharing the comment / notifying the author?
-        Inbox.objects.create(
-            author_id=recieving_author_id, 
-            endpoint=data['id'],
-            type=data['type'],
+        comment = Comment(
+            author_data = json.dumps(data['author']),
+            post_endpoint = data['id'],
+            content = data['comment'],
+            created_at = datetime.now(pytz.timezone('America/Edmonton'))
         )
+
+        comment.save()
+
         return Response(status=200)
 
     elif data['type'].lower() == 'follow':
@@ -998,8 +992,8 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=400)
 
 
-#/authors/{AUTHOR_ID}/posts/{POST_ID}/likes    
-@api_view(['GET', 'POST', 'DELETE'])
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/likes/
+@api_view(['GET', 'POST'])
 def getPostLikes(request, author_id, post_id):
     print("service: Get post likes request received")
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -1011,11 +1005,13 @@ def getPostLikes(request, author_id, post_id):
             url = request.build_absolute_uri()
             parts = url.split('/')
             start = f"{parts[0]}//{parts[2]}"
-            end = f"{parts[6]}/{parts[7]}/"
-
-            likes = Like.objects.all()
+            end = f"{parts[5]}/{parts[6]}/"
 
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
+            
+            print(url)
+            print(likes)
+            
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
 
             serialized_likes = like_serializer.data
@@ -1026,18 +1022,19 @@ def getPostLikes(request, author_id, post_id):
                 user = request.user
                 if user.is_authenticated:
                     url = request.build_absolute_uri()
+                    parts = url.split('/')
                     url = url[:len(url)-6]
 
-                    author = Author.objects.get(id=author_id)
-
                     like = Like(
-                        author=author,
+                        author_endpoint=request.data['author_endpoint'],
+                        author_data=json.dumps(request.data['author_data']),
                         post_endpoint=url,
-                        summary=f"{author.user.username} like your post", 
+                        summary=f"{user.username} like your post", 
                         created_at=datetime.now(pytz.timezone('America/Edmonton'))
                     )
 
-                    like.save()
+                    if (request.data['destination'] == 'here'):
+                        like.save()
 
                     like_serializer = LikeSerializer(like, context={'request': request})
                     data = like_serializer.data
@@ -1045,44 +1042,71 @@ def getPostLikes(request, author_id, post_id):
                     return Response(data, status=201)
                 return Response(status=401) 
 
-            elif request.method == 'DELETE':
-                user = request.user
-                if user.is_authenticated:
-                    url = request.build_absolute_uri()
-                    url = url[:len(url)-6]
 
-                    author = Author.objects.get(id=author_id)
+            # THIS IS NO LONGER USED
+            # USE IF WE DECIDE TO UNLIKE POSTS AGAIN
+            # elif request.method == 'DELETE':
+            #     user = request.user
+            #     if user.is_authenticated:
+            #         url = request.build_absolute_uri()
+            #         url = url[:len(url)-6]
 
-                    like = Like.objects.get(author=author, post_endpoint=url)
+            #         author = Author.objects.get(id=author_id)
 
-                    like.delete()
+            #         like = Like.objects.get(author=author, post_endpoint=url)
 
-                    return Response(status=200)
-                return Response(status=401) 
+            #         like.delete()
+
+            #         return Response(status=200)
+            #     return Response(status=401) 
             
         return Response(status=405)
     return result
 
 
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def getCommentLikes(request, author_id, post_id, comment_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
     if result in ['self', 'other']:
         print("service: Get comment likes request received")
-        if request.method != 'GET':
-            return Response(status=405)
+        if request.method == 'GET':
+            url = request.build_absolute_uri()
+            parts = url.split('/')
+            start = f"{parts[0]}//{parts[2]}"
+            end = f"{parts[7]}/{parts[8]}/"
 
-        if post_id == None or comment_id == None:
-            return Response(status=400)
-        
-        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, post_id]))
+            likes = Like.objects.filter(Q(comment_endpoint__contains=start) & Q(comment_endpoint__contains=end)).order_by('created_at')
+            like_serializer = LikeSerializer(likes, many=True, context={'request': request})
 
-        likes = Like.objects.filter(post_endpoint=post_url).order_by('created_at')
-        
-        like_serializer = LikeSerializer(likes, many=True, context={'request': request})
-        serialized_likes = like_serializer.data
-        return Response(serialized_likes)
+            serialized_likes = like_serializer.data
+            return Response(serialized_likes, status=200)
+
+        if result == 'self':
+            if request.method == 'POST':
+                user = request.user
+                if user.is_authenticated:
+                    url = request.build_absolute_uri()
+                    parts = url.split('/')
+                    url = url[:len(url)-6]
+
+                    like = Like(
+                        author_endpoint=request.data['author_endpoint'],
+                        author_data=json.dumps(request.data['author_data']),
+                        comment_endpoint=url,
+                        summary=f"{user.username} like your post", 
+                        created_at=datetime.now(pytz.timezone('America/Edmonton'))
+                    )
+
+                    if (request.data['destination'] == 'here'):
+                        like.save()
+
+                    like_serializer = LikeSerializer(like, context={'request': request})
+                    data = like_serializer.data
+
+                    return Response(data, status=201)
+                return Response(status=401) 
+        return Response(status=405)
     return result
 
 
