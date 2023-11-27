@@ -32,7 +32,12 @@
         function getAuth(input) {
             for (const item in hosts) {
                 if (hosts[item][0] === input) {
-                    return {"Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])}
+                    return {
+                        "Authorization": "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2]),
+                        "Access-Control-Allow-Origin": '*',
+                        "Access-Control-Allow-Methods": 'POST, GET, OPTIONS, PUT, DELETE',
+                        "Access-Control-Allow-Headers": 'Content-Type, X-Auth-Token, Origin, Authorization'
+                    }
                 }
             }
         }
@@ -208,7 +213,7 @@
                 });
                 $.ajax({
                     type: "POST",
-                    url: `/service/authors/${authorID}/posts/${id}/`,
+                    url: `/authors/${authorID}/posts/${id}/`,
                     contentType: 'application/json',
                     data: JSON.stringify({
                         'title': titleText,
@@ -297,7 +302,7 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/service/authors/{{author.id}}/posts/${id}`,
+                url: `/authors/{{author.id}}/posts/${id}`,
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {

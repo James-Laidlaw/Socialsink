@@ -167,22 +167,22 @@ class YourApiTests(TestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # tests for outward facing API (/service/*)
+    # tests for outward facing API (/*)
 
-    #GET /service/authors/
+    #GET /authors/
     def test_get_authors(self):
         url = reverse('authorList')
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # #GET /service/authors/<str:author_id>/
+    # #GET /authors/<str:author_id>/
     def test_get_author(self):
         url = reverse('authorReqHandler', args=[self.author.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.check_author(self.author, response.json())
 
-    #POST /service/authors/<str:author_id>/ //only for updating, not creating
+    #POST /authors/<str:author_id>/ //only for updating, not creating
     def test_update_author(self):
         url = reverse('authorReqHandler', args=[self.author.id])
         data = {'displayName': 'testuser2'}
@@ -200,7 +200,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, "get author failed")
         self.assertEqual(response.json()['displayName'], 'testuser2')
 
-    #GET /service/authors/<str:author_id>/followers
+    #GET /authors/<str:author_id>/followers
     def test_get_followers(self):
         follower = self.make_secondary_author()
         Follower.objects.create(follower=follower, followee=self.author)
@@ -211,7 +211,7 @@ class YourApiTests(TestCase):
         self.check_author(follower, response.json()['items'][0])
 
 
-    #GET /service/authors/<str:author_id>/followers/<str:foreign_author_id>
+    #GET /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_get_follower(self):
         follower = self.make_secondary_author()
         Follower.objects.create(follower=follower, followee=self.author)
@@ -220,7 +220,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), True)
     
-    #POST /service/authors/<str:author_id>/followers/<str:foreign_author_id>
+    #POST /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_add_follower(self):
         follower = self.make_secondary_author()
         url = reverse('followerReqHandler', args=[self.author.id, follower.id])
@@ -235,21 +235,21 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), True)
     
-    #DELETE /service/authors/<str:author_id>/followers/<str:foreign_author_id>
+    #DELETE /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_remove_follower(self):
         follower = self.make_secondary_author()
         url = reverse('followerReqHandler', args=[self.author.id, follower.id])
         response: JsonResponse = self.client.delete(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    #PUT /service/authors/<str:author_id>/followers/<str:foreign_author_id>
+    #PUT /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_follower_req_bad_method(self):
         follower = self.make_secondary_author()
         url = reverse('followerReqHandler', args=[self.author.id, follower.id])
         response: JsonResponse = self.client.put(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    #GET /service/authors/<str:author_id>/posts/
+    #GET /authors/<str:author_id>/posts/
     def test_get_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postReqHandler', args=[self.author.id, post.id])
@@ -257,7 +257,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.check_post(post, response.json())
     
-    #POST /service/authors/<str:author_id>/posts/<str:post_id> (update post (for some reason))
+    #POST /authors/<str:author_id>/posts/<str:post_id> (update post (for some reason))
     def test_update_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postReqHandler', args=[self.author.id, post.id])
@@ -271,14 +271,14 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()['title'], 'New Title')
 
-    #DELETE /service/authors/<str:author_id>/posts/<str:post_id>
+    #DELETE /authors/<str:author_id>/posts/<str:post_id>
     def test_delete_post(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postReqHandler', args=[self.author.id, post.id])
         response: JsonResponse = self.client.delete(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
-    #PUT /service/authors/<str:author_id>/posts/<str:post_id>
+    #PUT /authors/<str:author_id>/posts/<str:post_id>
     def test_create_specific_post(self):
         url = reverse('postReqHandler', args=[self.author.id, 12345])
         data = {'title': 'New Title', 'content': 'Test post content', 'publicity': 'public'}
@@ -291,7 +291,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()['title'], 'New Title')
 
-    #GET /service/authors/<str:author_id>/posts/
+    #GET /authors/<str:author_id>/posts/
     def test_get_posts(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('postCreationReqHandler', args=[self.author.id])
@@ -300,7 +300,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.check_post(post, response.json()[0])
 
-    #POST /service/authors/<str:author_id>/posts/
+    #POST /authors/<str:author_id>/posts/
     def test_create_post(self):
         url = reverse('postCreationReqHandler', args=[self.author.id])
         data = {'title': 'New Title', 'content': 'Test post content', 'publicity': 'public'}
@@ -313,7 +313,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['title'], 'New Title')
 
-    #GET /service/authors/<str:author_id>/posts/<str:post_id>/comments/
+    #GET /authors/<str:author_id>/posts/<str:post_id>/comments/
     def test_get_comments(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         postURL = self.get_post_URL(self.author, post)
@@ -323,7 +323,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['comment'], 'Test comment')
 
-    #POST /service/authors/<str:author_id>/posts/<str:post_id>/comments/
+    #POST /authors/<str:author_id>/posts/<str:post_id>/comments/
     def test_create_comment(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         url = reverse('commentReqHandler', args=[self.author.id, post.id])
@@ -334,12 +334,13 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['comment'], 'Test comment')
 
-    # POST /service/authors/{AUTHOR_ID}/inbox/
+    # POST /authors/{AUTHOR_ID}/inbox/
     def test_send_like_inbox(self):
         post = Post.objects.create(
             author=self.author, content="Test post content", publicity=0
         )
         url = reverse("inboxReqHandler", args=[self.author.id])
+        author_id = "http://testserver/authors/" + str(self.author.id) + "/"
         data = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": "test summary",
@@ -356,7 +357,7 @@ class YourApiTests(TestCase):
         response: JsonResponse = self.client.post(url, data, format="json", headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
-    #GET /service/authors/{AUTHOR_ID}/posts/{POST_ID}/likes/
+    #GET /authors/{AUTHOR_ID}/posts/{POST_ID}/likes/
     def test_get_post_likes(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         postURL = self.get_post_URL(self.author, post)
@@ -366,7 +367,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['author'], self.authorURL)
     
-    #GET /service/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes/
+    #GET /authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes/
     def test_get_comment_likes(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         postURL = self.get_post_URL(self.author, post)
@@ -377,7 +378,7 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['author'], self.authorURL)
        
-    #GET /service/authors/{AUTHOR_ID}/liked/
+    #GET /authors/{AUTHOR_ID}/liked/
     def test_get_author_liked(self):
         post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
         postURL = self.get_post_URL(self.author, post)
@@ -437,7 +438,7 @@ class YourApiTests(TestCase):
         )
         commentURL = self.get_comment_URL(self.author, post, comment)
         url = reverse("inboxReqHandler", args=[self.author.id])
-        author_id = "http://testserver/service/authors/" + str(self.author.id) + "/"
+        author_id = "http://testserver/authors/" + str(self.author.id) + "/"
         data = {
             "xyz": "all of this should be stored arbitrarily, nothing is needed other than type",
             "id": commentURL,
@@ -449,7 +450,7 @@ class YourApiTests(TestCase):
                 "displayName": self.author.user.username,
                 "url": author_id,
             },
-            "object": "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(post.id) + "/comments/" + str(comment.id) + "/",
+            "object": "http://testserver/authors/" + str(self.author.id) + "/posts/" + str(post.id) + "/comments/" + str(comment.id) + "/",
         }
         response: JsonResponse = self.client.post(url, data, format="json", headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
