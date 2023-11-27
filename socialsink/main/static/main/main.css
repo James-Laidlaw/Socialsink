@@ -520,7 +520,7 @@ main {
     color: var(--off-white);
 }
 
-.btn-share svg {
+.btn-off-white svg {
     color: var(--off-white);
 }
 
@@ -577,6 +577,8 @@ main {
     border-radius: 5px;
     border: none;
     transition: all 500ms ease 0s;
+    /* This drop down was not used, hidding it for now instead of deleting too much */
+    display: none;
 }
 
 .feed-post .dropdown-toggle:hover,
@@ -823,6 +825,7 @@ main {
 
 #find-author-bar img,
 #follow-requests-bar img {
+    min-width: 48px;
     width: 48px;
     height: 48px;
     border-radius: 50%;
