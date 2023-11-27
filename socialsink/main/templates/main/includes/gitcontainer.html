@@ -16,12 +16,11 @@
         });
 
         var gitActivityFeed = $("#git-container .git-activity-feed");
+        // Get the GitHub username from the author object
         var gitHubUsername = "{{ author.github }}"
         
         // Check if the user has provided a GitHub username
         if (gitHubUsername !== "None") {
-            //console.log(gitHubUsername)
-            //console.log("Updating git activity feed");
             
             // Make a GET request to the GitHub API to get the user's activity feed
             $.ajax({
@@ -30,7 +29,6 @@
                 contentType: 'application/json',
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        //console.log(response);
 
                         // For each activity item, create a post element and append it to git-activity-feed
                         response.forEach(function(activity) {
@@ -78,8 +76,6 @@
     }
 
     // setInterval(updateGitActivity, 10000);
-    // There is a rate limit on the GitHub API, so we can't update too often
-    // unless authenticated requests is implemented (which is not a priority) - Yevhen 
     updateGitActivity();
 
 </script>

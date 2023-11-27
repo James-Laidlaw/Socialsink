@@ -151,12 +151,10 @@ class LikeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
-
         super_result['type'] = "like"
 
         #TODO we might have to provide whole author object if it is a local author
         super_result['author'] = instance.author_endpoint
-
         author_remote = (request.build_absolute_uri("/") not in instance.author_endpoint)
 
         author_name = None
