@@ -281,6 +281,7 @@
                     success: async function (response, textStatus, http) {
                         console.log(response)
                         status = followingStatus[i]['status']
+                        console.log(status)
                         newStatus = 'none'
                         if (status === 'requested' && response === true) {
                             newStatus = 'accept'
