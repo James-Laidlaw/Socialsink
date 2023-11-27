@@ -117,7 +117,7 @@
             }
 
             if (authorId === "{{author.id}}" && post['source'] === null) {
-                dropdown = `<div class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</div>`
+                dropdown = `<a class="dropdown-item" style="cursor: pointer" onclick="editPost(${id}, '${post['contentType']}')">Edit Post</a>`
             } else {
                 dropdown = `<a class="dropdown-item" href="#">Non owner action</a>`
             }
@@ -189,19 +189,6 @@
 
             return id
         }
-
-        $(document).on('click', '.dropdown-toggle', function () {
-            var dropdown = $(this).siblings('.dropdown-menu');
-            $('.dropdown-menu').not(dropdown).removeClass('show');
-            dropdown.toggleClass('show');
-        });
-    
-        // Close dropdown when clicking outside
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('.dropdown').length) {
-                $('.dropdown-menu').removeClass('show');
-            }
-        });
 
         function postComment(postID, post, author) {
             text = $(`#post-comment-input-${postID}`).val()
@@ -433,7 +420,7 @@
                 creds = getAuth(window.location.href)
                 $.ajax({
                     type: "POST",
-                    url: `/authors/${authorID}/posts/${id}/`,
+                    url: `${postIDs[id][2]}`,
                     contentType: 'application/json',
                     data: JSON.stringify({
                         'title': titleText,
@@ -1096,5 +1083,6 @@
             }
 
         }
+
     </script>
 {% endblock content %}
