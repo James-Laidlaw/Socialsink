@@ -194,7 +194,7 @@ def getNodeHosts(request):
         nodes = Node.objects.all()
         data = []
         for node in nodes:
-            if node.hostname != 'super-coding-team':
+            if node.hostname not in ['super-coding-team', 'req1', 'req2']:
                 data.append([node.hostname, node.username, node.password])
         
         return Response(data, status=200)
