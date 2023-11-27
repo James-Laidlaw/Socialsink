@@ -279,6 +279,7 @@
                     },
                     //headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
                     success: async function (response, textStatus, http) {
+                        console.log(response)
                         status = followingStatus[i]['status']
                         newStatus = 'none'
                         if (status === 'requested' && response === true) {
@@ -286,6 +287,7 @@
                         } else if ((status === 'friends' || status === 'following') && response === false) {
                             newStatus = 'dismiss'
                         }
+                        console.log(newStatus)
                         creds = getAuth(window.location.href)
                         $.ajax({
                             type: "POST",
