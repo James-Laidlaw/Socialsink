@@ -201,7 +201,7 @@
             } else if (text.length > 0) {
                 $.ajax({
                     type: "GET",
-                    url: `${author}`,
+                    url: `/authors/${"{{author.id}}"}`,
                     headers: getAuth(window.location.href),
                     success: function (response, textStatus, http) {
                         var csrf_token = "{{ csrf_token }}";
@@ -228,9 +228,6 @@
                                     data: JSON.stringify(response),
                                     contentType: 'application/json',
                                     headers: getAuth(getHostFromUrl(`${author}inbox/`)),
-                                    success: function (response, textStatus, http) {
-                                        //console.log(response)
-                                    },
                                     error: function(error) {
                                         console.error(error)
                                     }
@@ -257,15 +254,11 @@
             const newComment = document.createElement("div");
             newComment.classList.add("post-single-comment")
 
-            var authorObject = JSON.parse(comment.author);
-            // Access the 'displayName' property
-            var displayName = authorObject.displayName;
-            console.log("TESTING");
-            console.log(JSON.stringify(comment, null, 2));
+            var authorObject = JSON.parse(comment['author']);
 
             newComment.innerHTML = `
                 <div class="flex-vertical-wrap">
-                    <p class="comment-username">${comment['author']['displayName']}</p>
+                    <p class="comment-username">${authorObject['displayName']}</p>
                     <p class="comment-description">${text}</p>
                 </div>
                 <div class="flex-btn-wrap">
@@ -501,6 +494,8 @@
         
         function deletePost(id) {
 
+            postID = postIDs[id][0]
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -511,14 +506,14 @@
             });
             $.ajax({
                 type: "DELETE",
-                url: `/authors/{{author.id}}/posts/${id}`,
+                url: `/authors/{{author.id}}/posts/${postID}`,
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
                         $(`#post-block-${id}`).remove()
-                        postIDs = postIDs.filter(item => item[0] !== `${id}`);
+                        postIDs = postIDs.filter(item => item[0] !== `${postID}`);
 
-                        deletePostFromInbox(id)
+                        deletePostFromInbox(postID)
                     }
                 },
                 error: function (error) {
@@ -612,60 +607,6 @@
             })
         }
         initInbox();
-
-        // NEED THIS FUNCTION STILL?
-        function retrievePosts() {
-            if (oldPostsRetrieved) {
-                $.ajax({
-                    type: "GET",
-                    url: `/authors/${authorID}/inbox`,
-                    dataType: 'json',
-                    headers: getAuth(window.location.href),
-                    success: function (response, textStatus, http) {
-                        if (http.status === 200) {
-                            for (const post in response['items']) {
-                                if (response['items'][post]['type'] === 'post') {
-                                    $.ajax({
-                                        type: "GET",
-                                        url: `${response['items'][post]['endpoint']}`,
-                                        headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
-                                        success: function (response, textStatus, http) {
-                                            postData = response
-                                            $.ajax({
-                                                type: "GET",
-                                                url: `${postData['id']}likes`,
-                                                headers: getAuth(getHostFromUrl(`${postData['id']}likes`)),
-                                                success: function (response, textStatus, http) {
-                                                    liked = false
-                                                    for (const index in response) {
-                                                        if (response[index]['author']['id'] === "{{author_endpoint}}") {
-                                                            liked = true
-                                                        }
-                                                    }
-                                                    addPost(postData, response.length, liked)
-                                                },
-                                                error: function(error) {
-                                                    console.error(error)
-                                                }
-                                            })
-                                        },
-                                        error: function(error) {
-                                            console.error(error)
-                                        }
-                                    })
-                                } else {
-                                    console.log("NOT POST")
-                                }
-                            }
-                        }
-                    },
-                    error: function (error) {
-                        console.error(error);
-                    }
-                })
-            }
-        }
-        //setInterval(retrievePosts, 2000)
 
         function likePost(postID, authorID, postAuthor, endpoint) {
             var csrf_token = "{{ csrf_token }}";

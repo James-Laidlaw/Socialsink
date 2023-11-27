@@ -23,6 +23,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 import json
+import re
 
 # Create your views here.
 @login_required
@@ -210,10 +211,12 @@ def deleteInboxPost(request, author_id, post_id):
         author = Author.objects.get(id=author_id)
         items = Inbox.objects.filter(author=author)
 
+        url = request.build_absolute_uri()
+        parts = url.split('/')
+        url = f"{parts[0]}//{parts[2]}/authors/{author_id}/posts/{post_id}/"
+
         for item in items:
-            content = json.loads(item.content)
-            id = content['id'].split('/')[-2]
-            if content['type'] == 'post' and id == post_id:
+            if item.type == 'post' and re.match(rf"^{parts[0]}//{parts[2]}/authors/.*/posts/{post_id}/$", item.endpoint):
                 item.delete()
         
         return Response(status=200)
@@ -1010,9 +1013,11 @@ def getPostLikes(request, author_id, post_id):
             start = f"{parts[0]}//{parts[2]}"
             end = f"{parts[6]}/{parts[7]}/"
 
+            likes = Like.objects.all()
+
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
-            
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
+
             serialized_likes = like_serializer.data
             return Response(serialized_likes)
 
