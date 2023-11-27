@@ -346,7 +346,7 @@ def updateAuthor(request, author_id):
 
 
 #/authors/{AUTHOR_ID}/followers/
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 def getFollowers(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
