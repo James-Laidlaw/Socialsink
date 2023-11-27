@@ -152,7 +152,6 @@ main {
     background: var(--deep-blue);
     padding: 50px;
     border-radius: 32px;
-    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 .login-wrapper .login-left,
@@ -281,7 +280,6 @@ main {
     background: var(--deep-blue);
     padding: 20px 25px 50px;
     border-radius: 0 0 32px 32px;
-    /* box-shadow: 0 30px 40px rgba(0,0,0,.5); */
 }
 
 /* Main Containers and Bars Starts ----------------- */
@@ -308,41 +306,30 @@ main {
 
 .right-bar {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     height: 100%;
     flex-basis: 25%;
     width: 25%;
     overflow: hidden;
-    /* ADDITIONS */
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
 }
 
 /* Main Containers and Bars Ends ------------------- */
 
-#post-container {
-    display: none;
-}
-
-#post-container.active-container {
-    display: initial;
-    overflow-y: overlay;
-    scrollbar-gutter: stable;
-    border-radius: 16px;
-    padding-right: 5px;
-}
-
+#post-container,
 #git-container {
     display: none;
 }
 
+#post-container.active-container,
 #git-container.active-container {
     display: initial;
     overflow-y: overlay;
-    scrollbar-gutter: stable;
     border-radius: 16px;
     padding-right: 5px;
 }
+
 /* Feed Posts Begins ------------------------------- */
 
 .feed-post-wrapper {
@@ -516,10 +503,7 @@ main {
     font-size: 1.125rem;
 } 
 
-.btn-like svg {
-    color: var(--off-white);
-}
-
+.btn-like svg,
 .btn-off-white svg {
     color: var(--off-white);
 }
@@ -596,7 +580,6 @@ main {
 
 /* Feed Posts Ends ----------------------------- */
 
-
 /* Visibility Button Starts --------------------------- */
 
 .flex-btn-wrap .btn {
@@ -652,10 +635,6 @@ main {
 /* Visibility Button Ends ----------------------------- */
 
 /* Create Post Begins -------------------------- */
-
-/* #create-accordion {
-    position: relative;
-} */
 
 #create-accordion .feed-post {
     display: none;

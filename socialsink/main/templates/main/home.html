@@ -14,11 +14,7 @@
                 <button id="toggle-create-window" class="btn" type="button"><i class="fa-solid fa-circle-minus create-icon hide"></i><i class="fa-solid fa-circle-plus create-icon"></i>Create a Post</button>
             </div>
             {% include 'main/includes/createpost.html' %}
-            <div id="post-container" class="active-container">
-                {% for post in posts %}
-                    {% include 'main/includes/feedpost.html' with post=post %}
-                {% endfor %}
-            </div>
+            <div id="post-container" class="active-container"></div>
             <!-- This includes the html for gitfeed and the outer div has id="git-container" -->
             {% include 'main/includes/gitcontainer.html' %}
             <!-- --------------------------------------------------------------------------- -->
@@ -128,7 +124,6 @@
             const readableTime = date.toLocaleTimeString();
 
             // Construct the post content using the provided data
-            // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
 
             // showReshareConfirmation function can be found in the popupmodals.html file under scripts
             postElement.innerHTML = `
@@ -170,11 +165,7 @@
             `;
 
             // Get the container where you want to insert the new post
-            if (feedContainer.firstChild) {
-                feedContainer.insertBefore(postElement, feedContainer.firstChild);
-            } else {
-                feedContainer.appendChild(postElement)
-            }
+            feedContainer.appendChild(postElement)
 
             postNum = postNum + 1
 
