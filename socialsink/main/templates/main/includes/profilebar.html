@@ -3,7 +3,7 @@
         <i class="fa-solid fa-pencil"></i>
     </button>
     <img src="../../../static/images/user_bg.jpg" class="user-bg" />
-    <img src="../../../static/images/unknown_user.png" class="profile-img" />
+    <img src="{% if author.profileImage %}{{ author.profileImage }}{% else %}../../../static/images/unknown_user.png{% endif %}" class="profile-img" />
     <div class="user-box">
         <h3 id="profile-username" class="username">{{ user.username}}</h3>
         <p id="profile-email" class="useremail">{{ user.email }}</p>
@@ -26,20 +26,20 @@
 <div id="edit-profile-dialog" class="popup-modal">
     <p>Edit your profile here</p>
     <div id="profile-bar">
-        <input type="file" id="profile-banner-attachment" style="display:none" name="photo-attachment" accept="image/*">
-        <img src="../../../static/images/user_bg.jpg" class="user-bg" onclick="chooseBannerImage()" />
+        <img src="../../../static/images/user_bg.jpg" class="user-bg" />
         <div class="edit-profile-image-container">
-            <input type="file" id="profile-photo-attachment" style="display:none" name="photo-attachment" accept="image/*">
-            <img src="../../../static/images/unknown_user.png" class="profile-img" onclick="chooseProfileImage()" />
+            <img src="{% if author.profileImage %}{{ author.profileImage }}{% else %}../../../static/images/unknown_user.png{% endif %}" class="profile-img" />
         </div>
         <div class="user-box">
             <p class="useremail">{{ user.email }}</p>
+            <label for="edit-userimage">Profile Image</label>
+            <input type="text" id="edit-userimage" class="form-control" placeholder="{{ author.profileImage }}"/>
             <label for="edit-username">Username</label>
-            <input type="text" id="edit-username" class="username form-control" placeholder="{{ user.username }}"/>
+            <input type="text" id="edit-username" class="form-control" placeholder="{{ user.username }}"/>
             <label for="edit-userbio">Bio</label>
-            <input type="text" id="edit-userbio" class="userbio form-control" placeholder="{{ author.bio }}"/>
+            <input type="text" id="edit-userbio" class="form-control" placeholder="{{ author.bio }}"/>
             <label for="edit-usergithub">GitHub</label>
-            <input type="text" id="edit-usergithub" class="usergithub form-control" placeholder="{{ author.github }}"/>
+            <input type="text" id="edit-usergithub" class="form-control" placeholder="{{ author.github }}"/>
         </div>
     </div>
     <div class="button-wrap">
@@ -86,19 +86,26 @@
 
     $("#confirm-edit-profile-yes").click(function() {
         // Execute the edit profile logic when the user clicks "Yes"
+        var profileImage = $("#edit-userimage").val()
         var username = $("#edit-username").val()
         var bio = $("#edit-userbio").val()
         var github = $("#edit-usergithub").val()
 
-        if (username.length === 0 && bio.length === 0 && github.length === 0) {
+        if (username.length === 0 && bio.length === 0 && github.length === 0 && profileImage.length === 0) {
             alert("No changes have been made, fields are empty");
             $("#edit-profile-dialog").removeClass("show");
             $("body").toggleClass("has-popup-modal");
+
+        } else if (profileImage.length > 200 || (!profileImage.startsWith("https://imgur.com/") && !profileImage.startsWith("https://i.imgur.com/"))) {
+            alert("Profile image URL is too long or invalid, must be under 200 characters and start with 'https://imgur.com/' or 'https://i.imgur.com/'");
+        } else if (username.length > 200) {
+            alert("Username is too long, must be under 200 characters");
         } else if (bio.length > 200) {
             alert("Bio is too long, must be under 200 characters");
         } else if (github.length > 200) {
             alert("GitHub is too long, must be under 200 characters");
         } else {
+
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {
@@ -112,6 +119,7 @@
                 url: `/api/update-user/{{user.id}}`,
                 contentType: 'application/json',
                 data: JSON.stringify({
+                    'profileImage': profileImage,
                     'username': username,
                     'bio': bio,
                     'github': github,
@@ -135,15 +143,5 @@
         $("#edit-profile-dialog").removeClass("show");
         $("body").toggleClass("has-popup-modal");
     });
-
-    function chooseBannerImage() {
-        // Trigger the file input when the image is clicked
-        $("#profile-banner-attachment").click();
-    }
-
-    function chooseProfileImage() {
-        // Trigger the file input when the image is clicked
-        $("#profile-photo-attachment").click();
-    }
 
 </script>

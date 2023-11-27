@@ -22,9 +22,6 @@
     <script>
         function submitLogin(e) {
             e.preventDefault()
-            console.log("Sending login request to server")
-
-
             var csrf_token = "{{ csrf_token }}";
             $.ajaxSetup({
                 beforeSend: function(xhr, settings) {

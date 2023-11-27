@@ -100,11 +100,11 @@ class CommentSerializer(serializers.ModelSerializer):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
         post_url = instance.post_endpoint
-        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-4], post_url.split('/')[-2]])) + str(instance.id)
+        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-4], post_url.split('/')[-2]])) + str(instance.id) +'/'
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
-        super_result['author'] = instance.author_data
+        super_result['author'] = json.loads(instance.author_data)
         super_result['published'] = instance.created_at.isoformat()
         super_result['comment'] = instance.content
         super_result['contentType'] = "text/plain" #Spec wants us to specify content type but doens't say we have to support anything other than plaintext
@@ -151,26 +151,16 @@ class LikeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
-
         super_result['type'] = "like"
 
-        #TODO we might have to provide whole author object if it is a local author
-        super_result['author'] = instance.author_endpoint
+        super_result['author'] = json.loads(instance.author_data)
 
-        author_remote = (request.build_absolute_uri("/") not in instance.author_endpoint)
-
-        author_name = None
-        if author_remote:
-            author_name = "Remote Author"
-        else:
-            author_name = Author.objects.get(id=get_object_id_from_url(instance.author_endpoint)).user.username
-
-        if instance.post_endpoint != None:
+        if instance.post_endpoint != '':
             super_result['object'] = instance.post_endpoint
-            super_result['summary'] = f"{author_name} liked a post"
-        elif instance.comment_endpoint != None:
+            super_result['summary'] = instance.summary
+        elif instance.comment_endpoint != '':
             super_result['object'] = instance.comment_endpoint
-            super_result['summary'] = f"{author_name} liked a Comment"
+            super_result['summary'] = instance.summary
 
         super_result['@context'] = instance.context
         return super_result

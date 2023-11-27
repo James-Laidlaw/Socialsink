@@ -73,7 +73,7 @@
             }
 
             if (authorId === "{{author.id}}") {
-                deleteButton = `<button type="button" class="btn" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
+                deleteButton = `<button type="button" class="btn btn-off-white" id="delete-button-${id}" onclick="showDeleteConfirmation(${id})"><i class="fa-solid fa-trash"></i>Delete</button>`
             } else {
                 deleteButton = ""
             }
@@ -95,12 +95,18 @@
 
             const readableDate = date.toDateString();
             const readableTime = date.toLocaleTimeString();
+            const postProfileImage = post['author']['profileImage'];
+
+            if (postProfileImage !== null) {
+                profileImage = postProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
 
             // Construct the post content using the provided data
-            // <a href="/"><img src="../../../static/images/unknown_user.png" /></a>
             postElement.innerHTML = `
                 <div class="feed-post existing-post">
-                    <a href="/"><img src="../../../static/images/unknown_user.png" class="profile-img" /></a>
+                    <img src="${profileImage}" class="profile-img" />
                     <div class="post-content">
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -119,9 +125,9 @@
                             <p id="post-categories-${id}">${post['categories']}</p>
                             ${content}
                         </div>
-                        <div class="post-btn-wrap" id="post-btn-wrap-${id}">
+                        <div class="flex-btn-wrap" id="flex-btn-wrap-${id}">
                             ${likeButton}
-                            <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
+                            <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-off-white"><i class="fa-solid fa-share"></i>Share</button>
                             ${deleteButton}
                         </div>
                     </div>
@@ -129,8 +135,8 @@
                 <div class="post-comment-content" id="post-comment-container-${id}">
                     <div class="post-comment-input-wrapper">
                         <input type="text" id="post-comment-input-${id}" placeholder="Comment" class="form-control" value="">
-                        <div class="post-btn-wrap">
-                            <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-share"><i class="fa-solid fa-comment"></i>Comment</button>
+                        <div class="flex-btn-wrap">
+                            <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-off-white"><i class="fa-solid fa-comment"></i>Comment</button>
                         </div>
                     </div>
                 </div>
@@ -402,7 +408,6 @@
                 headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
-                        console.log(response)
                         for (const post in response) {
                             window.location.href = "/"
                         }

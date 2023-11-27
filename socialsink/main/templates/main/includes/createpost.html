@@ -107,7 +107,6 @@
                 var reader = new FileReader()
 
                 reader.onload = function(e) {
-                    console.log(e.target.result)
                     createPost(JSON.stringify({
                         'title': title.value,
                         'description': description.value,
@@ -171,7 +170,6 @@
                     }
 
                     const post = response
-                    console.log(post)
 
                     //THIS IS FOR POSTING TO THIS USERS INBOX
                     $.ajax({
@@ -180,9 +178,6 @@
                         data: post,
                         contentType: 'application/json',
                         headers: getAuth(window.location.href),
-                        success: function (response, textStatus, http) {
-                            console.log(response)
-                        },
                         error: function(error) {
                             console.error(error)
                         }
@@ -203,9 +198,6 @@
                                             data: post,
                                             contentType: 'application/json',
                                             headers: getAuth(getHostFromUrl(`${response[i]}inbox/`)),
-                                            success: function (response, textStatus, http) {
-                                                console.log(response)
-                                            },
                                             error: function(error) {
                                                 console.error(error)
                                             }
@@ -231,9 +223,6 @@
                                                 data: post,
                                                 contentType: 'application/json',
                                                 headers: getAuth(hosts[host][0]),
-                                                success: function (response, textStatus, http) {
-                                                    console.log(response)
-                                                },
                                                 error: function(error) {
                                                     console.error(error)
                                                 }
