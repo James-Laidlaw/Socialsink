@@ -259,7 +259,7 @@
                                     //headers: getAuth(hosts[host][0]),
                                     success: function (response, textStatus, http) {
                                         for (const follower in response['items']) {
-                                            const id = response['items'][follower]['id'].split('/').at(-2)
+                                            const id = JSON.parse(response['items'][follower])['id'].split('/').at(-2)
                                             creds = getAuth(hosts[host][0])
                                             $.ajax({
                                                 type: "POST",

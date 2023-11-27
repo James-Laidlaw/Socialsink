@@ -360,7 +360,7 @@ def getFollowers(request, author_id):
         follower_authors = []
         followers = Follower.objects.filter(followee_endpoint=url)
         for f in followers:
-            follower_authors.append(f.followee_data)
+            follower_authors.append(f.follower_data)
 
         returnDict = {"type": "followers", "items": follower_authors}
 
