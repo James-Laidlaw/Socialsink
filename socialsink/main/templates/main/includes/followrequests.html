@@ -56,7 +56,6 @@
     }
 
     function createFollowRequestPanel(fd, id, followerEndpoint) {
-        fd = JSON.parse(fd)
         console.log(fd)
         const follow_request = document.createElement('div');
         follow_request.classList.add('request')
@@ -113,7 +112,6 @@
 
     async function addRequests(data) {
         ids = []
-
         for (const i in data) {
             fd = JSON.parse(data[i])
             if (!requests_ids.some(sublist => sublist[0] === fd['id'])) {

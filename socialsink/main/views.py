@@ -390,9 +390,13 @@ def getFollowRequests(request, author_id):
 
         elif request.method == 'POST':
             status = request.data['status']
+            print(status)
 
             if request.data['mode'] == 'update-direct':
                 follower_endpoint = request.data['follower_endpoint']
+
+                print(url)
+                print(follower_endpoint)
                 
                 fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 

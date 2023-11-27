@@ -259,7 +259,9 @@
     // Update interval
     setInterval(updateAuthors, 2000); //2 Second cooldown
 
-    function updateFollowing() {
+    async function updateFollowing() {
+        await getFollowingStatus()
+
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
