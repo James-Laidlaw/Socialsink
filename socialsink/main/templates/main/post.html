@@ -114,7 +114,7 @@
                             <p id="post-categories-${id}">${post['categories']}</p>
                             ${content}
                         </div>
-                        <div class="post-btn-wrap" id="post-btn-wrap-${id}">
+                        <div class="flex-btn-wrap" id="flex-btn-wrap-${id}">
                             ${likeButton}
                             <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                             ${deleteButton}
@@ -124,7 +124,7 @@
                 <div class="post-comment-content" id="post-comment-container-${id}">
                     <div class="post-comment-input-wrapper">
                         <input type="text" id="post-comment-input-${id}" placeholder="Comment" class="form-control" value="">
-                        <div class="post-btn-wrap">
+                        <div class="flex-btn-wrap">
                             <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-share"><i class="fa-solid fa-comment"></i>Comment</button>
                         </div>
                     </div>

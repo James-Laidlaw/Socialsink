@@ -147,7 +147,7 @@
                             <p id="post-categories-${id}">${post['categories']}</p>
                             ${content}
                         </div>
-                        <div class="post-btn-wrap" id="post-btn-wrap-${id}">
+                        <div class="flex-btn-wrap" id="flex-btn-wrap-${id}">
                             ${likeButton}
                             <button type="submit" id="share-button-${id}" onclick="sharePost(${id}, ${authorId}, '${post['origin']}', '${post['source']}')" class="btn btn-share"><i class="fa-solid fa-share"></i>Share</button>
                             ${deleteButton}
@@ -157,7 +157,7 @@
                 <div class="post-comment-content" id="post-comment-container-${id}">
                     <div class="post-comment-input-wrapper">
                         <input type="text" id="post-comment-input-${id}" placeholder="Comment" class="form-control" value="">
-                        <div class="post-btn-wrap">
+                        <div class="flex-btn-wrap">
                             <button type="button" id="comment-button-${id}" onclick="postComment('${id}', '${post['id']}', '${post['author']['id']}')" class="btn btn-share"><i class="fa-solid fa-comment"></i>Comment</button>
                         </div>
                     </div>
@@ -250,10 +250,20 @@
             id = comment['id'].split('/').at(-1)
 
             const newComment = document.createElement("div");
-            //comment.classList.add("comment")
+            newComment.classList.add("post-single-comment")
+
+            var authorObject = JSON.parse(comment.author);
+            // Access the 'displayName' property
+            var displayName = authorObject.displayName;
+            console.log("TESTING");
+            console.log(JSON.stringify(comment, null, 2));
+
             newComment.innerHTML = `
-                ${comment['author']['displayName']} - ${text}
-                <div class="post-btn-wrap">
+                <div class="flex-vertical-wrap">
+                    <p class="comment-username">${comment['author']['displayName']}</p>
+                    <p class="comment-description">${text}</p>
+                </div>
+                <div class="flex-btn-wrap">
                     <button type="button" class="btn btn-like" id="like-comment-button-${id}" onclick="likeComment('${id}')"> <i class="fa-solid fa-heart"></i></button>
                 </div>
             `

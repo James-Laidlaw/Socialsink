@@ -349,7 +349,6 @@ main {
     display: inline-flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
     width: 100%;
     height: auto;
     margin-bottom: 16px;
@@ -364,10 +363,13 @@ main {
     gap: 16px;
     width: 100%;
     height: auto;
-    margin-bottom: 16px;
     padding: 16px;
     background: var(--dark-gray);
     border-radius: var(--card-round-border);
+}
+
+#git-container .feed-post {
+    margin-bottom: 16px;
 }
 
 #post-container .feed-post:last-of-type,
@@ -411,7 +413,7 @@ main {
     flex-direction: column;
     flex-grow: 1;
     gap: 16px;
-    padding: 0px 16px 16px 16px;
+    padding: 0 16px;
     width: 100%;
 }
 
@@ -431,12 +433,52 @@ main {
     letter-spacing: 0.5px;
 }
 
-.post-btn-wrap {
+.post-comment-content:first-of-type {
+    margin-top: 16px;
+}
+
+.post-single-comment {
     display: flex;
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: flex-end;
     gap: 10px;
+    min-height: 50px;
+    border-radius: var(--card-round-border);
 }
+
+.post-single-comment .flex-vertical-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.post-comment-content .comment-username {
+    padding-left: 5px;
+    margin: 0 0 8px 0;
+}
+
+.post-single-comment .comment-description {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 50px;
+    width: 100%;
+    color: var(--lightest-blue);
+    background: none;
+    outline: 1px solid var(--light-grey);
+    border: none;
+    border-radius: var(--card-round-border);
+    letter-spacing: 0.5px;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    margin: 0;
+}
+
 
 .flex-btn-wrap {
     display: flex;
@@ -624,7 +666,7 @@ main {
 .feed-post.create-new {
     width: calc(100% - 9px);
     min-height: 346px;
-    margin-right: auto;
+    margin: 0 auto 16px 0;
     transition: min-height 500ms ease 0s, height 500ms ease 0s;
 }
 
@@ -1172,3 +1214,10 @@ body.has-popup-modal:before {
 }
 
 /* Nav Feed Tabs Ends --------------------- */
+
+@media only screen and (min-width: 1921px) {
+    main {
+        max-width: 1920px;
+        margin: var(--design-padding) auto;
+    }
+}
