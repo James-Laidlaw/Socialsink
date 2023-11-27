@@ -105,7 +105,7 @@
                             type: "POST",
                             url: `${authors[id]['id']}inbox/`,
                             contentType: 'application/json',
-                            data: response,
+                            data: JSON.stringify(response),
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
                             beforeSend: function (request)
                             {
