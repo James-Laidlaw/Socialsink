@@ -262,6 +262,8 @@
     async function updateFollowing() {
         await getFollowingStatus()
 
+        console.log(followingStatus)
+
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {

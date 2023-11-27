@@ -516,7 +516,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
-            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id, followee_endpoint=url+author_id).exists()
+            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id+'/', followee_endpoint=url+author_id+'/').exists()
             return Response(relationships_exists)
         
         if result == 'self':
