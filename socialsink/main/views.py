@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 #Image Imports
 from django.core.files.base import ContentFile
@@ -43,6 +44,7 @@ def login(request):
                   template_name='main/login.html',
             
                   context={})
+
 
 def register(request):
     return render(request=request,
@@ -91,13 +93,11 @@ def getAuthed(auth_header):
         return Response({"Unauthorized."}, status=401)
     
     token_type, _, credentials = auth_header.partition(' ')
-    
     try:
         username, password = base64.b64decode(credentials).decode().split(':')
-
-        node = Node.objects.get(username=username, password=password)
+        node = Node.objects.filter(username=username, password=password).first()
         if node == None:
-            return Response(status=401)
+            return Response("Error decoding Authorization header", status=401)
 
         if node.username == 'socialsink':
             return 'self'
@@ -133,7 +133,7 @@ def createAccount(request):
         return Response(status=201)
         
     except:
-        return Response(status=401)
+        return Response(status=500)
 
 
 @api_view(['POST'])
@@ -184,33 +184,6 @@ def deleteAccount(request):
 
 
 @api_view(['GET'])
-def getFollowing(request):
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-        following = [x for x in Follower.objects.filter(follower = author)]
-        data = {}
-        for i, follow in enumerate(following):
-            data[i] = {'id': follow.followee.id, 'user': follow.followee.user.username, 'accepted': follow.accepted, 'friendship': follow.friendship}
-        return Response(data, status=200)
-    return Response(status=401)
-
-
-@api_view(['GET'])
-def getFollowRequests(request):
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-        # Requests that not accepted and not dismissed
-        follow_requests = [x for x in Follower.objects.filter(followee = author) if (not x.dismissed and not x.accepted)]
-        data = {}
-        for i, follow_request in enumerate(follow_requests):
-            data[i] = {'id': follow_request.follower.id, 'user': follow_request.follower.user.username}
-        return Response(data, status=200)
-    return Response(status=401)
-
-
-@api_view(['GET'])
 def getNodeHosts(request):
     '''
     PRIVATE: Get node host names
@@ -220,7 +193,8 @@ def getNodeHosts(request):
         nodes = Node.objects.all()
         data = []
         for node in nodes:
-            data.append([node.hostname, node.username, node.password])
+            if node.hostname != 'super-coding-team':
+                data.append([node.hostname, node.username, node.password])
         
         return Response(data, status=200)
     return Response(status=401)
@@ -243,72 +217,6 @@ def deleteInboxPost(request, author_id, post_id):
                 item.delete()
         
         return Response(status=200)
-    return Response(status=401)
-
-
-@api_view(['POST', 'PUT', 'DELETE'])
-def handleFollow(request):
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-        
-        # accept/dismiss follow request
-        if request.method == 'POST':
-            if request.data['action'] == 'accept':
-                # FRIENDSHIP CHECKING HERE
-                id = request.data['id']
-                follower = Author.objects.get(id=id)
-                follow_obj = Follower.objects.get(follower = follower, followee = author)
-                follow_obj.accepted = True
-                follow_obj.save()
-
-                # CHECK FOR FRIENDSHIP
-                try:
-                    returned_follow_obj = Follower.objects.get(follower = author, followee = follower)
-                    returned_follow_obj.friendship = True
-                    returned_follow_obj.save()
-
-                    follow_obj.friendship = True
-                    follow_obj.save()
-
-                finally:
-                    return Response(status=200)
-                    
-
-            elif request.data['action'] == 'dismiss':
-                id = request.data['id']
-                follower = Author.objects.get(id=id)
-                follow_obj = Follower.objects.get(follower = follower, followee = author)
-                follow_obj.dismissed = True
-                follow_obj.save()
-
-                # DISCUSSED DELETION OF FOLLOW OBJ
-                follow_obj.delete()
-                return Response(status=200)
-        
-        # put follow request
-        elif request.method == 'PUT':
-            id = request.data['id']
-            followee = Author.objects.get(id=id)
-            Follower(follower = author, followee = followee, dismissed = False, accepted = False).save()
-            return Response(status=200)
-        
-        # Used to consider unfollow and dismissal as the same operation,
-        # moving dismissal to POST
-        elif request.method == 'DELETE':
-            # FRIENDSHIP REMOVAL HERE
-            id = request.data['id']
-            followee = Author.objects.get(id=id)
-            Follower.objects.get(follower = author, followee = followee).delete()
-
-            # CHECK FOR FRIENDSHIP
-            try:
-                returned_follow_obj = Follower.objects.get(follower = followee, followee = author)
-                returned_follow_obj.friendship = False
-                returned_follow_obj.save()
-
-            finally:
-                return Response(status=200)
     return Response(status=401)
 
 
@@ -344,6 +252,7 @@ def updateUser(request, id):
 # outwards facing API endpoints
 @api_view(['GET'])
 #get list of authors with pagination
+#/authors/
 def getAuthors(request):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
     if result in ['self', 'other']:
@@ -370,6 +279,7 @@ def getAuthors(request):
     return result
 
 
+#/authors/{AUTHOR_ID}
 @api_view(['GET', 'POST'])
 def authorReqHandler(request, author_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -425,6 +335,7 @@ def updateAuthor(request, author_id):
         return Response(status=400)
 
 
+#/authors/{AUTHOR_ID}/followers/
 @api_view(['GET'])
 def getFollowers(request, author_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -432,18 +343,15 @@ def getFollowers(request, author_id):
         print("service: Get followers request received")
         if author_id == None:
             return Response(status=400)
-        
-        author = Author.objects.get(id=author_id)
 
-        if author == None:
-            return Response(status=404)
+        url = request.build_absolute_uri()
+        url = url[:len(url)-10]
         
-        followers = author.followed_by.all()
-        # get the author instances from the follower instances
         follower_authors = []
-        for follower in followers:
-            follower_authors.append(follower.follower)
-
+        followers = Follower.objects.filter(followee_endpoint=url)
+        for f in followers:
+            author = Author.objects.get(id=f.follower_endpoint.split('/')[-2])
+            follower_authors.append(author)
 
         author_serializer = AuthorSerializer(follower_authors, many=True, context={'request': request})
 
@@ -454,8 +362,123 @@ def getFollowers(request, author_id):
 
     return result
 
+@api_view(['GET', 'POST'])
+def getFollowRequests(request, author_id):
+    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    if result in 'self':
+        url = request.build_absolute_uri()
+        url = url[:len(url)-19]
 
-@api_view(['GET', 'POST', 'DELETE'])
+        if request.method == 'GET':
+            followRequests = Follower.objects.filter(followee_endpoint=url, accepted=False)
+
+            data = []
+            for fr in followRequests:
+                data.append(fr.follower_data)
+
+            return Response(data, status=200)
+
+        elif request.method == 'POST':
+            status = request.data['status']
+
+            if request.data['mode'] == 'update-direct':
+                follower_endpoint = request.data['follower_endpoint']
+                
+                fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
+
+                if fr == None:
+                    return Response(status=404)
+
+                if status == 'accept':
+                    fr.accepted = True
+
+                    frReverse = Follower.objects.filter(followee_endpoint=follower_endpoint, follower_endpoint=url).first()
+                    if frReverse != None and frReverse.accepted == True:
+                        frReverse.friendship = True
+                        fr.friendship = True
+                        frReverse.save()
+
+                    fr.save()
+
+                    return Response(status=200)
+
+                elif status == 'dismiss':
+                    fr.delete()
+
+                    return Response(status=204)
+
+            elif request.data['mode'] == 'update-indirect':
+                followee_endpoint = request.data['follower_endpoint']
+                
+                fr = Follower.objects.filter(followee_endpoint=followee_endpoint, follower_endpoint=url).first()
+
+                if fr == None:
+                    return Response(status=404)
+
+                if status == 'accept':
+                    fr.accepted = True
+
+                    frReverse = Follower.objects.filter(followee_endpoint=url, follower_endpoint=followee_endpoint).first()
+                    if frReverse != None and frReverse.accepted == True:
+                        frReverse.friendship = True
+                        fr.friendship = True
+                        frReverse.save()
+
+                    fr.save()
+
+                    return Response(status=200)
+
+                elif status == 'dismiss':
+                    fr.delete()
+
+                    return Response(status=204)
+            return Response('Unaccepted status', status=400)
+        return Response(status=405)
+    return result
+
+#/authors/{AUTHOR_ID}/following
+@api_view(['GET'])
+def getFollowing(request, author_id):
+    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    if result == 'self':
+        url = request.build_absolute_uri()
+        url = url[:len(url)-10] 
+
+        following = Follower.objects.filter(follower_endpoint=url)
+        data = {}
+        for i, follow in enumerate(following):
+            status = 'follow'
+            if follow.friendship == True:
+                status = 'friends'
+            elif follow.accepted == True:
+                status = 'following'
+            elif follow.accepted == False and follow.dismissed == False:
+                status = 'requested'
+            data[i] = {'status': status, 'followee': follow.followee_endpoint}
+        return Response(data, status=200)
+    return Response(status=401)
+
+
+#/authors/{AUTHOR_ID}/friends
+@api_view(['GET'])
+def getFriends(request, author_id):
+    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
+    if result == 'self':
+        url = request.build_absolute_uri()
+        url = url[:len(url)-8] 
+
+        data = []
+        following = Follower.objects.filter(follower_endpoint=url)
+        for follower in following:
+            if follower.friendship == True:
+                data.append(follower.followee_endpoint)
+
+        return Response(data, status=200)
+    return Response(status=401)
+
+
+#/authors/{AUTHOR_ID}/followers/{FOREIGN_AUTHOR_ID}/
+@api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
     print("service: Get follower-followee relationship details request received")
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -469,32 +492,58 @@ def followerReqHandler(request, author_id, foreign_author_id):
             return Response(status=404)
         
         if request.method == 'GET':
-            relationships_exists = followee.followed_by.filter(follower_id=foreign_author_id).exists()
+            url = request.build_absolute_uri()
+            parts = url.split("/")
+            url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
+
+            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id, followee_endpoint=url+author_id).exists()
             return Response(relationships_exists)
         
         if result == 'self':
-            # Add FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID (must be authenticated)
-            #TODO Allow foriegn keys to remote authors
-            if request.method == 'POST':
-                #TODO not sure if they want the follower or the followee to be authenticated
-                if not request.user.is_authenticated or request.user != followee.user:
-                    return Response(status=401)
-                follower = Author.objects.get(id=foreign_author_id)
+            if request.method == 'PUT':
+                follower_instance = Follower.objects.filter(
+                    follower_endpoint = request.data['follower_data']['id'],
+                    followee_endpoint = request.data['followee_data']['id']
+                )
                 
-                if not Follower.objects.filter(followee=followee, follower=follower).exists():
-                    Follower.objects.create(followee=followee, follower=follower)
+                if follower_instance == None:
+                    return Response(status=409)
 
+                follow = Follower(
+                    follower_data = json.dumps(request.data['follower_data']),
+                    follower_endpoint = request.data['follower_data']['id'],
+                    follower_host = request.data['follower_data']['host'],
+                    followee_data = json.dumps(request.data['followee_data']),
+                    followee_endpoint = request.data['followee_data']['id'],
+                    followee_host = request.data['followee_data']['host'],
+                    dismissed = False,
+                    accepted = False,
+                    friendship = False,
+                    created_at = datetime.now(pytz.timezone('America/Edmonton'))
+                )
+
+                follow.save()
 
                 return Response(status=200)
 
-            # remove FOREIGN_AUTHOR_ID as a follower of AUTHOR_ID
-            #TODO Allow foriegn keys to remote authors
-            elif request.method == 'DELETE':
-                follower = Author.objects.get(id=foreign_author_id)
-                follower_instance = Follower.objects.filter(followee=followee, follower=follower).first()
 
-                if follower_instance != None:
-                    follower_instance.delete()
+            elif request.method == 'DELETE':
+                f = Follower.objects.filter(
+                    follower_endpoint = request.data['follower_endpoint'],
+                    followee_endpoint = request.data['followee_endpoint']
+                ).first()
+
+                fReverse = Follower.objects.filter(
+                    follower_endpoint = request.data['followee_endpoint'],
+                    followee_endpoint = request.data['follower_endpoint']
+                ).first()
+
+                if fReverse != None:
+                    fReverse.friendship = False
+                    fReverse.save()
+
+                if f != None:
+                    f.delete()
 
                 return Response(status=200)
             
@@ -548,6 +597,11 @@ def updatePost(request, post_id):
     if post is None:
         return Response(status=404)
     
+    #check authorization
+    if post.author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
     try:
         post.title = request.data.get('title', post.title)
         post.description = request.data.get('description', post.description)
@@ -574,6 +628,12 @@ def createSpecificPost(request, author_id, post_id):
     if author == None:
         return Response(status=404)
     
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
+
+
     # check if post id is in use
     if Post.objects.filter(id=post_id).exists():
         return Response(status=409) #409 = conflict
@@ -614,6 +674,11 @@ def createPost(request, author_id):
     author = Author.objects.filter(id=author_id).first()
     if author == None:
         return Response(status=404)
+    
+    #check authorization
+    if author.user != request.user or not request.user.is_authenticated:
+        print("unauthorized, returning 401")
+        return Response(status=401)
     
     default_origin = f'http://{request.get_host()}/author/{author_id}/'
     #try:
@@ -736,7 +801,7 @@ def getAuthorPosts(request, author_id):
     return Response(serialized_posts)
 
 
-#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/comments
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments
 @api_view(['GET', 'POST'])
 def commentReqHandler(request, author_id, post_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -762,8 +827,10 @@ def getComments(request, post_id):
     if found_post == None:
         return Response(status=404)
     
-    comments = found_post.comments.all().order_by('created_at')
-
+    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author.id, found_post.id]))
+    
+    comments = Comment.objects.filter(post_endpoint=post_endpoint).order_by('created_at')
+    
     comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
 
     serialized_comments = comment_serializer.data
@@ -797,7 +864,7 @@ def createComment(request, author_id, post_id):
     return Response(data, status=200)
     
 
-# /service/authors/{AUTHOR_ID}/inbox/
+# /authors/{AUTHOR_ID}/inbox/
 @api_view(['POST', 'GET', 'DELETE'])
 def inboxReqHandler(request, author_id):
     '''
@@ -830,7 +897,7 @@ def inboxReqHandler(request, author_id):
                 author_serializer = AuthorSerializer(author, context={'request': request})
                 author_url_id = author_serializer.data.get('id')
 
-                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('created_at')
+                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('-created_at')
 
                 paginatedItems = Paginator(inbox_items, pageSize)
 
@@ -863,33 +930,24 @@ def inboxReqHandler(request, author_id):
 def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
     
-    if data['type'] == 'like':
-        #likeSerializer = LikeSerializer(data=data, context={'request': request})
-        #if not likeSerializer.is_valid():
-        #    print("invalid like", likeSerializer.errors)
-        #    return Response(status=400)
+    if data['type'].lower() == 'like':
+        likeSerializer = LikeSerializer(data=data, context={'request': request})
+        if not likeSerializer.is_valid():
+           print("invalid like", likeSerializer.errors)
+           return Response(status=400)
         
-        #object_url = data.get('object')
-        #object_id = get_object_id_from_url(object_url)
+        object_url = data.get('object')
+        object_id = get_object_id_from_url(object_url)
 
-        #ensure item being liked exists
-        #if not Post.objects.filter(id=object_id).exists() and not Comment.objects.filter(id=object_id).exists():
-        #    return Response(status=404)
-        
         #ensure not duplicate like
-        #from_author_url_id = data.get('author').get('id') #will be in URL format
-        #from_author_id = get_object_id_from_url(from_author_url_id)
+        from_author_url_id = data.get('author').get('id') #will be in URL format
 
-        #check for duplicate likes from the same author (local)
-        #if Like.objects.filter(Q(author_id=from_author_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
-        #    return Response(status=409)
-        
-        #check for duplicate likes from the same author (remote author)
-        #if Like.objects.filter(Q(foreign_author_id=from_author_url_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
-        #    return Response(status=409)
+        #check for duplicate likes from the same author
+        if Like.objects.filter(Q(author_endpoint=from_author_url_id) & (Q(post_endpoint=object_url) | Q(comment_endpoint=object_url))).exists():
+           return Response(status=409)
 
         #save like
-        #likeSerializer.save()
+        likeSerializer.save()
 
         #create inbox object
         Inbox.objects.create(
@@ -899,14 +957,14 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
     
 
-    elif data['type'] == 'post':
+    elif data['type'].lower() == 'post':
         Inbox.objects.create(
             author_id=recieving_author_id, 
             endpoint=data['id'],
             type=data['type'])
         return Response(status=200)
     
-    elif data['type'] == 'comment':
+    elif data['type'].lower() == 'comment':
         #TODO should this make a comment object? or is it just sharing the comment / notifying the author?
         Inbox.objects.create(
             author_id=recieving_author_id, 
@@ -915,15 +973,29 @@ def inboxPOSTHandler(request, recieving_author_id):
         )
         return Response(status=200)
 
-    elif data['type'] == 'follow':
-        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+    elif data['type'].lower() == 'follow':
+        follow = Follower(
+            follower_endpoint = data['actor']['id'],
+            follower_host = data['actor']['host'],
+            follower_data = data['actor'],
+            followee_endpoint = data['object']['id'],
+            followee_host = data['object']['host'],
+            followee_data = data['object'],
+            dismissed = False,
+            accepted = False,
+            friendship = False,
+            created_at = datetime.now(pytz.timezone('America/Edmonton'))
+        )
+
+        follow.save()
+
         return Response(status=200)
 
     else:
         return Response(status=400)
 
 
-#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/likes    
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/likes    
 @api_view(['GET', 'POST', 'DELETE'])
 def getPostLikes(request, author_id, post_id):
     print("service: Get post likes request received")
@@ -987,7 +1059,7 @@ def getPostLikes(request, author_id, post_id):
     return result
 
 
-#/service/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
 @api_view(['GET'])
 def getCommentLikes(request, author_id, post_id, comment_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -999,10 +1071,9 @@ def getCommentLikes(request, author_id, post_id, comment_id):
         if post_id == None or comment_id == None:
             return Response(status=400)
         
-        url = request.build_absolute_uri()
-        url = url[:len(url)-6]
+        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, post_id]))
 
-        likes = Like.objects.filter(post_endpoint=url).order_by('created_at')
+        likes = Like.objects.filter(post_endpoint=post_url).order_by('created_at')
         
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         serialized_likes = like_serializer.data
@@ -1010,7 +1081,7 @@ def getCommentLikes(request, author_id, post_id, comment_id):
     return result
 
 
-#/service/authors/{AUTHOR_ID}/liked
+#/authors/{AUTHOR_ID}/liked
 @api_view(['GET'])
 def getAuthorLiked(request, author_id):
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', b''))
@@ -1027,7 +1098,8 @@ def getAuthorLiked(request, author_id):
         if found_author == None:
             return Response(status=404)
         
-        likes = found_author.likes.all().order_by('created_at')
+        author_url = request.build_absolute_uri(reverse('authorReqHandler', args=[found_author.id]))
+        likes = Like.objects.filter(author_endpoint=author_url).order_by('created_at')
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         serialized_likes = like_serializer.data
         return Response(serialized_likes)
