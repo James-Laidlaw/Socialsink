@@ -74,10 +74,10 @@ class Comment(models.Model):
 class Like(models.Model): 
     id = models.AutoField(primary_key=True)
     context = models.CharField(max_length=200, null=True) # i don't know what this is, but it's in the spec. @context
-    author = models.ForeignKey(Author, related_name='likes', on_delete=models.CASCADE, null=True)
+    author_endpoint = models.CharField(max_length=1000, default='')
+    post_endpoint = models.CharField(max_length=1000, default='', null=True)
     summary = models.CharField(max_length=200, default='')
-    post_endpoint = models.CharField(max_length=1000, default='')
-    comment_endpoint = models.CharField(max_length=1000, default='')
+    comment_endpoint = models.CharField(max_length=1000, default='', null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
