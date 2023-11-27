@@ -150,6 +150,24 @@ CORS_ALLOWED_ORIGINS = [
     "https://socialsync-404-project-6469dd163e44.herokuapp.com",
 ]
 
+CORS_ALLOWED_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+CORS_ALLOW_METHODS = (
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+)
+
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_ALL_ORIGINS = True
