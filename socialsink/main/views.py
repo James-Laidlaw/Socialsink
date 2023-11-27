@@ -342,7 +342,7 @@ def updateAuthor(request, author_id):
 
 
 #/authors/{AUTHOR_ID}/followers/
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def getFollowers(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
@@ -352,7 +352,7 @@ def getFollowers(request, author_id):
 
         url = request.build_absolute_uri()
         url = url[:len(url)-10]
-        
+
         follower_authors = []
         followers = Follower.objects.filter(followee_endpoint=url)
         for f in followers:
@@ -487,7 +487,7 @@ def getFriends(request, author_id):
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
     print("service: Get follower-followee relationship details request received")
-    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
+    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', ''))
     if result in ['self', 'other']:
         if foreign_author_id == None or author_id == None:
             return Response(status=400)
@@ -502,7 +502,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
-            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id, followee_endpoint=url+author_id).exists()
+            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id+"/", followee_endpoint=url+author_id+"/").exists()
             return Response(relationships_exists)
         
         if result == 'self':
