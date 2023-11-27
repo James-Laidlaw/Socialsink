@@ -221,72 +221,6 @@ def deleteInboxPost(request, author_id, post_id):
     return Response(status=401)
 
 
-@api_view(['POST', 'PUT', 'DELETE'])
-def handleFollow(request):
-    user = request.user
-    if user.is_authenticated:
-        author = Author.objects.get(user=user)
-        
-        # accept/dismiss follow request
-        if request.method == 'POST':
-            if request.data['action'] == 'accept':
-                # FRIENDSHIP CHECKING HERE
-                id = request.data['id']
-                follower = Author.objects.get(id=id)
-                follow_obj = Follower.objects.get(follower = follower, followee = author)
-                follow_obj.accepted = True
-                follow_obj.save()
-
-                # CHECK FOR FRIENDSHIP
-                try:
-                    returned_follow_obj = Follower.objects.get(follower = author, followee = follower)
-                    returned_follow_obj.friendship = True
-                    returned_follow_obj.save()
-
-                    follow_obj.friendship = True
-                    follow_obj.save()
-
-                finally:
-                    return Response(status=200)
-                    
-
-            elif request.data['action'] == 'dismiss':
-                id = request.data['id']
-                follower = Author.objects.get(id=id)
-                follow_obj = Follower.objects.get(follower = follower, followee = author)
-                follow_obj.dismissed = True
-                follow_obj.save()
-
-                # DISCUSSED DELETION OF FOLLOW OBJ
-                follow_obj.delete()
-                return Response(status=200)
-        
-        # put follow request
-        elif request.method == 'PUT':
-            id = request.data['id']
-            followee = Author.objects.get(id=id)
-            Follower(follower = author, followee = followee, dismissed = False, accepted = False).save()
-            return Response(status=200)
-        
-        # Used to consider unfollow and dismissal as the same operation,
-        # moving dismissal to POST
-        elif request.method == 'DELETE':
-            # FRIENDSHIP REMOVAL HERE
-            id = request.data['id']
-            followee = Author.objects.get(id=id)
-            Follower.objects.get(follower = author, followee = followee).delete()
-
-            # CHECK FOR FRIENDSHIP
-            try:
-                returned_follow_obj = Follower.objects.get(follower = followee, followee = author)
-                returned_follow_obj.friendship = False
-                returned_follow_obj.save()
-
-            finally:
-                return Response(status=200)
-    return Response(status=401)
-
-
 @api_view(['PUT'])
 def updateUser(request, id):
     user = request.user
@@ -447,30 +381,58 @@ def getFollowRequests(request, author_id):
 
         elif request.method == 'POST':
             status = request.data['status']
-            follower_endpoint = request.data['follower_endpoint']
-            
-            fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 
-            if fr == None:
-                return Response(status=404)
+            if request.data['mode'] == 'update-direct':
+                follower_endpoint = request.data['follower_endpoint']
+                
+                fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 
-            if status == 'accept':
-                fr.accepted = True
+                if fr == None:
+                    return Response(status=404)
 
-                frReverse = Follower.objects.filter(followee_endpoint=follower_endpoint, follower_endpoint=url).first()
-                if frReverse != None and frReverse.accepted == True:
-                    frReverse.friendship = True
-                    fr.friendship = True
-                    frReverse.save()
+                if status == 'accept':
+                    fr.accepted = True
 
-                fr.save()
+                    frReverse = Follower.objects.filter(followee_endpoint=follower_endpoint, follower_endpoint=url).first()
+                    if frReverse != None and frReverse.accepted == True:
+                        frReverse.friendship = True
+                        fr.friendship = True
+                        frReverse.save()
 
-                return Response(status=200)
+                    fr.save()
 
-            elif status == 'dismiss':
-                fr.delete()
+                    return Response(status=200)
 
-                return Response(status=204)
+                elif status == 'dismiss':
+                    fr.delete()
+
+                    return Response(status=204)
+
+            elif request.data['mode'] == 'update-indirect':
+                followee_endpoint = request.data['follower_endpoint']
+                
+                fr = Follower.objects.filter(followee_endpoint=followee_endpoint, follower_endpoint=url).first()
+
+                if fr == None:
+                    return Response(status=404)
+
+                if status == 'accept':
+                    fr.accepted = True
+
+                    frReverse = Follower.objects.filter(followee_endpoint=url, follower_endpoint=followee_endpoint).first()
+                    if frReverse != None and frReverse.accepted == True:
+                        frReverse.friendship = True
+                        fr.friendship = True
+                        frReverse.save()
+
+                    fr.save()
+
+                    return Response(status=200)
+
+                elif status == 'dismiss':
+                    fr.delete()
+
+                    return Response(status=204)
             return Response('Unaccepted status', status=400)
         return Response(status=405)
     return result
@@ -1003,8 +965,19 @@ def inboxPOSTHandler(request, recieving_author_id):
         )
         return Response(status=200)
 
-    elif data['type'] == 'follow':
-        Inbox.objects.create(author_id=recieving_author_id, content=json.dumps(data))
+    elif data['type'] == 'Follow':
+        follow = Follower(
+            follower_endpoint = data['actor']['id'],
+            follower_host = data['actor']['host'],
+            follower_data = data['actor'],
+            followee_endpoint = data['object']['id'],
+            followee_host = data['object']['host'],
+            followee_data = data['object'],
+            dismissed = False,
+            accepted = False,
+            friendship = False,
+            created_at = datetime.now(pytz.timezone('America/Edmonton'))
+        )
         return Response(status=200)
 
     else:

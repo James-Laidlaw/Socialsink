@@ -35,6 +35,7 @@
             url: `/authors/${"{{ author.id }}"}/followers/requests/`,
             contentType: 'application/json',
             data: JSON.stringify({
+                'mode': 'update-direct',
                 'status': status,
                 'follower_endpoint': followerEndpoint
             }),

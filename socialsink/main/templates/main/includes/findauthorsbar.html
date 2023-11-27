@@ -209,5 +209,44 @@
     // Update interval
     setInterval(updateAuthors, 2000); //2 Second cooldown
 
-    // TESTING
+    function updateFollowing() {
+        for (const i in followingStatus) {
+            url = new URL(followingStatus[i]['followee'])
+            if (!(window.location.href.includes(url.host))) {
+                $.ajax({
+                    type: "GET",
+                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
+                    headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
+                    success: async function (response, textStatus, http) {
+                        status = followingStatus[i]['status']
+                        if (status === 'requested' && response === true) {
+                            newStatus = 'accept'
+                        } else if ((status === 'friends' || status === 'following') && response === false) {
+                            newStatus = 'dismiss'
+                        }
+                        $.ajax({
+                            type: "POST",
+                            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                'mode': 'update-indirect',
+                                'status': new_status,
+                                'follower_endpoint': followingStatus[i]['followee']
+                            }),
+                            headers: getAuth(window.location.href),
+                            error: function (error) {
+                                console.error(error);
+                            }
+                        })
+                    },
+                    error: function (error) {
+                        console.error(error);
+                    }
+                });
+            }
+            console.log(followingStatus[i]['followee'])
+        }
+    }
+
+    setInterval(updateFollowing, 2000)
 </script>
