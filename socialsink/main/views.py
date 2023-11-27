@@ -231,9 +231,13 @@ def updateUser(request, id):
         user_object = User.objects.get(id=id)
         author = Author.objects.get(user=user_object)
 
+        request_profileImage = request.data["profileImage"]
         request_username = request.data["username"]
         request_bio = request.data["bio"]
         request_github = request.data["github"]
+
+        if request_profileImage.startswith("https://imgur.com/") or request_profileImage.startswith("https://i.imgur.com/"):
+            author.profileImage = request_profileImage
 
         if request_username:
             user_object.username = request_username

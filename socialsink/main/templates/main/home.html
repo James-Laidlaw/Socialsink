@@ -122,13 +122,20 @@
 
             const readableDate = date.toDateString();
             const readableTime = date.toLocaleTimeString();
+            const postProfileImage = post['author']['profileImage'];
+
+            if (postProfileImage !== null) {
+                profileImage = postProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
 
             // Construct the post content using the provided data
 
             // showReshareConfirmation function can be found in the popupmodals.html file under scripts
             postElement.innerHTML = `
                 <div class="feed-post existing-post">
-                    <img src="../../../static/images/unknown_user.png" class="profile-img" />
+                    <img src="${profileImage}" class="profile-img" />
                     <div class="post-content">
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -246,8 +253,17 @@
             newComment.classList.add("post-single-comment")
 
             var authorObject = JSON.parse(comment['author']);
+            const userProfileImage = authorObject['profileImage'];
+
+            if (userProfileImage !== null) {
+                profileImage = userProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
+
 
             newComment.innerHTML = `
+                <img src="${profileImage}" class="profile-img comment-img" />
                 <div class="flex-vertical-wrap">
                     <p class="comment-username">${authorObject['displayName']}</p>
                     <p class="comment-description">${text}</p>

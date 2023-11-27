@@ -95,11 +95,18 @@
 
             const readableDate = date.toDateString();
             const readableTime = date.toLocaleTimeString();
+            const postProfileImage = post['author']['profileImage'];
+
+            if (postProfileImage !== null) {
+                profileImage = postProfileImage;
+            } else {
+                profileImage = "../../../static/images/unknown_user.png";
+            }
 
             // Construct the post content using the provided data
             postElement.innerHTML = `
                 <div class="feed-post existing-post">
-                    <img src="../../../static/images/unknown_user.png" class="profile-img" />
+                    <img src="${profileImage}" class="profile-img" />
                     <div class="post-content">
                         <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton-${id}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
