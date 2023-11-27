@@ -229,6 +229,7 @@
                         'categories': categoriesText,
                         'content': contentText,
                     }),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -317,6 +318,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/authors/{{author.id}}/posts/${id}`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -347,6 +349,7 @@
             $.ajax({
                 type: "POST",
                 url: `/api/like-post/${postID}`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -380,6 +383,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/unlike-post/${postID}`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -431,6 +435,7 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -477,6 +482,7 @@
                     'location': loc
                 }),
                 contentType: 'application/json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;

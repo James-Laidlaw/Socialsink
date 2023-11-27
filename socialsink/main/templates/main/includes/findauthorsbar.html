@@ -73,15 +73,6 @@
         e.preventDefault();
         button = document.getElementById(`follow-${id}`);
         followee_id = authors[id]['id'].split('/').at(-2)
-        var csrf_token = "{{ csrf_token }}";
-        $.ajaxSetup({
-            beforeSend: function(xhr, settings) {
-                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
-                    xhr.setRequestHeader("X-CSRFToken", csrf_token);
-                }
-            }
-        });
-        
         // Not the most robust method but works well
         // Checks the class list on the action to complete
         if (button.classList.contains('request')) {
@@ -96,6 +87,7 @@
                     'follower_data': followerData,
                     'followee_data': authors[id]
                 }),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -113,10 +105,8 @@
                             type: "POST",
                             url: `${authors[id]['id']}inbox/`,
                             contentType: 'application/json',
-                            data: JSON.stringify({
-                                'follower_data': followerData,
-                                'followee_data': authors[id]
-                            }),
+                            data: JSON.stringify(response),
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
                             beforeSend: function (request)
                             {
                                 request.withCredentials = true;
@@ -144,6 +134,7 @@
                     'follower_endpoint': followerData['id'],
                     'followee_endpoint': authors[id]['id']
                 }),
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -162,7 +153,7 @@
         }
     }
 
-    async function getAuthorData() {
+    async function getAuthorData2() {
         creds = getAuth(window.location.href)
         await $.ajax({
             type: "GET",
@@ -187,6 +178,7 @@
         await $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/following/`,
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
             beforeSend: function (request)
             {
                 request.withCredentials = true;
@@ -232,7 +224,7 @@
 
     async function updateAuthors() {
         await getHosts()
-        await getAuthorData()
+        await getAuthorData2()
         await getFollowingStatus()
         
         for (const host in hosts) {
@@ -240,6 +232,7 @@
             await $.ajax({
                 type: "GET",
                 url: `${hosts[host][0]}authors/`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -247,6 +240,7 @@
                 },
                 //headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
                 success: async function (response, textStatus, http) {
+                    response = response["items"]
                     for (i in response) {
                         if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
                             authors.push(response[i])
@@ -265,14 +259,19 @@
     // Update interval
     setInterval(updateAuthors, 2000); //2 Second cooldown
 
-    function updateFollowing() {
+    async function updateFollowing() {
+        await getFollowingStatus()
+
+        console.log(followingStatus)
+
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
-                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
+                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}followers/${"{{ author.id }}"}`))
                 $.ajax({
                     type: "GET",
-                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
+                    url: `${followingStatus[i]['followee']}followers/${"{{ author.id }}"}`,
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -281,6 +280,7 @@
                     //headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
                     success: async function (response, textStatus, http) {
                         status = followingStatus[i]['status']
+                        newStatus = 'none'
                         if (status === 'requested' && response === true) {
                             newStatus = 'accept'
                         } else if ((status === 'friends' || status === 'following') && response === false) {
@@ -293,9 +293,10 @@
                             contentType: 'application/json',
                             data: JSON.stringify({
                                 'mode': 'update-indirect',
-                                'status': new_status,
+                                'status': newStatus,
                                 'follower_endpoint': followingStatus[i]['followee']
                             }),
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
                             beforeSend: function (request)
                             {
                                 request.withCredentials = true;

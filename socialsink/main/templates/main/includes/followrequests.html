@@ -39,6 +39,7 @@
                 'status': status,
                 'follower_endpoint': followerEndpoint
             }),
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
             beforeSend: function (request)
             {
                 request.withCredentials = true;
@@ -55,6 +56,7 @@
     }
 
     function createFollowRequestPanel(fd, id, followerEndpoint) {
+        console.log(fd)
         const follow_request = document.createElement('div');
         follow_request.classList.add('request')
         follow_request.id = `follow-request-${id}`
@@ -82,11 +84,11 @@
 
     function updateFollowRequests() {
         //authors/<str:author_id>/followers/requests/
-            
         return $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/followers/requests/`,
             contentType: 'application/json',
+            headers: { "X-CSRFToken": '{{csrf_token}}' },
             beforeSend: function (request)
             {
                 request.withCredentials = true;
@@ -110,7 +112,6 @@
 
     async function addRequests(data) {
         ids = []
-
         for (const i in data) {
             fd = JSON.parse(data[i])
             if (!requests_ids.some(sublist => sublist[0] === fd['id'])) {

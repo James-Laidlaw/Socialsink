@@ -279,9 +279,13 @@ def getAuthors(request):
 
         author_serializer = AuthorSerializer(page, many=True, context={'request': request})
 
-        serialized_authors = author_serializer.data
+        data = {
+            "type": "authors",
+            "items": author_serializer.data
+        }
 
-        return Response(serialized_authors)
+        return Response(data, status=200)
+
     return result
 
 
@@ -386,9 +390,13 @@ def getFollowRequests(request, author_id):
 
         elif request.method == 'POST':
             status = request.data['status']
+            print(status)
 
             if request.data['mode'] == 'update-direct':
                 follower_endpoint = request.data['follower_endpoint']
+
+                print(url)
+                print(follower_endpoint)
                 
                 fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 
@@ -412,6 +420,9 @@ def getFollowRequests(request, author_id):
                     fr.delete()
 
                     return Response(status=204)
+
+                elif status == 'none':
+                    return Response(status=200)
 
             elif request.data['mode'] == 'update-indirect':
                 followee_endpoint = request.data['follower_endpoint']
@@ -438,6 +449,9 @@ def getFollowRequests(request, author_id):
                     fr.delete()
 
                     return Response(status=204)
+
+                elif status == 'none':
+                    return Response(status=200)
             return Response('Unaccepted status', status=400)
         return Response(status=405)
     return result
@@ -502,11 +516,12 @@ def followerReqHandler(request, author_id, foreign_author_id):
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
-            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id+"/", followee_endpoint=url+author_id+"/").exists()
+            relationships_exists = Follower.objects.filter(follower_endpoint=url+foreign_author_id+'/', followee_endpoint=url+author_id+'/').exists()
             return Response(relationships_exists)
         
         if result == 'self':
             if request.method == 'PUT':
+                print(request.data)
                 follower_instance = Follower.objects.filter(
                     follower_endpoint = request.data['follower_data']['id'],
                     followee_endpoint = request.data['followee_data']['id']
@@ -942,6 +957,7 @@ def inboxReqHandler(request, author_id):
 
 def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
+    print(data)
     
     if data['type'].lower() == 'like':
         like = Like(
@@ -984,10 +1000,10 @@ def inboxPOSTHandler(request, recieving_author_id):
         follow = Follower(
             follower_endpoint = data['actor']['id'],
             follower_host = data['actor']['host'],
-            follower_data = data['actor'],
+            follower_data = json.dumps(data['actor']),
             followee_endpoint = data['object']['id'],
             followee_host = data['object']['host'],
-            followee_data = data['object'],
+            followee_data = json.dumps(data['object']),
             dismissed = False,
             accepted = False,
             friendship = False,

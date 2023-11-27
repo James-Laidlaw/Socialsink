@@ -225,6 +225,7 @@
                         'author': authorData
                     }),
                     contentType: 'application/json',
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -239,6 +240,7 @@
                             url: `${author}inbox/`,
                             data: JSON.stringify(response),
                             contentType: 'application/json',
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
                             beforeSend: function (request)
                             {
                                 request.withCredentials = true;
@@ -326,6 +328,7 @@
                     'author_data': authorData
                 }),
                 contentType: 'application/json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -346,6 +349,7 @@
                                 url: `${commentAuthor}inbox/`,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
                                 beforeSend: function (request)
                                 {
                                     request.withCredentials = true;
@@ -437,6 +441,7 @@
                         'categories': categoriesText,
                         'content': contentText,
                     }),
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -508,6 +513,7 @@
                         'post_id': postIDs[postID][0],
                     }),
                     contentType: 'application/json',
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -524,6 +530,7 @@
                             url: `/authors/${"{{author.id}}"}/inbox/`,
                             data: post,
                             contentType: 'application/json',
+                            headers: { "X-CSRFToken": '{{csrf_token}}' },
                             beforeSend: function (request)
                             {
                                 request.withCredentials = true;
@@ -543,6 +550,7 @@
                                 $.ajax({
                                     type: "GET",
                                     url: `authors/${"{{author.id}}"}/friends/`,
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                                     beforeSend: function (request)
                                     {
                                         request.withCredentials = true;
@@ -557,6 +565,7 @@
                                                 url: `${response[i]}inbox/`,
                                                 data: post,
                                                 contentType: 'application/json',
+                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
                                                 beforeSend: function (request)
                                                 {
                                                     request.withCredentials = true;
@@ -579,6 +588,7 @@
                                     await $.ajax({
                                         type: "GET",
                                         url: `${hosts[host][0]}authors/${"{{author.id}}"}/followers`,
+                                        headers: { "X-CSRFToken": '{{csrf_token}}' },
                                         beforeSend: function (request)
                                         {
                                             request.withCredentials = true;
@@ -594,6 +604,7 @@
                                                     url: `${hosts[host][0]}authors/${id}/inbox/`,
                                                     data: post,
                                                     contentType: 'application/json',
+                                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                                                     beforeSend: function (request)
                                                     {
                                                         request.withCredentials = true;
@@ -640,6 +651,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/authors/{{author.id}}/posts/${postID}`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -673,6 +685,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/api/delete-inbox-item/{{ author.id }}/posts/${postID}`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -690,6 +703,7 @@
             await $.ajax({
                 type: "GET",
                 url: `${postData['id']}likes`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -722,6 +736,7 @@
             await $.ajax({
                 type: "GET",
                 url: `${comment['id']}likes`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -754,6 +769,7 @@
                 type: "GET",
                 url: `/authors/${authorID}/inbox`,
                 dataType: 'json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -768,6 +784,7 @@
                                 await $.ajax({
                                     type: "GET",
                                     url: `${response['items'][post]['endpoint']}`,
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                                     beforeSend: function (request)
                                     {
                                         request.withCredentials = true;
@@ -799,6 +816,7 @@
                 type: "GET",
                 url: `/authors/${"{{ author.id }}"}/`,
                 dataType: 'json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -841,6 +859,7 @@
                     'author_data': authorData
                 }),
                 contentType: 'application/json',
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -861,6 +880,7 @@
                                 url: `${postAuthor}inbox/`,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
                                 beforeSend: function (request)
                                 {
                                     request.withCredentials = true;
@@ -895,6 +915,7 @@
             $.ajax({
                 type: "DELETE",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes/`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -927,6 +948,7 @@
                     type: "GET",
                     url: `${postInfo[2]}`,
                     contentType: 'application/json',
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -953,6 +975,7 @@
                 await $.ajax({
                     type: "GET",
                     url: `${postInfo[2]}`,
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
@@ -978,6 +1001,7 @@
                     await $.ajax({
                         type: "GET",
                         url: `${comments[comment]['id']}likes`,
+                        headers: { "X-CSRFToken": '{{csrf_token}}' },
                         beforeSend: function (request)
                         {
                             request.withCredentials = true;
@@ -1006,6 +1030,7 @@
             await $.ajax({
                 type: "GET",
                 url: `${postInfo[2]}likes`,
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request)
                 {
                     request.withCredentials = true;
@@ -1054,6 +1079,7 @@
                 $.ajax({
                     type: "GET",
                     url: `${commentIDs[index][1]['id']}likes`,
+                    headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request)
                     {
                         request.withCredentials = true;
