@@ -208,7 +208,11 @@ def deleteInboxPost(request, author_id, post_id):
     user = request.user
     if user.is_authenticated:
         author = Author.objects.get(id=author_id)
-        items = Inbox.objects.filter(author=author)
+
+        author_serializer = AuthorSerializer(author, context={'request': request})
+        serialized_author = author_serializer.data
+
+        items = Inbox.objects.filter(author_id=serialized_author['id'])
 
         url = request.build_absolute_uri()
         parts = url.split('/')
@@ -926,9 +930,9 @@ def inboxReqHandler(request, author_id):
                     return Response(status=401)
 
                 author_serializer = AuthorSerializer(author, context={'request': request})
-                author_url_id = author_serializer.data.get('id')
+                author_url_id = author_serializer.data['id']
 
-                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('-created_at')
+                inbox_items = Inbox.objects.filter(author_id=author_url_id).order_by('-created_at')
 
                 paginatedItems = Paginator(inbox_items, pageSize)
 
@@ -980,10 +984,15 @@ def inboxPOSTHandler(request, recieving_author_id):
     
 
     elif data['type'].lower() == 'post':
+        author = request.user.author
+        author_serializer = AuthorSerializer(author, context={'request': request})
+        serialized_author = author_serializer.data
+
         Inbox.objects.create(
-            author_id=recieving_author_id, 
+            author_id=serialized_author['id'], 
             endpoint=data['id'],
-            type=data['type'])
+            type=data['type']
+        )
 
         return Response(status=200)
     

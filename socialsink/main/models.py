@@ -91,7 +91,7 @@ class Inbox(models.Model):
     id = models.AutoField(primary_key=True)
     endpoint = models.CharField(max_length=1000, default="")
     type = models.CharField(max_length=200, default="")
-    author = models.ForeignKey(Author, related_name='inbox', on_delete=models.CASCADE) #author who received the notification
+    author_id = models.CharField(max_length=1000, default='') #author who received the notification
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
