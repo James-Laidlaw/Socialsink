@@ -116,24 +116,20 @@ def createAccount(request):
 
     ss = ServerSettings.objects.first()
 
-    try:    
-        user = User.objects.create_user(username=username, email=email, password=password)
-        if ss.auto_permit_users == True:
-            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
-        else:
-            author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')), is_permitted=False)
-        author.save()
-        user.author = author
-        user.save()
+    user = User.objects.create_user(username=username, email=email, password=password)
+    if ss.auto_permit_users == True:
+        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
+    else:
+        author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')), is_permitted=False)
+    author.save()
+    user.author = author
+    user.save()
 
-        if ss.auto_permit_users == True:
-            auth_login(request, user)
-        else:
-            return Response(status=301)
-        return Response(status=201)
-        
-    except:
-        return Response(status=500)
+    if ss.auto_permit_users == True:
+        auth_login(request, user)
+    else:
+        return Response(status=301)
+    return Response(status=201)
 
 
 @api_view(['POST'])
