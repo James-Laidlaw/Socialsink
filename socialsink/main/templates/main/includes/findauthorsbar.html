@@ -98,7 +98,8 @@
                     button.innerText = 'Requested';
                     button.classList.remove("request");
                     button.classList.add("unfollow");
-
+                    console.log(`${authors[id]['id']}inbox/`)
+                    console.log(JSON.stringify(response))
                     if (!(window.location.href.includes(getHostFromUrl(authors[id]['id'])))) {
                         creds = getAuth(getHostFromUrl(`${authors[id]['id']}inbox/`))
                         $.ajax({
@@ -243,8 +244,19 @@
                     response = response["items"]
                     for (i in response) {
                         if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
-                            authors.push(response[i])
-                            await addAuthor(response[i])
+                            var present = false
+                            for (const index in authors) {
+                                if (authors[index]['id'] === response[i]['id']) {
+                                    authors[index] = response[i]
+                                    await addAuthor(response[i])
+                                    present = true
+                                    break
+                                }
+                            }
+                            if (!present) {
+                                authors.push(response[i])
+                                await addAuthor(response[i])
+                            }
                         }
                     }
                 },
@@ -277,16 +289,13 @@
                     },
                     //headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
                     success: async function (response, textStatus, http) {
-                        console.log(response)
                         status = followingStatus[i]['status']
-                        console.log(status)
                         newStatus = 'none'
                         if (status === 'requested' && response === true) {
                             newStatus = 'accept'
                         } else if ((status === 'friends' || status === 'following') && response === false) {
                             newStatus = 'dismiss'
                         }
-                        console.log(newStatus)
                         creds = getAuth(window.location.href)
                         $.ajax({
                             type: "POST",

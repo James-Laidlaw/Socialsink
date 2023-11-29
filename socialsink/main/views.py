@@ -984,7 +984,7 @@ def inboxPOSTHandler(request, recieving_author_id):
     
 
     elif data['type'].lower() == 'post':
-        author = request.user.author
+        author = Author.objects.get(id=recieving_author_id)
         author_serializer = AuthorSerializer(author, context={'request': request})
         serialized_author = author_serializer.data
 
