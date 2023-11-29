@@ -481,7 +481,7 @@
             $(`#delete-button-${id}`).removeClass('hide')
         }
 
-        function sharePost(postID, authorID, origin, source) {
+        async function sharePost(postID, authorID, origin, source) {
             if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
                 var csrf_token = "{{ csrf_token }}";
                 $.ajaxSetup({
@@ -507,7 +507,7 @@
                         request.setRequestHeader(creds[0], creds[1]);
                     },
                     //headers: getAuth(window.location.href),
-                    success: async function (response, textStatus, http) {
+                    success: await async function (response, textStatus, http) {
                         post = response
 
                         // SEND THIS TO THIS INBOX
@@ -570,45 +570,42 @@
                                     }
                                 })
                             } else {
-                                for (const host in hosts) {
-                                    creds = getAuth(hosts[host][0])
-                                    await $.ajax({
-                                        type: "GET",
-                                        url: `${hosts[host][0]}authors/${"{{author.id}}"}/followers`,
-                                        headers: { "X-CSRFToken": '{{csrf_token}}' },
-                                        beforeSend: function (request)
-                                        {
-                                            request.withCredentials = true;
-                                            request.setRequestHeader(creds[0], creds[1]);
-                                        },
-                                        //headers: getAuth(hosts[host][0]),
-                                        success: async function (response, textStatus, http) {
-                                            for (const follower in response['items']) {
-                                                const id = response['items'][follower]['id'].split('/').at(-2)
-                                                creds = getAuth(hosts[host][0])
-                                                await $.ajax({
-                                                    type: "POST",
-                                                    url: `${hosts[host][0]}authors/${id}/inbox/`,
-                                                    data: post,
-                                                    contentType: 'application/json',
-                                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
-                                                    beforeSend: function (request)
-                                                    {
-                                                        request.withCredentials = true;
-                                                        request.setRequestHeader(creds[0], creds[1]);
-                                                    },
-                                                    //headers: getAuth(hosts[host][0]),
-                                                    error: function(error) {
-                                                        console.error(error)
-                                                    }
-                                                })
-                                            }
-                                        },
-                                        error: function(error) {
-                                            console.error(error)
+                                await $.ajax({
+                                    type: "GET",
+                                    url: `/authors/${"{{ author.id }}"}/followers/`,
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                    beforeSend: function (request)
+                                    {
+                                        request.withCredentials = true;
+                                        request.setRequestHeader(creds[0], creds[1]);
+                                    },
+                                    //headers: getAuth(hosts[host][0]),
+                                    success: await async function (response, textStatus, http) {
+                                        for (const follower in response['items']) {
+                                            f = JSON.parse(response['items'][follower])
+                                            creds = getAuth(getHostFromUrl(`${f['id']}inbox/`))
+                                            await $.ajax({
+                                                type: "POST",
+                                                url: `${f['id']}inbox/`,
+                                                data: post,
+                                                contentType: 'application/json',
+                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                                beforeSend: function (request)
+                                                {
+                                                    request.withCredentials = true;
+                                                    request.setRequestHeader(creds[0], creds[1]);
+                                                },
+                                                //headers: getAuth(hosts[host][0]),
+                                                error: function(error) {
+                                                    console.error(error)
+                                                }
+                                            })
                                         }
-                                    })
-                                }
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
                             }
                         }
                     },

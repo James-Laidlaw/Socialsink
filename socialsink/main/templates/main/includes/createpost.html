@@ -141,7 +141,7 @@
         }
     }
 
-    function createPost(formData) {
+    async function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
@@ -150,10 +150,7 @@
                 }
             }
         });
-
-
         creds = getAuth(window.location.href)
-
 
         $.ajax({
             type: "POST",
@@ -167,7 +164,7 @@
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
             },
-            success: function (response, textStatus, http) {
+            success: await async function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 
                     description.value = "" 
@@ -209,7 +206,7 @@
                             creds = getAuth(window.location.href)
                             $.ajax({
                                 type: "GET",
-                                url: `authors/${author_id}/friends/`,
+                                url: `/authors/${author_id}/friends/`,
                                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                                 beforeSend: function (request)
                                 {
@@ -243,45 +240,42 @@
                                 }
                             })
                         } else {
-                            for (const host in hosts) {
-                                creds = getAuth(hosts[host][0])
-                                $.ajax({
-                                    type: "GET",
-                                    url: `${hosts[host][0]}authors/${author_id}/followers/`,
-                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
-                                    beforeSend: function (request)
-                                    {
-                                        request.withCredentials = true;
-                                        request.setRequestHeader(creds[0], creds[1]);
-                                    },
-                                    //headers: getAuth(hosts[host][0]),
-                                    success: function (response, textStatus, http) {
-                                        for (const follower in response['items']) {
-                                            const id = JSON.parse(response['items'][follower])['id'].split('/').at(-2)
-                                            creds = getAuth(hosts[host][0])
-                                            $.ajax({
-                                                type: "POST",
-                                                url: `${hosts[host][0]}authors/${id}/inbox/`,
-                                                data: post,
-                                                contentType: 'application/json',
-                                                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                                                beforeSend: function (request)
-                                                {
-                                                    request.withCredentials = true;
-                                                    request.setRequestHeader(creds[0], creds[1]);
-                                                },
-                                                //headers: getAuth(hosts[host][0]),
-                                                error: function(error) {
-                                                    console.error(error)
-                                                }
-                                            })
-                                        }
-                                    },
-                                    error: function(error) {
-                                        console.error(error)
+                            await $.ajax({
+                                type: "GET",
+                                url: `/authors/${author_id}/followers/`,
+                                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                beforeSend: function (request)
+                                {
+                                    request.withCredentials = true;
+                                    request.setRequestHeader(creds[0], creds[1]);
+                                },
+                                //headers: getAuth(hosts[host][0]),
+                                success: await async function (response, textStatus, http) {
+                                    for (const follower in response['items']) {
+                                        f = JSON.parse(response['items'][follower])
+                                        creds = getAuth(getHostFromUrl(`${f['id']}inbox/`))
+                                        await $.ajax({
+                                            type: "POST",
+                                            url: `${f['id']}inbox/`,
+                                            data: post,
+                                            contentType: 'application/json',
+                                            headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                            beforeSend: function (request)
+                                            {
+                                                request.withCredentials = true;
+                                                request.setRequestHeader(creds[0], creds[1]);
+                                            },
+                                            //headers: getAuth(hosts[host][0]),
+                                            error: function(error) {
+                                                console.error(error)
+                                            }
+                                        })
                                     }
-                                })
-                            }
+                                },
+                                error: function(error) {
+                                    console.error(error)
+                                }
+                            })
                         }
                     }
                 }
