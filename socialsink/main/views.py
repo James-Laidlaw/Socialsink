@@ -902,7 +902,7 @@ def createCommentData(request):
         data = CommentSerializer(comment, context={'request': request}).data
         
         if request.data['destination'] == 'there':
-            data['id'] = request.data['post'] + 'comments/None/' 
+            data['id'] = request.data['post'] + 'comments/' 
 
         return Response(data, status=200)
     return Response(status=401)
@@ -1006,9 +1006,12 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
     
     elif data['type'].lower() == 'comment':
+        parts = data['id'].split('/')
+        post_endpoint = f"{parts[0]}//{parts[2]}/{parts[3]}/{parts[4]}/{parts[5]}/{parts[6]}/"
+
         comment = Comment(
             author_data = json.dumps(data['author']),
-            post_endpoint = data['id'],
+            post_endpoint = post_endpoint,
             content = data['comment'],
             created_at = datetime.now(pytz.timezone('America/Edmonton'))
         )
@@ -1130,9 +1133,8 @@ def getCommentLikes(request, author_id, post_id, comment_id):
             if request.method == 'POST':
                 user = request.user
                 if user.is_authenticated:
-                    url = request.build_absolute_uri()
-                    parts = url.split('/')
-                    url = url[:len(url)-6]
+
+                    print(request.data)
 
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],

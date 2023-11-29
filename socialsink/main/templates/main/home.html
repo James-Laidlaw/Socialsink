@@ -261,6 +261,7 @@
 
         function addComment(pid, comment, like_count, liked) {
             commentContainer = document.getElementById(`post-comment-container-${pid}`)
+            console.log(comment)
             text = comment['content']
             id = comment['id'].split('/').at(-2)
 
@@ -274,7 +275,7 @@
             } else {
                 likeButton = `<button type="button" class="btn btn-like" id="like-comment-button-${commentNum}" onclick="likeComment(${commentNum}, ${pid}, '${comment['author']['id']}')">${like_count}<i class="fa-solid fa-heart"></i></button>`
             }
-            var authorObject = JSON.parse(comment['author']);
+            var authorObject = comment['author'];
             const userProfileImage = authorObject['profileImage'];
 
             if (userProfileImage !== null) {
@@ -325,7 +326,7 @@
                     'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
                     'destination': destination,
                     'author_data': authorData,
-                    'object': comment[0]
+                    'object': comment['id']
                 }),
                 contentType: 'application/json',
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
