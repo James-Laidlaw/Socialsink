@@ -356,7 +356,7 @@ def getFollowers(request, author_id):
 
         url = request.build_absolute_uri()
         url = url[:len(url)-10]
-        
+
         follower_authors = []
         followers = Follower.objects.filter(followee_endpoint=url)
         for f in followers:
@@ -497,7 +497,7 @@ def getFriends(request, author_id):
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
     print("service: Get follower-followee relationship details request received")
-    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
+    result = getAuthed(request.META.get('HTTP_AUTHORIZATION', ''))
     if result in ['self', 'other']:
         if foreign_author_id == None or author_id == None:
             return Response(status=400)
