@@ -96,7 +96,7 @@
             $("#edit-profile-dialog").removeClass("show");
             $("body").toggleClass("has-popup-modal");
 
-        } else if (profileImage.length > 200 || (!profileImage.startsWith("https://imgur.com/") && !profileImage.startsWith("https://i.imgur.com/"))) {
+        } else if (profileImage.length > 0 && (profileImage.length > 200 || (!profileImage.startsWith("https://imgur.com/") && !profileImage.startsWith("https://i.imgur.com/")))) {
             alert("Profile image URL is too long or invalid, must be under 200 characters and start with 'https://imgur.com/' or 'https://i.imgur.com/'");
         } else if (username.length > 200) {
             alert("Username is too long, must be under 200 characters");

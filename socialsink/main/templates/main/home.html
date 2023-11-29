@@ -222,6 +222,8 @@
                     //headers: getAuth(window.location.href),
                     success: function(response, textStatus, http) {
                         $(`#post-comment-input-${postID}`).val("")
+                        console.log(`${author}inbox/`)
+                        console.log(response)
                         creds = getAuth(getHostFromUrl(`${author}inbox/`))
                         $.ajax({
                             type: "POST",
@@ -834,6 +836,7 @@
             } else {
                 destination = 'there'
             }
+            console.log(destination)
             creds = getAuth(window.location.href)
             $.ajax({
                 type: "POST",
@@ -859,8 +862,9 @@
                         //USED IF WE WANT TO UNLIKE //document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
                         document.getElementById(`like-button-${postID}`).disabled = true
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
-
-                        if (destination === 'there' && !(postAuthor.includes(url.host)) && !(postAuthor.split('/').at(-2) === "{{author.id}}")) {
+                        if (destination === 'there') {
+                            
+                            console.log(`${postAuthor}inbox/`)
                             creds = getAuth(getHostFromUrl(`${postAuthor}inbox/`))
                             $.ajax({
                                 type: "POST",
@@ -959,7 +963,7 @@
             for (const index in postIDs) {
                 postInfo = postIDs[index]
                 creds = getAuth(getHostFromUrl(`${postInfo[2]}`))
-                await $.ajax({
+                await await $.ajax({
                     type: "GET",
                     url: `${postInfo[2]}`,
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -969,7 +973,7 @@
                         request.setRequestHeader(creds[0], creds[1]);
                     },
                     //headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
-                    success: async function (response, textStatus, http) {
+                    success: await async function (response, textStatus, http) {
                         if (http.status === 200) {
                             await updateFields(response, index)
                         }
@@ -1044,14 +1048,14 @@
                     await newComments(index, comments)
                 }
             
-                $(`#post-title-${id}`).text(response['title'])
-                $(`#post-description-${id}`).text(response['description'])
-                $(`#post-categories-${id}`).text(response['categories'])
+                $(`#post-title-${index}`).text(response['title'])
+                $(`#post-description-${index}`).text(response['description'])
+                $(`#post-categories-${index}`).text(response['categories'])
 
                 if (response['contentType'] === 'image/jpeg;base64' || response['contentType'] === 'image/png;base64') {
                     $(`#image-previews`).attr('src', response['content'])
                 } else {
-                    $(`#post-content-${id}`).text(response['content'])
+                    $(`#post-content-${index}`).text(response['content'])
                 }
             }
         }
