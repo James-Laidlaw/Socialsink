@@ -386,13 +386,9 @@ def getFollowRequests(request, author_id):
 
         elif request.method == 'POST':
             status = request.data['status']
-            print(status)
 
             if request.data['mode'] == 'update-direct':
                 follower_endpoint = request.data['follower_endpoint']
-
-                print(url)
-                print(follower_endpoint)
                 
                 fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 
@@ -512,8 +508,6 @@ def followerReqHandler(request, author_id, foreign_author_id):
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
-            print(url)
-
             following = Follower.objects.filter(followee_endpoint=url+author_id+'/')
             for f in following:
                 if f"/{foreign_author_id}/" in f.follower_endpoint and f.accepted == True:
@@ -522,7 +516,6 @@ def followerReqHandler(request, author_id, foreign_author_id):
         
         if result == 'self':
             if request.method == 'PUT':
-                print(request.data)
                 follower_instance = Follower.objects.filter(
                     follower_endpoint = request.data['follower_data']['id'],
                     followee_endpoint = request.data['followee_data']['id']
@@ -898,7 +891,6 @@ def createComment(request, author_id, post_id):
 def createCommentData(request):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
-        print(request.data['post'])
 
         comment = Comment(
             author_data=json.dumps(request.data['author']),
