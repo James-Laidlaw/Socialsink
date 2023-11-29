@@ -777,7 +777,6 @@
                                         request.withCredentials = true;
                                         request.setRequestHeader(creds[0], creds[1]);
                                     },
-                                    //headers: getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`)),
                                     success: async function (response, textStatus, http) {
                                         await insertPostComplete(response)
                                     },

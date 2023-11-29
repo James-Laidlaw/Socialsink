@@ -140,6 +140,7 @@
             }
         }
     }
+
     function createPost(formData) {
         var csrf_token = "{{ csrf_token }}";
         $.ajaxSetup({
@@ -161,14 +162,11 @@
             contentType: 'application/json',
             //headers: getAuth(window.location.href),
             headers: { "X-CSRFToken": '{{csrf_token}}' },
-            
             beforeSend: function (request)
             {
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
             },
-
-
             success: function (response, textStatus, http) {
                 if (http.status === 201) {
                     title.value = "" 

@@ -44,7 +44,7 @@ class AuthorSerializer(serializers.ModelSerializer):
         
         return super_result
     
-visibility_options = {0: "PUBLIC", 1: "FRIENDS", 2: "PRIVATE"}
+visibility_options = {0: "PUBLIC", 1: "FRIENDS", 2: "UNLISTED"}
 #TODO serializer should return comments too
 #TODO test
 class PostSerializer(serializers.ModelSerializer):
@@ -56,12 +56,12 @@ class PostSerializer(serializers.ModelSerializer):
         request: Request = self.context.get('request')
 
         super_result = super().to_representation(instance)
-        author_id = instance.author.id
+        author_id = instance.author_endpoint.split('/')[-2]
         post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, instance.id]))
 
         super_result['type'] = "post"
         super_result['id'] = post_url
-        super_result['author'] = AuthorSerializer(instance.author, context={'request': request}).data
+        super_result['author'] = json.loads(instance.author_data)
         super_result['published'] = instance.created_at.isoformat()
         super_result['visibility'] = visibility_options[instance.publicity]
         super_result['unlisted'] = instance.unlisted

@@ -46,7 +46,6 @@ class Post(models.Model):
     id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=200, default="Default title")
     description = models.CharField(max_length=200, null=True)
-    author = models.ForeignKey(Author, related_name='posts', on_delete=models.CASCADE)
     author_endpoint = models.CharField(max_length=1000, default='')
     author_data = models.CharField(max_length=2000, default='')
     contentType = models.CharField(max_length=200, default="text/plain")

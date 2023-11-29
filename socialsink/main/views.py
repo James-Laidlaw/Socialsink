@@ -627,7 +627,7 @@ def updatePost(request, post_id):
         return Response(status=404)
     
     #check authorization
-    if post.author.user != request.user or not request.user.is_authenticated:
+    if not request.user.is_authenticated:
         print("unauthorized, returning 401")
         return Response(status=401)
 
@@ -703,6 +703,9 @@ def createPost(request, author_id):
     author = Author.objects.filter(id=author_id).first()
     if author == None:
         return Response(status=404)
+
+    author_serializer = AuthorSerializer(author, context={'request': request})
+    serialized_author = author_serializer.data
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
@@ -738,7 +741,8 @@ def createPost(request, author_id):
             publicity = -1 #Unknown publicity
 
         post = Post(
-                author=author,
+                author_data=json.dumps(serialized_author),
+                author_endpoint=serialized_author['id'],
                 title=title,
                 description=description,
                 categories=categories,
@@ -771,7 +775,8 @@ def createPost(request, author_id):
             return Response(status=404)
 
         new_post = Post(
-            author=author, 
+            author_data=post.author_data,
+            author_endpoint=post.author_endpoint, 
             title=post.title,
             description=post.description,
             categories=post.categories,
@@ -807,13 +812,10 @@ def getAuthorPosts(request, author_id):
     if author_id == None:
         return Response(status=400)
     
-    author = Author.objects.get(id=author_id)
+    url = request.build_absolute_uri()
+    url = url[:len(url)-6]
 
-    if author == None:
-        return Response(status=404)
-    
-
-    posts = author.posts.all().order_by('created_at')
+    posts = Post.objects.filter(author_endpoint=url).order_by('created_at')
 
     paginatedPosts = Paginator(posts, pageSize)
 
@@ -856,7 +858,7 @@ def getComments(request, post_id):
     if found_post == None:
         return Response(status=404)
     
-    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author.id, found_post.id]))
+    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author_endpoint.split('/')[-2], found_post.id]))
     
     comments = Comment.objects.filter(post_endpoint=post_endpoint).order_by('created_at')
     
