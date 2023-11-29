@@ -27,7 +27,6 @@
                 type: "GET",
                 url: `https://api.github.com/users/${gitHubUsername}/events`,
                 contentType: 'application/json',
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
                 success: function (response, textStatus, http) {
                     if (http.status === 200) {
 

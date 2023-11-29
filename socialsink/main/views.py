@@ -896,12 +896,10 @@ def createComment(request, author_id, post_id):
 
 @api_view(['POST'])
 def createCommentData(request):
-
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
-        url = request.build_absolute_uri()
-        url = url[:len(url)-9]
-        
+        print(request.data['post'])
+
         comment = Comment(
             author_data=json.dumps(request.data['author']),
             post_endpoint=request.data['post'],
@@ -910,6 +908,9 @@ def createCommentData(request):
         )
 
         data = CommentSerializer(comment, context={'request': request}).data
+        
+        if request.data['destination'] == 'there':
+            data['id'] = request.data['post'] + 'comments/None/' 
 
         return Response(data, status=200)
     return Response(status=401)
@@ -989,7 +990,7 @@ def inboxPOSTHandler(request, recieving_author_id):
             summary = data['summary']
         )
 
-        if data['object'].split('/')[-2] == 'post':
+        if data['object'].split('/')[-3] == 'posts':
             like.post_endpoint = data['object']
         else:
             like.comment_endpoint = data['object']

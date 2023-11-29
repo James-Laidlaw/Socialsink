@@ -191,6 +191,14 @@
         }
 
         function postComment(postID, post, author) {
+            url = new URL(post)
+
+            if (window.location.href.includes(url.host)) {
+                destination = 'here'
+            } else {
+                destination = 'there'
+            }
+
             text = $(`#post-comment-input-${postID}`).val()
             if (text.length > 200) {
                 alert("Comment exceeds maximum length (200 characters)")
@@ -210,7 +218,8 @@
                     data: JSON.stringify({
                         'comment': text,
                         'author': authorData,
-                        'post': post
+                        'post': post,
+                        'destination': destination
                     }),
                     contentType: 'application/json',
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -1030,7 +1039,6 @@
                 },
                 //headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
                 success: function (response, textStatus, http) {
-                    console.log(response)
                     document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
                 },
                 error: function(error) {
