@@ -203,13 +203,14 @@
                         }
                     }
                 });
-                creds = getAuth(getHostFromUrl(`${post}comments/`))
+                creds = getAuth(window.location.href)
                 $.ajax({
                     type: "POST",
-                    url: `${post}comments/`,
+                    url: `/api/create-comment-data/`,
                     data: JSON.stringify({
                         'comment': text,
-                        'author': authorData
+                        'author': authorData,
+                        'post': post
                     }),
                     contentType: 'application/json',
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -312,7 +313,8 @@
                 data: JSON.stringify({
                     'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
                     'destination': destination,
-                    'author_data': authorData
+                    'author_data': authorData,
+                    'object': comment[0]
                 }),
                 contentType: 'application/json',
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -839,7 +841,8 @@
                 data: JSON.stringify({
                     'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
                     'destination': destination,
-                    'author_data': authorData
+                    'author_data': authorData,
+                    'object': postIDs[postID][2]
                 }),
                 contentType: 'application/json',
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -850,6 +853,7 @@
                 },
                 //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
+                    console.log(response)
                     if (http.status === 201) {
                         $(`#like-button-${postID}`).addClass('liked')
                         //USED IF WE WANT TO UNLIKE //document.getElementById(`like-button-${postID}`).setAttribute('onclick', `unlikePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
@@ -967,7 +971,7 @@
                     //headers: getAuth(getHostFromUrl(`${postInfo[2]}`)),
                     success: async function (response, textStatus, http) {
                         if (http.status === 200) {
-                            await updateFields()
+                            await updateFields(response, index)
                         }
                     },
                     error: function(error) {
@@ -1009,6 +1013,7 @@
         }
 
         async function doPostLikes(postInfo, index) {
+            index = parseInt(index)
             creds = getAuth(getHostFromUrl(`${postInfo[2]}likes`))
             await $.ajax({
                 type: "GET",
@@ -1021,6 +1026,7 @@
                 },
                 //headers: getAuth(getHostFromUrl(`${postInfo[2]}likes`)),
                 success: function (response, textStatus, http) {
+                    console.log(response)
                     document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
                 },
                 error: function(error) {
@@ -1029,9 +1035,9 @@
             })
         }
 
-        async function updateFields(index) {
+        async function updateFields(response, index) {
             if ($(`#like-button-${index}`).is(":visible")) {
-                await doPostLikes()
+                await doPostLikes(postIDs[index], index)
 
                 if (response['commentsSrc'] && response['commentsSrc'].length > 0) {
                     comments = response['commentsSrc']

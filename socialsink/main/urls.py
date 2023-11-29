@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/update-user/<int:id>", views.updateUser, name="updateUser"),
     path("api/get-node-hosts/", views.getNodeHosts, name="getNodeHosts"),
     path("api/delete-inbox-item/<str:author_id>/posts/<str:post_id>", views.deleteInboxPost, name="deleteInboxPost"),
+    path("api/create-comment-data/", views.createCommentData, name="createCommentData"),
     path("authors/<str:author_id>/", views.authorReqHandler, name="authorReqHandler"),
     path("authors/", views.getAuthors, name="authorList"),
     path("authors/<str:author_id>/followers/", views.getFollowers, name="getFollowers"),

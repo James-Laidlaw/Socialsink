@@ -893,6 +893,26 @@ def createComment(request, author_id, post_id):
     data = CommentSerializer(comment, context={'request': request}).data
 
     return Response(data, status=200)
+
+@api_view(['POST'])
+def createCommentData(request):
+
+    result = getAuthed(request.META['HTTP_AUTHORIZATION'])
+    if result == 'self':
+        url = request.build_absolute_uri()
+        url = url[:len(url)-9]
+        
+        comment = Comment(
+            author_data=json.dumps(request.data['author']),
+            post_endpoint=request.data['post'],
+            content=request.data['comment'],
+            created_at=datetime.now(pytz.timezone('America/Edmonton'))
+        )
+
+        data = CommentSerializer(comment, context={'request': request}).data
+
+        return Response(data, status=200)
+    return Response(status=401)
     
 
 # /authors/{AUTHOR_ID}/inbox/
@@ -1059,7 +1079,7 @@ def getPostLikes(request, author_id, post_id):
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],
                         author_data=json.dumps(request.data['author_data']),
-                        post_endpoint=url,
+                        post_endpoint=request.data['object'],
                         summary=f"{user.username} like your post", 
                         created_at=datetime.now(pytz.timezone('America/Edmonton'))
                     )
@@ -1124,7 +1144,7 @@ def getCommentLikes(request, author_id, post_id, comment_id):
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],
                         author_data=json.dumps(request.data['author_data']),
-                        comment_endpoint=url,
+                        comment_endpoint=request.data['object'],
                         summary=f"{user.username} like your post", 
                         created_at=datetime.now(pytz.timezone('America/Edmonton'))
                     )
