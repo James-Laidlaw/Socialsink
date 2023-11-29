@@ -762,24 +762,26 @@ def createPost(request, author_id):
         return Response(data, status=201)
     else:
         id = request.data.get('post_id')
-        
-        post = Post.objects.filter(id=id).first()
-        if post == None:
-            return Response(status=404)
+
+        post = request.data['post']
+
+        publicity = 0
+        if post['visibility'] == 'FRIENDS':
+            publicity = 1
 
         new_post = Post(
-            author_data=post.author_data,
-            author_endpoint=post.author_endpoint, 
-            title=post.title,
-            description=post.description,
-            categories=post.categories,
-            contentType=post.contentType,
-            content=post.content,
+            author_data=json.dumps(serialized_author),
+            author_endpoint=post['author']['id'], 
+            title=post['title'],
+            description=post['description'],
+            categories=post['categories'],
+            contentType=post['contentType'],
+            content=post['content'],
             source=source,
-            origin=post.origin,
-            publicity=post.publicity,
-            unlisted=post.unlisted,
-            created_at=post.created_at
+            origin=post['origin'],
+            publicity=publicity,
+            unlisted=post['unlisted'],
+            created_at=post['published']
         )
 
         new_post.save()
