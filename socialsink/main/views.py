@@ -508,7 +508,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
-            following = Follower.objects.filter(followee_endpoint=url+author_id+'/')
+            following = Follower.objects.filter(followee_endpoint=url+author_id)
             for f in following:
                 if f"/{foreign_author_id}/" in f.follower_endpoint and f.accepted == True:
                     return Response(True, status=200)

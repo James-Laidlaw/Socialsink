@@ -260,9 +260,8 @@
 
     async function updateFollowing() {
         await getFollowingStatus()
-        
+
         for (const i in followingStatus) {
-            console.log(followingStatus[i])
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
                 creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}/`))
@@ -275,6 +274,7 @@
                         request.setRequestHeader(creds[0], creds[1]);
                     },
                     success: async function (response, textStatus, http) {
+                        console.log(response)
                         status = followingStatus[i]['status']
                         newStatus = 'none'
                         if (status === 'requested' && response === true) {
