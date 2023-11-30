@@ -37,8 +37,8 @@ class AuthorSerializer(serializers.ModelSerializer):
         host_url = request.build_absolute_uri("/")
 
         super_result['type'] = "author"
-        super_result['id'] = author_url
-        super_result['url'] = author_url
+        super_result['id'] = author_url.rstrip('/')
+        super_result['url'] = author_url.rstrip('/')
         super_result['host'] = host_url
         super_result['displayName'] = instance.user.username
         
@@ -56,11 +56,11 @@ class PostSerializer(serializers.ModelSerializer):
         request: Request = self.context.get('request')
 
         super_result = super().to_representation(instance)
-        author_id = instance.author_endpoint.split('/')[-2]
-        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, instance.id]))
+        author_id = instance.author_endpoint.split('/')[-1]
+        post_url = request.build_absolute_uri(reverse('postReqHandler', args=[author_id, instance.id])).rstrip('/')
 
         super_result['type'] = "post"
-        super_result['id'] = post_url
+        super_result['id'] = post_url.rstrip('/')
         super_result['author'] = json.loads(instance.author_data)
         super_result['published'] = instance.created_at.isoformat()
         super_result['visibility'] = visibility_options[instance.publicity]
@@ -99,8 +99,8 @@ class CommentSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
-        post_url = instance.post_endpoint
-        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-4], post_url.split('/')[-2]])) + str(instance.id) +'/'
+        post_url = instance.post_endpoint.rstrip('/')
+        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-3], post_url.split('/')[-1]])) + str(instance.id)
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
@@ -156,10 +156,10 @@ class LikeSerializer(serializers.ModelSerializer):
         super_result['author'] = json.loads(instance.author_data)
 
         if instance.post_endpoint != '':
-            super_result['object'] = instance.post_endpoint
+            super_result['object'] = instance.post_endpoint.rstrip('/')
             super_result['summary'] = instance.summary
         elif instance.comment_endpoint != '':
-            super_result['object'] = instance.comment_endpoint
+            super_result['object'] = instance.comment_endpoint.rstrip('/')
             super_result['summary'] = instance.summary
 
         super_result['@context'] = instance.context
@@ -195,7 +195,7 @@ class InboxSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = {}
-        data['endpoint'] = instance.endpoint
+        data['endpoint'] = instance.endpoint.rstrip('/')
         data['type'] = instance.type
 
         return data

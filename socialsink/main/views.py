@@ -705,7 +705,7 @@ def createPost(request, author_id):
         print("unauthorized, returning 401")
         return Response(status=401)
     
-    default_origin = f'http://{request.get_host()}/author/{author_id}/'
+    default_origin = f'http://{request.get_host()}/author/{author_id}'
     #try:
 
     source = request.data.get('source')
@@ -716,7 +716,7 @@ def createPost(request, author_id):
         content = request.data.get('content')
         contentType = request.data.get('contentType', 'text/plain')
         publicity = request.data.get('publicity')
-        origin = request.data.get('origin', default_origin)
+        origin = request.data.get('origin', default_origin).rstrip('/')
         image = request.data.get('image')
 
         if image:
@@ -735,7 +735,7 @@ def createPost(request, author_id):
 
         post = Post(
                 author_data=json.dumps(serialized_author),
-                author_endpoint=serialized_author['id'],
+                author_endpoint=serialized_author['id'].rstrip('/'),
                 title=title,
                 description=description,
                 categories=categories,
@@ -749,9 +749,7 @@ def createPost(request, author_id):
 
         post.save()
 
-        origin += f'posts/{post.id}'
-
-        post.origin = origin
+        post.origin = post.origin + f'/posts/{post.id}'
 
         post.save()
 
@@ -777,8 +775,8 @@ def createPost(request, author_id):
             categories=post['categories'],
             contentType=post['contentType'],
             content=post['content'],
-            source=source,
-            origin=post['origin'],
+            source=source.rstrip('/'),
+            origin=post['origin'].rstrip('/'),
             publicity=publicity,
             unlisted=post['unlisted'],
             created_at=post['published']
@@ -786,7 +784,7 @@ def createPost(request, author_id):
 
         new_post.save()
 
-        source += f"posts/{new_post.id}"
+        source += f"/posts/{new_post.id}"
         new_post.source = source
 
         new_post.save()

@@ -88,28 +88,23 @@
                     'followee_data': authors[id]
                 }),
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
-                beforeSend: function (request)
-                {
+                beforeSend: function (request) {
                     request.withCredentials = true;
                     request.setRequestHeader(creds[0], creds[1]);
                 },
-                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     button.innerText = 'Requested';
                     button.classList.remove("request");
                     button.classList.add("unfollow");
-                    console.log(`${authors[id]['id']}inbox/`)
-                    console.log(JSON.stringify(response))
                     if (!(window.location.href.includes(getHostFromUrl(authors[id]['id'])))) {
-                        creds = getAuth(getHostFromUrl(`${authors[id]['id']}inbox/`))
+                        creds = getAuth(getHostFromUrl(`${authors[id]['id']}/inbox/`))
                         $.ajax({
                             type: "POST",
-                            url: `${authors[id]['id']}inbox/`,
+                            url: `${authors[id]['id']}/inbox/`,
                             contentType: 'application/json',
                             data: JSON.stringify(response),
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
-                            beforeSend: function (request)
-                            {
+                            beforeSend: function (request) {
                                 request.withCredentials = true;
                                 request.setRequestHeader(creds[0], creds[1]);
                             },
@@ -136,12 +131,10 @@
                     'followee_endpoint': authors[id]['id']
                 }),
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
-                beforeSend: function (request)
-                {
+                beforeSend: function (request) {
                     request.withCredentials = true;
                     request.setRequestHeader(creds[0], creds[1]);
                 },
-                //headers: getAuth(window.location.href),
                 success: function (response, textStatus, http) {
                     button.innerText = 'Follow';
                     button.classList.remove("unfollow");
@@ -159,12 +152,10 @@
         await $.ajax({
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/`,
-            beforeSend: function (request)
-            {
+            beforeSend: function (request) {
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
             },
-            //headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 followerData = response
             },
@@ -180,12 +171,10 @@
             type: "GET",
             url: `/authors/${"{{ author.id }}"}/following/`,
             headers: { "X-CSRFToken": '{{csrf_token}}' },
-            beforeSend: function (request)
-            {
+            beforeSend: function (request) {
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
             },
-            //headers: getAuth(window.location.href),
             success: function (response, textStatus, http) {
                 followingStatus = response
             },
@@ -234,16 +223,14 @@
                 type: "GET",
                 url: `${hosts[host][0]}authors/`,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
-                beforeSend: function (request)
-                {
+                beforeSend: function (request) {
                     request.withCredentials = true;
                     request.setRequestHeader(creds[0], creds[1]);
                 },
-                //headers: getAuth(getHostFromUrl(`${hosts[host][0]}authors/`)),
                 success: async function (response, textStatus, http) {
                     response = response["items"]
                     for (i in response) {
-                        if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}/`) {
+                        if (response[i]['id'] !== `${window.location.href}authors/${"{{ author.id }}"}`) {
                             var present = false
                             for (const index in authors) {
                                 if (authors[index]['id'] === response[i]['id']) {
@@ -277,17 +264,15 @@
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
-                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}followers/${"{{ author.id }}"}`))
+                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
                 $.ajax({
                     type: "GET",
-                    url: `${followingStatus[i]['followee']}followers/${"{{ author.id }}"}`,
+                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
-                    beforeSend: function (request)
-                    {
+                    beforeSend: function (request) {
                         request.withCredentials = true;
                         request.setRequestHeader(creds[0], creds[1]);
                     },
-                    //headers: getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`)),
                     success: async function (response, textStatus, http) {
                         status = followingStatus[i]['status']
                         newStatus = 'none'
@@ -307,12 +292,10 @@
                                 'follower_endpoint': followingStatus[i]['followee']
                             }),
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
-                            beforeSend: function (request)
-                            {
+                            beforeSend: function (request) {
                                 request.withCredentials = true;
                                 request.setRequestHeader(creds[0], creds[1]);
                             },
-                            //headers: getAuth(window.location.href),
                             error: function (error) {
                                 console.error(error);
                             }
