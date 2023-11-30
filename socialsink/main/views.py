@@ -355,7 +355,7 @@ def getFollowers(request, author_id):
             return Response(status=400)
 
         url = request.build_absolute_uri()
-        url = url[:len(url)-10]
+        url = url[:len(url)-11]
 
         follower_authors = []
         followers = Follower.objects.filter(followee_endpoint=url)
@@ -373,7 +373,7 @@ def getFollowRequests(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self']:
         url = request.build_absolute_uri()
-        url = url[:len(url)-19]
+        url = url[:len(url)-20]
 
         if request.method == 'GET':
             followRequests = Follower.objects.filter(followee_endpoint=url, accepted=False)
@@ -448,13 +448,13 @@ def getFollowRequests(request, author_id):
         return Response(status=405)
     return result
 
-#/authors/{AUTHOR_ID}/following
+#/authors/{AUTHOR_ID}/following/
 @api_view(['GET'])
 def getFollowing(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
         url = request.build_absolute_uri()
-        url = url[:len(url)-10] 
+        url = url[:len(url)-11] 
 
         following = Follower.objects.filter(follower_endpoint=url)
         data = {}
@@ -471,13 +471,13 @@ def getFollowing(request, author_id):
     return Response(status=401)
 
 
-#/authors/{AUTHOR_ID}/friends
+#/authors/{AUTHOR_ID}/friends/
 @api_view(['GET'])
 def getFriends(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
         url = request.build_absolute_uri()
-        url = url[:len(url)-8] 
+        url = url[:len(url)-9] 
 
         data = []
         following = Follower.objects.filter(follower_endpoint=url)
@@ -797,7 +797,7 @@ def createPost(request, author_id):
     #except:
     #    return Response(status=400)
     
-
+#/authors/{AUTHOR_ID}/posts/
 def getAuthorPosts(request, author_id):
     pageNum = request.GET.get('page', 1)
     pageSize = request.GET.get('size', 50)
@@ -806,7 +806,7 @@ def getAuthorPosts(request, author_id):
         return Response(status=400)
     
     url = request.build_absolute_uri()
-    url = url[:len(url)-6]
+    url = url[:len(url)-7]
 
     posts = Post.objects.filter(author_endpoint=url).order_by('created_at')
 
@@ -872,7 +872,7 @@ def createComment(request, author_id, post_id):
     #slot in post ID
 
     url = request.build_absolute_uri()
-    url = url[:len(url)-9]
+    url = url[:len(url)-10]
     
     comment = Comment(
         author_data=json.dumps(request.data['author']),
@@ -1070,7 +1070,7 @@ def getPostLikes(request, author_id, post_id):
                 if user.is_authenticated:
                     url = request.build_absolute_uri()
                     parts = url.split('/')
-                    url = url[:len(url)-6]
+                    url = url[:len(url)-7]
 
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],

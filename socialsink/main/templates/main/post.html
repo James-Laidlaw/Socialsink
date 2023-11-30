@@ -39,7 +39,7 @@
 
         function addPost(post, likeCount, likedPost) {
             id = post['id'].split('/').at(-2)
-            authorId = post['author']['id'].split('/').at(-2)
+            authorId = post['author']['id'].split('/').at(-1)
             postIDs.push([id, authorId, post['id']])
             id = postNum
 
