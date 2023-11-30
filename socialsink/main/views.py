@@ -196,6 +196,7 @@ def getNodeHosts(request):
     return Response(status=401)
 
 
+#api/delete-inbox-item/<str:author_id>/posts/<str:post_id>/
 @api_view(['DELETE'])
 def deleteInboxPost(request, author_id, post_id):
     '''
@@ -212,10 +213,10 @@ def deleteInboxPost(request, author_id, post_id):
 
         url = request.build_absolute_uri()
         parts = url.split('/')
-        url = f"{parts[0]}//{parts[2]}/authors/{author_id}/posts/{post_id}/"
+        url = f"{parts[0]}//{parts[2]}/authors/{author_id}/posts/{post_id}"
 
         for item in items:
-            if item.type == 'post' and re.match(rf"^{parts[0]}//{parts[2]}/authors/.*/posts/{post_id}/$", item.endpoint):
+            if item.type == 'post' and re.match(rf"^{parts[0]}//{parts[2]}/authors/.*/posts/{post_id}$", item.endpoint):
                 item.delete()
         
         return Response(status=200)
@@ -510,7 +511,7 @@ def followerReqHandler(request, author_id, foreign_author_id):
 
             following = Follower.objects.filter(followee_endpoint=url+author_id)
             for f in following:
-                if f"/{foreign_author_id}/" in f.follower_endpoint and f.accepted == True:
+                if f"/{foreign_author_id}" in f.follower_endpoint and f.accepted == True:
                     return Response(True, status=200)
             return Response(False, status=200)
         
@@ -825,7 +826,7 @@ def getAuthorPosts(request, author_id):
     return Response(serialized_posts)
 
 
-#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/
 @api_view(['GET', 'POST'])
 def commentReqHandler(request, author_id, post_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
@@ -872,7 +873,7 @@ def createComment(request, author_id, post_id):
     #slot in post ID
 
     url = request.build_absolute_uri()
-    url = url[:len(url)-10]
+    url = url[:len(url)-11]
     
     comment = Comment(
         author_data=json.dumps(request.data['author']),
@@ -1007,7 +1008,7 @@ def inboxPOSTHandler(request, recieving_author_id):
     
     elif data['type'].lower() == 'comment':
         parts = data['id'].split('/')
-        post_endpoint = f"{parts[0]}//{parts[2]}/{parts[3]}/{parts[4]}/{parts[5]}/{parts[6]}/"
+        post_endpoint = f"{parts[0]}//{parts[2]}/{parts[3]}/{parts[4]}/{parts[5]}/{parts[6]}"
 
         comment = Comment(
             author_data = json.dumps(data['author']),
@@ -1055,7 +1056,7 @@ def getPostLikes(request, author_id, post_id):
             url = request.build_absolute_uri()
             parts = url.split('/')
             start = f"{parts[0]}//{parts[2]}"
-            end = f"{parts[5]}/{parts[6]}/"
+            end = f"{parts[5]}/{parts[6]}"
 
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
 
@@ -1111,7 +1112,7 @@ def getPostLikes(request, author_id, post_id):
     return result
 
 
-#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes    
+#/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes/   
 @api_view(['GET', 'POST'])
 def getCommentLikes(request, author_id, post_id, comment_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
@@ -1121,7 +1122,7 @@ def getCommentLikes(request, author_id, post_id, comment_id):
             url = request.build_absolute_uri()
             parts = url.split('/')
             start = f"{parts[0]}//{parts[2]}"
-            end = f"{parts[7]}/{parts[8]}/"
+            end = f"{parts[7]}/{parts[8]}"
 
             likes = Like.objects.filter(Q(comment_endpoint__contains=start) & Q(comment_endpoint__contains=end)).order_by('created_at')
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
@@ -1133,8 +1134,6 @@ def getCommentLikes(request, author_id, post_id, comment_id):
             if request.method == 'POST':
                 user = request.user
                 if user.is_authenticated:
-
-                    print(request.data)
 
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],

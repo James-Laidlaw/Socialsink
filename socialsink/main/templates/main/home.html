@@ -291,7 +291,7 @@
                 type: "POST",
                 url: `/authors/${"{{author.id}}"}/posts/${postIDs[pid][0]}/comments/${commentIDs[cid][0]}/likes/`,
                 data: JSON.stringify({
-                    'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}/`,
+                    'author_endpoint': `${window.location.href}authors/${"{{author.id}}"}`,
                     'destination': destination,
                     'author_data': authorData,
                     'object': comment['id']
@@ -450,7 +450,6 @@
 
         async function sharePost(postID, authorID, origin, source) {
             if ((origin !== source && authorID.toString() !== "{{ author.id }}") || source === null) {
-                console.log(postIDs[postID][2])
                 creds = getAuth(getHostFromUrl(postIDs[postID][2]))
                 $.ajax({
                     type: "GET",
