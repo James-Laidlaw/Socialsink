@@ -23,7 +23,7 @@
         requests_ids.splice(requests_ids.indexOf(id), 1);
         $.ajax({
             type: "POST",
-            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
+            url: `/authors/${"{{ author.id }}"}/followers/requests`,
             contentType: 'application/json',
             data: JSON.stringify({
                 'mode': 'update-direct',
@@ -72,7 +72,7 @@
         //authors/<str:author_id>/followers/requests/
         return $.ajax({
             type: "GET",
-            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
+            url: `/authors/${"{{ author.id }}"}/followers/requests`,
             contentType: 'application/json',
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             beforeSend: function (request) {

@@ -80,7 +80,7 @@
             creds = getAuth(window.location.href)
             $.ajax({
                 type: "PUT",
-                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
+                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}`,
                 contentType: 'application/json',
                 data: JSON.stringify({
                     'follower_data': followerData,
@@ -96,10 +96,10 @@
                     button.classList.remove("request");
                     button.classList.add("unfollow");
                     if (!(window.location.href.includes(getHostFromUrl(authors[id]['id'])))) {
-                        creds = getAuth(getHostFromUrl(`${authors[id]['id']}/inbox/`))
+                        creds = getAuth(getHostFromUrl(`${authors[id]['id']}/inbox`))
                         $.ajax({
                             type: "POST",
-                            url: `${authors[id]['id']}/inbox/`,
+                            url: `${authors[id]['id']}/inbox`,
                             contentType: 'application/json',
                             data: JSON.stringify(response),
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -123,7 +123,7 @@
             creds = getAuth(window.location.href)
             $.ajax({
                 type: "DELETE",
-                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}/`,
+                url: `/authors/${"{{ author.id }}"}/followers/${followee_id}`,
                 contentType: 'application/json',
                 data: JSON.stringify({
                     'follower_endpoint': followerData['id'],
@@ -150,7 +150,7 @@
         creds = getAuth(window.location.href)
         await $.ajax({
             type: "GET",
-            url: `/authors/${"{{ author.id }}"}/`,
+            url: `/authors/${"{{ author.id }}"}`,
             beforeSend: function (request) {
                 request.withCredentials = true;
                 request.setRequestHeader(creds[0], creds[1]);
@@ -168,7 +168,7 @@
         creds = getAuth(window.location.href)
         await $.ajax({
             type: "GET",
-            url: `/authors/${"{{ author.id }}"}/following/`,
+            url: `/authors/${"{{ author.id }}"}/following`,
             headers: { "X-CSRFToken": '{{csrf_token}}' },
             beforeSend: function (request) {
                 request.withCredentials = true;
@@ -217,10 +217,10 @@
         await getFollowingStatus()
         
         for (const host in hosts) {
-            creds = getAuth(getHostFromUrl(`${hosts[host][0]}authors/`))
+            creds = getAuth(getHostFromUrl(`${hosts[host][0]}authors`))
             await $.ajax({
                 type: "GET",
-                url: `${hosts[host][0]}authors/`,
+                url: `${hosts[host][0]}authors`,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
@@ -263,10 +263,10 @@
         for (const i in followingStatus) {
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
-                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}/`))
+                creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
                 $.ajax({
                     type: "GET",
-                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}/`,
+                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request) {
                         request.withCredentials = true;
@@ -283,7 +283,7 @@
                         creds = getAuth(window.location.href)
                         $.ajax({
                             type: "POST",
-                            url: `/authors/${"{{ author.id }}"}/followers/requests/`,
+                            url: `/authors/${"{{ author.id }}"}/followers/requests`,
                             contentType: 'application/json',
                             data: JSON.stringify({
                                 'mode': 'update-indirect',
