@@ -72,7 +72,11 @@
     function followAuthor(e, id) {
         e.preventDefault();
         button = document.getElementById(`follow-${id}`);
-        followee_id = authors[id]['id'].split('/').at(-1)
+        if (followee_id = authors[id]['id'].split('/').at(-1) === '') {
+            followee_id = authors[id]['id'].split('/').at(-2)
+        } else {
+            followee_id = authors[id]['id'].split('/').at(-1)
+        }
         // Not the most robust method but works well
         // Checks the class list on the action to complete
         if (button.classList.contains('request')) {
@@ -281,7 +285,7 @@
             if (!(window.location.href.includes(url.host))) {
                 creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
                 if (getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
-                    url = `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}/`
+                    url = `${followingStatus[i]['followee']}followers/${"{{ author.id }}"}/`
                 } else {
                     url = `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`
                 }
