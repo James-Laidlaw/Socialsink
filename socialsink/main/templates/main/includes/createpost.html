@@ -198,7 +198,7 @@
                                         creds = getAuth(getHostFromUrl(`${response[i]}/inbox`))
                                         if (getHostFromUrl(`${response[i]}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                                             url = `${response[i]}inbox/`
-                                            data = JSON.stringify({'items': [postJson]})
+                                            data = JSON.stringify({'items': postJson})
                                         } else {
                                             url = `${response[i]}/inbox`
                                             data = post
@@ -238,7 +238,7 @@
                                         creds = getAuth(getHostFromUrl(`${f['id']}/inbox`))
                                         if (getHostFromUrl(`${f['id']}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                                             url = `${f['id']}inbox/`
-                                            data = JSON.stringify({'items': [postJson]})
+                                            data = JSON.stringify({'items': postJson})
                                         } else {
                                             url = `${f['id']}/inbox`
                                             data = post

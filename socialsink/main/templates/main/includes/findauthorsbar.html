@@ -103,7 +103,7 @@
                         creds = getAuth(getHostFromUrl(`${authors[id]['id']}/inbox`))
                         if (getHostFromUrl(`${authors[id]['id']}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                             url = `${authors[id]['id']}inbox/`
-                            data = JSON.stringify({'items': [response]})
+                            data = JSON.stringify({'items': response})
                         } else {
                             url = `${authors[id]['id']}/inbox`
                             data = JSON.stringify(response)
