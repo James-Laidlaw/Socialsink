@@ -63,7 +63,6 @@
         }
 
         function getAuth(input) {
-            parts = input.split('/')
             for (const item in hosts) {
                 if (hosts[item][0] === input) {
                     return ["Authorization", "Basic " + btoa(hosts[item][1] + ":" + hosts[item][2])]

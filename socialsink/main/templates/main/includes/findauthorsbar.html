@@ -273,6 +273,7 @@
                         request.setRequestHeader(creds[0], creds[1]);
                     },
                     success: async function (response, textStatus, http) {
+                        response = JSON.parse(response)['is_follower']
                         status = followingStatus[i]['status']
                         newStatus = 'none'
                         if (status === 'requested' && response === true) {
