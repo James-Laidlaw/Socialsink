@@ -823,7 +823,7 @@ def getAuthorPosts(request, author_id):
 
     serialized_posts = post_serializer.data
 
-    return Response({'count': len(serialized_posts), 'items': [serialized_posts]})
+    return Response({'count': len(serialized_posts), 'items': serialized_posts})
 
 
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/
