@@ -217,7 +217,7 @@
                             url = `${author}inbox/`
                             data = JSON.stringify({'items': [response]})
                         } else {
-                            url `${author}/inbox`
+                            url = `${author}/inbox`
                             data = JSON.stringify(response)
                         }
                         $.ajax({

@@ -226,7 +226,7 @@
         for (const host in hosts) {
             creds = getAuth(getHostFromUrl(`${hosts[host][0]}authors`))
             if (getHostFromUrl(`${hosts[host][0]}authors`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
-                url = `${hosts[host][0]}authors/`
+                url = `${hosts[host][0]}api/authors/`
             } else {
                 url = `${hosts[host][0]}authors`
             }

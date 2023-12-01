@@ -100,7 +100,7 @@ class CommentSerializer(serializers.ModelSerializer):
         request: Request = self.context.get('request')
         super_result = super().to_representation(instance)
         post_url = instance.post_endpoint.rstrip('/')
-        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-3], post_url.split('/')[-1]])) + str(instance.id)
+        comment_url = request.build_absolute_uri(reverse('commentReqHandler', args=[post_url.split('/')[-3], post_url.split('/')[-1]])) + '/' + str(instance.id)
 
         super_result['type'] = "comment"
         super_result['id'] = comment_url
