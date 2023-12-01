@@ -97,9 +97,14 @@
                     button.classList.add("unfollow");
                     if (!(window.location.href.includes(getHostFromUrl(authors[id]['id'])))) {
                         creds = getAuth(getHostFromUrl(`${authors[id]['id']}/inbox`))
+                        if (getHostFromUrl(`${authors[id]['id']}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                            url = `${authors[id]['id']}inbox/`
+                        } else {
+                            url = `${authors[id]['id']}/inbox`
+                        }
                         $.ajax({
                             type: "POST",
-                            url: `${authors[id]['id']}/inbox`,
+                            url: url,
                             contentType: 'application/json',
                             data: JSON.stringify(response),
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -218,9 +223,14 @@
         
         for (const host in hosts) {
             creds = getAuth(getHostFromUrl(`${hosts[host][0]}authors`))
+            if (getHostFromUrl(`${hosts[host][0]}authors`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                url = `${hosts[host][0]}authors/`
+            } else {
+                url = `${hosts[host][0]}authors`
+            }
             await $.ajax({
                 type: "GET",
-                url: `${hosts[host][0]}authors`,
+                url: url,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
@@ -264,21 +274,25 @@
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
                 creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
+                if (getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                    url = `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}/`
+                } else {
+                    url = `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`
+                }
                 $.ajax({
                     type: "GET",
-                    url: `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`,
+                    url: url,
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request) {
                         request.withCredentials = true;
                         request.setRequestHeader(creds[0], creds[1]);
                     },
                     success: async function (response, textStatus, http) {
-                        response = JSON.parse(response)['is_follower']
                         status = followingStatus[i]['status']
                         newStatus = 'none'
-                        if (status === 'requested' && response === true) {
+                        if (status === 'requested' && response['is_follower'] === true) {
                             newStatus = 'accept'
-                        } else if ((status === 'friends' || status === 'following') && response === false) {
+                        } else if ((status === 'friends' || status === 'following') && response['is_follower'] === false) {
                             newStatus = 'dismiss'
                         }
                         creds = getAuth(window.location.href)

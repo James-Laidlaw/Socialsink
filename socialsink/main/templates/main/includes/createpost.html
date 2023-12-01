@@ -196,9 +196,14 @@
                                 success: function (response, textStatus, http) {
                                     for (const i in response) {
                                         creds = getAuth(getHostFromUrl(`${response[i]}/inbox`))
+                                        if (getHostFromUrl(`${response[i]}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                            url = `${response[i]}inbox/`
+                                        } else {
+                                            url = `${response[i]}/inbox`
+                                        }
                                         $.ajax({
                                             type: "POST",
-                                            url: `${response[i]}/inbox`,
+                                            url: url,
                                             data: post,
                                             contentType: 'application/json',
                                             headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -229,9 +234,14 @@
                                     for (const follower in response['items']) {
                                         f = JSON.parse(response['items'][follower])
                                         creds = getAuth(getHostFromUrl(`${f['id']}/inbox`))
+                                        if (getHostFromUrl(`${f['id']}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                            url = `${f['id']}inbox/`
+                                        } else {
+                                            url = `${f['id']}/inbox`
+                                        }
                                         await $.ajax({
                                             type: "POST",
-                                            url: `${f['id']}/inbox`,
+                                            url: url,
                                             data: post,
                                             contentType: 'application/json',
                                             headers: { "X-CSRFToken": '{{csrf_token}}' },

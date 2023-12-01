@@ -512,8 +512,8 @@ def followerReqHandler(request, author_id, foreign_author_id):
             following = Follower.objects.filter(followee_endpoint=url+author_id)
             for f in following:
                 if f"/{foreign_author_id}" in f.follower_endpoint and f.accepted == True:
-                    return Response(json.dumps({'is_follower': True}), status=200)
-            return Response(json.dumps({'is_follower': False}), status=200)
+                    return Response({'is_follower': True}, status=200)
+            return Response({'is_follower': False}, status=200)
         
         if result == 'self':
             if request.method == 'PUT':

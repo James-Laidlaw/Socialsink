@@ -213,9 +213,14 @@
                     success: function(response, textStatus, http) {
                         $(`#post-comment-input-${postID}`).val("")
                         creds = getAuth(getHostFromUrl(`${author}/inbox`))
+                        if (getHostFromUrl(`${author}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                            url = `${author}inbox/`
+                        } else {
+                            url `${author}/inbox`
+                        }
                         $.ajax({
                             type: "POST",
-                            url: `${author}/inbox`,
+                            url: url,
                             data: JSON.stringify(response),
                             contentType: 'application/json',
                             headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -310,9 +315,14 @@
 
                         if (destination === 'there') {
                             creds = getAuth(getHostFromUrl(`${commentAuthor}/inbox`))
+                            if (getHostFromUrl(`${commentAuthor}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                url = `${commentAuthor}inbox/`
+                            } else {
+                                url = `${commentAuthor}/inbox`
+                            }
                             $.ajax({
                                 type: "POST",
-                                url: `${commentAuthor}/inbox`,
+                                url: url,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
                                 headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -513,9 +523,14 @@
                                             success: function (response, textStatus, http) {
                                                 for (const i in response) {
                                                     creds = getAuth(getHostFromUrl(`${response[i]}/inbox`))
+                                                    if (getHostFromUrl(`${response[i]}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                                        url = `${response[i]}inbox/`
+                                                    } else {
+                                                        url = `${response[i]}/inbox`
+                                                    }
                                                     $.ajax({
                                                         type: "POST",
-                                                        url: `${response[i]}/inbox`,
+                                                        url: url,
                                                         data: post,
                                                         contentType: 'application/json',
                                                         headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -546,9 +561,14 @@
                                                 for (const follower in response['items']) {
                                                     f = JSON.parse(response['items'][follower])
                                                     creds = getAuth(getHostFromUrl(`${f['id']}/inbox`))
+                                                    if (getHostFromUrl(`${f['id']}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                                        url = `${f['id']}inbox/`
+                                                    } else {
+                                                        url = `${f['id']}/inbox`
+                                                    }
                                                     await $.ajax({
                                                         type: "POST",
-                                                        url: `${f['id']}/inbox`,
+                                                        url: url,
                                                         data: post,
                                                         contentType: 'application/json',
                                                         headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -628,9 +648,14 @@
 
         async function insertPostComplete(postData) {
             creds = getAuth(getHostFromUrl(`${postData['id']}/likes`))
+            if (getHostFromUrl(`${postData['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                url = `${postData['id']}likes/`
+            } else {
+                url = `${postData['id']}/likes`
+            }
             await $.ajax({
                 type: "GET",
-                url: `${postData['id']}/likes`,
+                url: url,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
@@ -659,9 +684,14 @@
 
         async function placeComment(pid, comment) {
             creds = getAuth(getHostFromUrl(`${comment['id']}/likes`))
+            if (getHostFromUrl(`${comment['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                url = `${comment['id']}likes/`
+            } else {
+                url = `${comment['id']}/likes`
+            }
             await $.ajax({
                 type: "GET",
-                url: `${comment['id']}/likes`,
+                url: url,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
@@ -784,9 +814,14 @@
                         if (destination === 'there') {
                             console.log(response)
                             creds = getAuth(getHostFromUrl(`${postAuthor}/inbox`))
+                            if (getHostFromUrl(`${postAuthor}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                                url = `${postAuthor}inbox/`
+                            } else {
+                                url = `${postAuthor}/inbox`
+                            }
                             $.ajax({
                                 type: "POST",
-                                url: `${postAuthor}/inbox`,
+                                url: url,
                                 data: JSON.stringify(response),
                                 contentType: 'application/json',
                                 headers: { "X-CSRFToken": '{{csrf_token}}' },
@@ -891,9 +926,14 @@
             for (const comment in comments) {
                 if (!(commentIDs.some(sublist => sublist[0] === comments[comment]['id'].split('/').at(-1)))) {
                     creds = getAuth(getHostFromUrl(`${comments[comment]['id']}/likes`))
+                    if (getHostFromUrl(`${comments[comment]['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                        url = `${comments[comment]['id']}likes/`
+                    } else {
+                        url = `${comments[comment]['id']}/likes`
+                    }
                     await $.ajax({
                         type: "GET",
-                        url: `${comments[comment]['id']}/likes`,
+                        url: url,
                         headers: { "X-CSRFToken": '{{csrf_token}}' },
                         beforeSend: function (request) {
                             request.withCredentials = true;
@@ -919,9 +959,14 @@
         async function doPostLikes(postInfo, index) {
             index = parseInt(index)
             creds = getAuth(getHostFromUrl(`${postInfo[2]}/likes`))
+            if (getHostFromUrl(`${postInfo[2]}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                url = `${postInfo[2]}likes/`
+            } else {
+                url = `${postInfo[2]}/likes`
+            }
             await $.ajax({
                 type: "GET",
-                url: `${postInfo[2]}/likes`,
+                url: url,
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
@@ -966,9 +1011,14 @@
         function updateCommentLikes(commentIDs) {
             for (const index in commentIDs) {
                 creds = getAuth(getHostFromUrl(`${commentIDs[index][1]['id']}/likes`))
+                if (getHostFromUrl(`${commentIDs[index][1]['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                    url = `${commentIDs[index][1]['id']}likes/`
+                } else {
+                    url = `${commentIDs[index][1]['id']}/likes`
+                }
                 $.ajax({
                     type: "GET",
-                    url: `${commentIDs[index][1]['id']}/likes`,
+                    url: url,
                     headers: { "X-CSRFToken": '{{csrf_token}}' },
                     beforeSend: function (request) {
                         request.withCredentials = true;
