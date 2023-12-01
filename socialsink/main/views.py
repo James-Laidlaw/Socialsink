@@ -983,7 +983,9 @@ def inboxPOSTHandler(request, recieving_author_id):
             summary = data['summary']
         )
 
-        if data['object'].split('/')[-3] == 'posts':
+        print(data)
+
+        if data['object'].split('/')[-2] == 'posts':
             like.post_endpoint = data['object']
         else:
             like.comment_endpoint = data['object']
@@ -1059,7 +1061,7 @@ def getPostLikes(request, author_id, post_id):
             end = f"{parts[5]}/{parts[6]}"
 
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
-
+            
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
 
             serialized_likes = like_serializer.data
