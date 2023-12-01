@@ -819,11 +819,11 @@ def getAuthorPosts(request, author_id):
     except:
         return Response(status=404)
 
-
     post_serializer = PostSerializer(page, many=True, context={'request': request})
 
     serialized_posts = post_serializer.data
-    return Response(serialized_posts)
+
+    return Response({'count': len(serialized_posts), 'items': [serialized_posts]})
 
 
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/
