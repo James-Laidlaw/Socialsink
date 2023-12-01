@@ -517,13 +517,6 @@ def followerReqHandler(request, author_id, foreign_author_id):
         
         if result == 'self':
             if request.method == 'PUT':
-                follower_instance = Follower.objects.filter(
-                    follower_endpoint = request.data['follower_data']['id'],
-                    followee_endpoint = request.data['followee_data']['id']
-                )
-                
-                if follower_instance == None:
-                    return Response(status=409)
 
                 follow = Follower(
                     follower_data = json.dumps(request.data['follower_data']),
