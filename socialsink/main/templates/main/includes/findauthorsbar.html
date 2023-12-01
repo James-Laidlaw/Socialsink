@@ -233,6 +233,10 @@
             await $.ajax({
                 type: "GET",
                 url: url,
+                data: {
+                    page: 1,
+                    size: 50
+                },
                 headers: { "X-CSRFToken": '{{csrf_token}}' },
                 beforeSend: function (request) {
                     request.withCredentials = true;
