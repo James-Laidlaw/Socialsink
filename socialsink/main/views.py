@@ -351,6 +351,9 @@ def updateAuthor(request, author_id):
 def getFollowers(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
+        #TODO this currently returns all followers rather than just the ones that are accepted
+        #TODO this fails to return any followers where author_data is null, 
+        # but a POST to authors/<str:author_id>/followers/requests has no way of writing author_data
         print("service: Get followers request received")
         if author_id == None:
             return Response(status=400)
@@ -845,8 +848,8 @@ def getComments(request, post_id):
     if found_post == None:
         return Response(status=404)
     
-    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author_endpoint.split('/')[-2], found_post.id]))
-    
+    post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author_endpoint.split('/')[-1], found_post.id]))
+
     comments = Comment.objects.filter(post_endpoint=post_endpoint).order_by('created_at')
     
     comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
@@ -866,7 +869,7 @@ def createComment(request, author_id, post_id):
     #slot in post ID
 
     url = request.build_absolute_uri()
-    url = url[:len(url)-10]
+    url = url[:len(url)-9]
     
     comment = Comment(
         author_data=json.dumps(request.data['author']),
@@ -956,8 +959,11 @@ def inboxReqHandler(request, author_id):
                 author = Author.objects.filter(id=author_id).first()
                 if author == None:
                     return Response(status=404)
+                
+                author_serializer = AuthorSerializer(author, context={'request': request})
+                serialized_author = author_serializer.data
 
-                inbox_items = Inbox.objects.filter(author_id=author_id).order_by('created_at')
+                inbox_items = Inbox.objects.filter(author_id=serialized_author.get('id')).order_by('created_at')
                 inbox_items.delete()
                 return Response(status=200)
 

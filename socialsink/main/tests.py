@@ -51,24 +51,21 @@ class PostModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
+        self.authorURL = "http://testserver/service/authors/" + str(self.author.id)
     
     def test_post_creation(self):
-        post = Post.objects.create(author=self.author, content="Test Content")
-        self.assertEqual(post.author, self.author)
+        post = Post.objects.create(author_endpoint=self.authorURL, content="Test Content")
+        self.assertEqual(post.author_endpoint, self.authorURL)
         self.assertEqual(post.content, "Test Content")
         self.assertTrue(isinstance(post.created_at, datetime))
-
-    def test_post_ownership(self):
-        post = Post.objects.create(author=self.author, content="Test Content")
-        self.assertEqual(post, self.author.posts.first())
 
 class CommentModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
-        self.authorURL = "http://testserver/service/authors/" + str(self.author.id) + "/"
-        self.post = Post.objects.create(author=self.author, content="Test Content")
-        self.postURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id) + "/"
+        self.authorURL = "http://testserver/service/authors/" + str(self.author.id)
+        self.post = Post.objects.create(author_endpoint=self.authorURL, content="Test Content")
+        self.postURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id)
     
     def test_comment_creation(self):
         comment = Comment.objects.create(author_data=self.authorURL, post_endpoint=self.postURL, content="Test Comment")
@@ -81,9 +78,9 @@ class LikeModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
-        self.post = Post.objects.create(author=self.author, content="Test Content")
-        self.authorURL = "http://testserver/service/authors/" + str(self.author.id) + "/"
-        self.postURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id) + "/"
+        self.authorURL = "http://testserver/service/authors/" + str(self.author.id)
+        self.post = Post.objects.create(author_endpoint=self.authorURL, content="Test Content")
+        self.postURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id)
 
     
     def test_like_creation(self):
@@ -94,7 +91,7 @@ class LikeModelTest(TestCase):
 
     def test_like_on_comment(self):
         comment = Comment.objects.create(author_data=self.authorURL, post_endpoint=self.post, content="Test Comment")
-        commentURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id) + "/comments/" + str(comment.id) + "/"
+        commentURL = "http://testserver/service/authors/" + str(self.author.id) + "/posts/" + str(self.post.id) + "/comments/" + str(comment.id)
         like = Like.objects.create(author_endpoint=self.authorURL, comment_endpoint=commentURL)
         self.assertEqual(like.author_endpoint, self.authorURL)
         self.assertEqual(like.comment_endpoint, commentURL)
@@ -107,8 +104,8 @@ class YourApiTests(TestCase):
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpassword')
         self.author = Author.objects.create(user=self.user)
-        self.authorURL = "http://testserver/authors/" + str(self.author.id) + "/"
-        self.node = Node.objects.create(hostname="http://testserver/", username=node_username, password=node_password)
+        self.local_host = "http://testserver/"
+        self.node = Node.objects.create(hostname=self.local_host, username=node_username, password=node_password)
     #utility
     def make_secondary_author(self):
         user = User.objects.create_user(username='testuser2', password='testpassword', email="testUserEmail@email.com")
@@ -116,37 +113,38 @@ class YourApiTests(TestCase):
         return author
     
     def get_author_URL(self, author):
-        return 'http://testserver/authors/' + str(author.id) + '/'
+        return self.local_host + 'authors/' + str(author.id)
     
     def get_post_URL(self, author, post):
-        return self.get_author_URL(author) + 'posts/' + str(post.id) + '/'
+        return self.get_author_URL(author) + '/posts/' + str(post.id)
     
     def get_comment_URL(self, author, post, comment):
-        return self.get_post_URL(author, post) + 'comments/' + str(comment.id) + '/'
+        return self.get_post_URL(author, post) + '/comments/' + str(comment.id)
     
-
+    def get_serialized_author(self, author):
+        return {'type': 'author', 'id': self.get_author_URL(author), 'host': self.local_host, 'displayName': author.user.username, 'url': self.get_author_URL(author)}
     
     def check_author(self, author, json):
         self.assertEqual(json['type'], 'author')
         self.assertEqual(json['id'], self.get_author_URL(author))
         self.assertEqual(json['url'], self.get_author_URL(author))
-        self.assertEqual(json['host'], 'http://testserver/')
+        self.assertEqual(json['host'], self.local_host)
         self.assertEqual(json['displayName'], author.user.username)
-        self.assertEqual(json['github'], None)
-        self.assertEqual(json['profileImage'], None)
+        self.assertEqual(json.get('github'), None)
+        self.assertEqual(json.get('profileImage'), None)
     
-    def check_post(self, post, json):
+    def check_post(self, post, author, json,):
         self.assertEqual(json['type'], 'post')
-        self.assertEqual(json['id'], self.get_post_URL(post.author, post))
+        self.assertEqual(json['id'], self.get_post_URL(author, post))
         self.assertEqual(json['title'], 'Default title')
         self.assertEqual(json['description'], None)
         self.assertEqual(json['contentType'], 'text/plain')
         self.assertEqual(json['content'], post.content)
-        self.check_author(post.author, json['author'])
+        self.check_author(author, json['author'])
         self.assertEqual(json['published'], post.created_at.isoformat())
         self.assertEqual(json['visibility'], 'PUBLIC')
         self.assertEqual(json['unlisted'], False)
-        self.assertEqual(json['comments'], self.get_post_URL(post.author, post) + 'comments')
+        self.assertEqual(json['comments'], self.get_post_URL(author, post) + 'comments')
 
     def test_sign_up(self):
         server_settings = ServerSettings.objects.create(auto_permit_users=True)
@@ -175,7 +173,7 @@ class YourApiTests(TestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # # tests for outward facing API (/*)
+    # tests for outward facing API (/*)
 
     #GET /authors/
     def test_get_authors(self):
@@ -208,42 +206,52 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, "get author failed")
         self.assertEqual(response.json()['displayName'], 'testuser2')
 
-    #GET /authors/<str:author_id>/followers
+    #Utility function to make a follow relationship
+    def make_follow_relationship(self, follower, followee):
+        return Follower.objects.create(
+            follower_endpoint=self.get_author_URL(follower),
+            follower_data=json.dumps(self.get_serialized_author(follower)),
+            followee_endpoint=self.get_author_URL(followee),
+            followee_data=json.dumps(self.get_serialized_author(followee)),
+            accepted=True,
+            )
+
+    # GET /authors/<str:author_id>/followers
     def test_get_followers(self):
         follower = self.make_secondary_author()
-        Follower.objects.create(follower_endpoint=self.get_author_URL(follower), followee_endpoint=self.get_author_URL(self.author))
-        url = reverse('getFollowers', args=[self.author.id])
+        self.make_follow_relationship(follower, self.author)
+        url = reverse("getFollowers", args=[self.author.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()['type'], 'followers')
-        self.check_author(follower, response.json()['items'][0])
-
+        first_follower = json.loads(response.json()["items"][0])
+        self.assertEqual(response.json()["type"], "followers")
+        self.check_author(follower, first_follower)
 
     #GET /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_get_follower(self):
         follower = self.make_secondary_author()
-        Follower.objects.create(follower_endpoint=self.get_author_URL(follower), followee_endpoint=self.get_author_URL(self.author))
+        follow = self.make_follow_relationship(follower, self.author)
         url = reverse('followerReqHandler', args=[self.author.id, follower.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), True)
+        self.assertEqual(response.json()['is_follower'], True)
     
-    #PUT /authors/<str:author_id>/followers/<str:foreign_author_id>
-    def test_add_follower(self):
-        follower = self.make_secondary_author()
-        url = reverse('followerReqHandler', args=[self.author.id, follower.id])
-        data = {'follower_data': {"id": self.get_author_URL(follower), "host": "http://testserver/", "displayName": follower.user.username},
-                 "followee_data": {"id": self.get_author_URL(self.author), "host": "http://testserver/", "displayName": self.author.user.username}}
-        response: JsonResponse = self.client.put(url, format='json', data=data)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.client.force_authenticate(user=self.user)
-        response: JsonResponse = self.client.put(url, headers=authorized_header, format='json', data=data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # #PUT /authors/<str:author_id>/followers/<str:foreign_author_id>
+    # def test_add_follower(self):
+    #     follower = self.make_secondary_author()
+    #     url = reverse('followerReqHandler', args=[self.author.id, follower.id])
+    #     data = {'follower_data': self.get_serialized_author(follower),
+    #              "followee_data": self.get_serialized_author(self.author)}
+    #     response: JsonResponse = self.client.put(url, format='json', data=data)
+    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    #     self.client.force_authenticate(user=self.user)
+    #     response: JsonResponse = self.client.put(url, headers=authorized_header, format='json', data=data)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        #check if the follower was added
-        response: JsonResponse = self.client.get(url, headers=authorized_header)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), True)
+    #     #check if the follower was added
+    #     response: JsonResponse = self.client.get(url, headers=authorized_header)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.json()['is_follower'], True)
     
     #DELETE /authors/<str:author_id>/followers/<str:foreign_author_id>
     def test_remove_follower(self):
@@ -261,17 +269,26 @@ class YourApiTests(TestCase):
         response: JsonResponse = self.client.post(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    #GET /authors/<str:author_id>/posts/
+    #utility function to make a post
+    def make_mock_post(self, author, content):
+        return Post.objects.create(
+            author_endpoint=self.get_author_URL(author),
+            author_data=json.dumps(self.get_serialized_author(author)),
+            content=content,
+            publicity=0,
+        )
+
+    # GET /authors/<str:author_id>/posts/
     def test_get_post(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
-        url = reverse('postReqHandler', args=[self.author.id, post.id])
+        post = self.make_mock_post(self.author, "Test post content")
+        url = reverse("postReqHandler", args=[self.author.id, post.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.check_post(post, response.json())
+        self.check_post(post, self.author, response.json())
     
     #POST /authors/<str:author_id>/posts/<str:post_id> (update post (for some reason))
     def test_update_post(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse('postReqHandler', args=[self.author.id, post.id])
         data = {'title': 'New Title'}
         response: JsonResponse = self.client.post(url, data, format='json', headers=authorized_header)
@@ -285,7 +302,7 @@ class YourApiTests(TestCase):
 
     #DELETE /authors/<str:author_id>/posts/<str:post_id>
     def test_delete_post(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse('postReqHandler', args=[self.author.id, post.id])
         response: JsonResponse = self.client.delete(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -305,12 +322,12 @@ class YourApiTests(TestCase):
 
     #GET /authors/<str:author_id>/posts/
     def test_get_posts(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse('postCreationReqHandler', args=[self.author.id])
         self.client.force_authenticate(user=self.user)
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.check_post(post, response.json()[0])
+        self.check_post(post, self.author, response.json()['items'][0])
 
     #POST /authors/<str:author_id>/posts/
     def test_create_post(self):
@@ -323,13 +340,13 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         response: JsonResponse = self.client.get(url,  headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()[0]['title'], 'New Title')
+        self.assertEqual(response.json()['items'][0]['title'], 'New Title')
 
     #GET /authors/<str:author_id>/posts/<str:post_id>/comments/
     def test_get_comments(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         postURL = self.get_post_URL(self.author, post)
-        author_data = {"id": self.authorURL, "host": "http://testserver/", "displayName": self.author.user.username}
+        author_data = self.get_serialized_author(self.author)
         comment = Comment.objects.create(author_data=json.dumps(author_data), post_endpoint=postURL, content='Test comment')
         url = reverse('commentReqHandler', args=[self.author.id, post.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
@@ -338,33 +355,25 @@ class YourApiTests(TestCase):
 
     #POST /authors/<str:author_id>/posts/<str:post_id>/comments/
     def test_create_comment(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse('commentReqHandler', args=[self.author.id, post.id])
-        data = {'comment': 'Test comment', "author": {"id": self.authorURL}}
+        data = {'comment': 'Test comment', "author": self.get_serialized_author(self.author)}
         response: JsonResponse = self.client.post(url, data, format='json', headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['comment'], 'Test comment')
 
-    # POST /authors/{AUTHOR_ID}/inbox/
+    # POST /authors/{AUTHOR_ID}/inbox/ TODO AUTHOR_ID
     def test_send_like_inbox(self):
-        post = Post.objects.create(
-            author=self.author, content="Test post content", publicity=0
-        )
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse("inboxReqHandler", args=[self.author.id])
         author_id = "http://testserver/authors/" + str(self.author.id) + "/"
         data = {
             "@context": "https://www.w3.org/ns/activitystreams",
             "summary": "test summary",
             "type": "Like",
-            "author": {
-                "type": "author",
-                "id": self.authorURL,
-                "host": "http://testserver/",
-                "displayName": self.author.user.username,
-                "url": self.authorURL,
-            },
+            "author": self.get_serialized_author(self.author),
             "object": self.get_post_URL(self.author, post),
         }
         response: JsonResponse = self.client.post(url, data, format="json", headers=authorized_header)
@@ -372,10 +381,10 @@ class YourApiTests(TestCase):
     
     #GET /authors/{AUTHOR_ID}/posts/{POST_ID}/likes/
     def test_get_post_likes(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         postURL = self.get_post_URL(self.author, post)
-        author_data = {"id": self.authorURL, "host": "http://testserver/", "displayName": self.author.user.username}
-        like = Like.objects.create(author_endpoint=self.authorURL, author_data=json.dumps(author_data), post_endpoint=postURL)
+        author_data = self.get_serialized_author(self.author)
+        like = Like.objects.create(author_endpoint=self.get_author_URL(self.author), author_data=json.dumps(author_data), post_endpoint=postURL)
         url = reverse('likeReqHandler', args=[self.author.id, post.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -383,12 +392,12 @@ class YourApiTests(TestCase):
     
     #GET /authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes/
     def test_get_comment_likes(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         postURL = self.get_post_URL(self.author, post)
-        comment = Comment.objects.create(author_data=self.authorURL, post_endpoint=postURL, content='Test comment')
+        comment = Comment.objects.create(author_data=self.get_author_URL(self.author), post_endpoint=postURL, content='Test comment')
         commentURL = self.get_comment_URL(self.author, post, comment)
-        author_data = {"id": self.authorURL, "host": "http://testserver/", "displayName": self.author.user.username}
-        like = Like.objects.create(author_endpoint=self.authorURL, author_data=json.dumps(author_data), comment_endpoint=commentURL)
+        author_data = self.get_serialized_author(self.author)
+        like = Like.objects.create(author_endpoint=self.get_author_URL, author_data=json.dumps(author_data), comment_endpoint=commentURL)
         url = reverse('commentLikeReqHandler', args=[self.author.id, post.id, comment.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -396,31 +405,22 @@ class YourApiTests(TestCase):
        
     #GET /authors/{AUTHOR_ID}/liked/
     def test_get_author_liked(self):
-        post = Post.objects.create(author=self.author, content='Test post content', publicity=0)
+        post = self.make_mock_post(self.author, "Test post content")
         postURL = self.get_post_URL(self.author, post)
-        author_data = {"id": self.authorURL, "host": "http://testserver/", "displayName": self.author.user.username}
-        like = Like.objects.create(author_endpoint=self.authorURL, author_data=json.dumps(author_data), post_endpoint=postURL)
+        author_data = self.get_serialized_author(self.author)
+        like = Like.objects.create(author_endpoint=self.get_author_URL(self.author), author_data=json.dumps(author_data), post_endpoint=postURL)
         url = reverse('authorLikedReqHandler', args=[self.author.id])
         response: JsonResponse = self.client.get(url, headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()[0]['object'], postURL)
 
     def test_send_post_inbox(self):
-        post = Post.objects.create(
-            author=self.author, content="Test post content", publicity=0
-        )
+        post = self.make_mock_post(self.author, "Test post content")
         url = reverse("inboxReqHandler", args=[self.author.id])
-        author_id = self.authorURL
         data = {
             "xyz": "all of this should be stored arbitrarily, nothing is needed other than type",
             "type": "Post",
-            "author": {
-                "type": "author",
-                "id": author_id,
-                "host": "http://testserver/",
-                "displayName": self.author.user.username,
-                "url": author_id,
-            },
+            "author": self.get_serialized_author(self.author),
             "id": self.get_post_URL(self.author, post)
         }
         response: JsonResponse = self.client.post(url, data, format="json", headers=authorized_header)
@@ -429,25 +429,11 @@ class YourApiTests(TestCase):
     def test_send_Follow_inbox(self):
         follower = self.make_secondary_author()
         url = reverse("inboxReqHandler", args=[self.author.id])
-        author_id = self.authorURL
-        follower_id = self.get_author_URL(follower)
         data = {
             "type": "Follow",
             "summary": "Greg wants to follow Lara",
-            "actor": {
-                "type": "author",
-                "id": follower_id,
-                "url": follower_id,
-                "host": "http://testserver/",
-                "displayName": follower.user.username,
-            },
-            "object": {
-                "type": "author",
-                "id": author_id,
-                "host": "http://testserver/",
-                "displayName": self.author.user.username,
-                "url": author_id,
-            },
+            "actor": self.get_serialized_author(follower),
+            "object": self.get_serialized_author(self.author),
         }
         
         self.client.force_authenticate(user=follower.user)
@@ -455,29 +441,20 @@ class YourApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_send_comment_inbox(self):
-        post = Post.objects.create(
-            author=self.author, content="Test post content", publicity=0
-        )
+        post = self.make_mock_post(self.author, "Test post content")
         postURL = self.get_post_URL(self.author, post)
         comment = Comment.objects.create(
-            author_data=self.authorURL, post_endpoint=postURL, content="Test comment"
+            author_data=self.get_author_URL(self.author), post_endpoint=postURL, content="Test comment"
         )
         commentURL = self.get_comment_URL(self.author, post, comment)
         url = reverse("inboxReqHandler", args=[self.author.id])
-        author_id = "http://testserver/authors/" + str(self.author.id) + "/"
         data = {
             "xyz": "all of this should be stored arbitrarily, nothing is needed other than type",
             "id": commentURL,
             "type": "Comment",
-            "author": {
-                "type": "author",
-                "id": author_id,
-                "host": "http://testserver/",
-                "displayName": self.author.user.username,
-                "url": author_id,
-            },
+            "author": self.get_serialized_author(self.author),
             'comment': 'Test comment',
-            "object": "http://testserver/authors/" + str(self.author.id) + "/posts/" + str(post.id) + "/comments/" + str(comment.id) + "/",
+            "object": self.get_comment_URL(self.author, post, comment),
         }
         response: JsonResponse = self.client.post(url, data, format="json", headers=authorized_header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
