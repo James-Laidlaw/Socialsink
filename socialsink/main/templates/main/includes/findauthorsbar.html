@@ -52,7 +52,11 @@
         const userProfileImage = followeeData['profileImage'];
 
         if (userProfileImage !== null) {
+            if (getHostFromUrl(followeeData['id']) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
+                profileImage = `https://cmput-average-21-b54788720538.herokuapp.com${userProfileImage}`
+            } else {
                 profileImage = userProfileImage;
+            }
         } else {
             profileImage = "../../../static/images/unknown_user.png";
         }
