@@ -984,8 +984,10 @@
         async function doPostLikes(postInfo, index) {
             index = parseInt(index)
             creds = getAuth(getHostFromUrl(`${postInfo[2]}/likes`))
+            var external = false
             if (getHostFromUrl(`${postInfo[2]}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                 url = `${postInfo[2]}likes/`
+                external = '21average'
             } else {
                 url = `${postInfo[2]}/likes`
             }
@@ -998,7 +1000,12 @@
                     request.setRequestHeader(creds[0], creds[1]);
                 },
                 success: function (response, textStatus, http) {
-                    document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
+                    if (external === '21average') {
+                        document.getElementById(`like-button-${index}`).innerHTML = `${response['items'].length} <i class="fa-solid fa-heart"></i>`
+
+                    } else {
+                        document.getElementById(`like-button-${index}`).innerHTML = `${response.length} <i class="fa-solid fa-heart"></i>`
+                    }
                 },
                 error: function(error) {
                     console.error(error)
