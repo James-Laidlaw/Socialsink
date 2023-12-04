@@ -288,8 +288,10 @@
             url = new URL(followingStatus[i]['followee'])
             if (!(window.location.href.includes(url.host))) {
                 creds = getAuth(getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`))
+                var external = false
                 if (getHostFromUrl(`${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                     url = `${followingStatus[i]['followee']}followers/${"{{ author.id }}"}/`
+                    external = '21average'
                 } else {
                     url = `${followingStatus[i]['followee']}/followers/${"{{ author.id }}"}`
                 }
@@ -303,10 +305,19 @@
                     },
                     success: async function (response, textStatus, http) {
                         status = followingStatus[i]['status']
+
+                        var responseStatus = false
+                        if (external === '21average') {
+                            responseStatus = response
+                        } else {
+                            responseStatus = response['is_follower']
+                        }
+
                         newStatus = 'none'
-                        if (status === 'requested' && response['is_follower'] === true) {
+                        
+                        if (status === 'requested' && responseStatus === true) {
                             newStatus = 'accept'
-                        } else if ((status === 'friends' || status === 'following') && response['is_follower'] === false) {
+                        } else if ((status === 'friends' || status === 'following') && responseStatus === false) {
                             newStatus = 'dismiss'
                         }
                         creds = getAuth(window.location.href)
