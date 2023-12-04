@@ -656,8 +656,10 @@
 
         async function insertPostComplete(postData) {
             creds = getAuth(getHostFromUrl(`${postData['id']}/likes`))
+            var external = false
             if (getHostFromUrl(`${postData['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                 url = `${postData['id']}likes/`
+                external = '21average'
             } else {
                 url = `${postData['id']}/likes`
             }
@@ -671,12 +673,23 @@
                 },
                 success: async function (response, textStatus, http) {
                     liked = false
-                    for (const index in response) {
-                        if (response[index]['author']['id'] === "{{author_endpoint}}") {
-                            liked = true
+                    var likedlength = 0
+                    if (external === '21average') {
+                        for (const index in response['items']) {
+                            if (response['items'][index]['author']['id'] === "{{author_endpoint}}") {
+                                liked = true
+                            }
                         }
+                        likedlength = response['items'].length
+                    } else {
+                        for (const index in response) {
+                            if (response[index]['author']['id'] === "{{author_endpoint}}") {
+                                liked = true
+                            }
+                        }
+                        likedlength = response.length
                     }
-                    pid = await addPost(postData, response.length, liked)
+                    pid = await addPost(postData, likedlength, liked)
                     if (postData['commentsSrc'] && postData['commentsSrc'].length > 0) {
                         comments = postData['commentsSrc']
                         for (const comment in comments) {
