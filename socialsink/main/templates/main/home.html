@@ -672,6 +672,8 @@
                     request.setRequestHeader(creds[0], creds[1]);
                 },
                 success: async function (response, textStatus, http) {
+                    console.log("EXTERNAL", external)
+                    console.log(response)
                     liked = false
                     var likedlength = 0
                     if (external === '21average') {
