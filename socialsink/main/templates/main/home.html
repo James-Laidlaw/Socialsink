@@ -97,7 +97,7 @@
                 //USED IF WE WANT TO UNLIKE //likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" onclick="unlikePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
                 likeButton = `<button type="button" class="btn btn-like liked" id="like-button-${id}" disabled>${likeCount} <i class="fa-solid fa-heart"></i></button>`
             } else {
-                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, ${authorId}, '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
+                likeButton = `<button type="button" class="btn btn-like" id="like-button-${id}" onclick="likePost(${id}, '${authorId}', '${post['author']['id']}', '${post['id']}')">${likeCount} <i class="fa-solid fa-heart"></i></button>`
             }
 
             // showDeleteConfirmation function can be found in the popupmodals.html file under scripts
