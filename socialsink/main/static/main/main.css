@@ -288,7 +288,7 @@ main {
     position: relative;
     display: flex;
     flex-direction: column;
-    /* overflow: hidden; */
+    overflow-y: scroll;
     flex-grow: 1;
     flex-basis: 50%;
     margin-left: 9px;
@@ -346,6 +346,10 @@ main {
     border-radius: var(--card-round-border);
 }
 
+.feed-post-wrapper:last-of-type {
+    margin-bottom: 0;
+}
+
 .feed-post {
     display: inline-flex;
     align-items: flex-start;
@@ -361,7 +365,6 @@ main {
     margin-bottom: 16px;
 }
 
-#post-container .feed-post:last-of-type,
 #git-container .feed-post:last-of-type {
     margin-bottom: 0;
 }
@@ -419,6 +422,7 @@ main {
     display: flex;
     flex-direction: row;
     gap: 10px;
+    margin-bottom: 10px;
 }
 
 .post-comment-content input {
@@ -686,7 +690,8 @@ main {
 
 /* Profile Bar Begins --------------------- */
 
-#profile-bar {
+#profile-bar,
+#profile-bar-edit {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -695,7 +700,8 @@ main {
     border-radius: var(--card-round-border);
 }
 
-#profile-bar .user-bg {
+#profile-bar .user-bg,
+#profile-bar-edit .user-bg {
     width: 100%;
     height: 130px;
     object-fit: cover;
@@ -703,7 +709,8 @@ main {
     transition: opacity 300ms ease 0s;
 }
 
-#profile-bar .profile-img {
+#profile-bar .profile-img,
+#profile-bar-edit .profile-img {
     width: 100px;
     height: 100px;
     border-radius: 50%;
@@ -714,7 +721,8 @@ main {
     transition: opacity 300ms ease 0s;
 }
 
-#profile-bar .user-box {
+#profile-bar .user-box,
+#profile-bar-edit .user-box {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -722,27 +730,33 @@ main {
     gap: 4px;
 }
 
-#profile-bar .user-box > * {
+#profile-bar .user-box > *,
+#profile-bar-edit .user-box > * {
     margin: 0;
 }
 
-#profile-bar .username {
+#profile-bar .username,
+#profile-bar-edit .username {
     font-size: 20px;
     font-weight: 500;
 }
 
-#profile-bar .useremail {
+#profile-bar .useremail,
+#profile-bar-edit .useremail {
     font-size: 16.5px;
     font-weight: 600;
     color: var(--light-grey);
+    margin-bottom: 8px;
     letter-spacing: 0;
 } 
 
-#profile-bar .userbio {
+#profile-bar .userbio,
+#profile-bar-edit .userbio {
     max-width: 300px;
 }
 
-#profile-bar .follow-box {
+#profile-bar .follow-box,
+#profile-bar-edit .follow-box {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -753,24 +767,28 @@ main {
     border-bottom: 1px solid #606e7a61;
 }
 
-#profile-bar .follow-box > div {
+#profile-bar .follow-box > div,
+#profile-bar-edit .follow-box > div {
     width: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-#profile-bar .follow-box > div:first-of-type {
+#profile-bar .follow-box > div:first-of-type,
+#profile-bar-edit .follow-box > div:first-of-type {
     border-right: 1px solid #606e7a61;
 }
 
-#profile-bar .follow-box .count {
+#profile-bar .follow-box .count,
+#profile-bar-edit .follow-box .count {
     color: var(--off-white);
     font-weight: 700;
     letter-spacing: 0.75px;
 }
 
-#profile-bar .follow-box .count-label {
+#profile-bar .follow-box .count-label,
+#profile-bar-edit .follow-box .count-label {
     color: #707f8c;
     font-weight: 600;
     letter-spacing: 0.75px;
@@ -812,7 +830,12 @@ main {
 
 #find-author-bar .author-box .author:first-of-type,
 #follow-requests-bar .request-box .request:first-of-type {
-    margin-top: 20px;
+    padding-top: 20px;
+}
+
+#find-author-bar .author-box .author:last-of-type,
+#follow-requests-bar .request-box .request:last-of-type {
+    padding-bottom: 20px;
 }
 
 #find-author-bar img,
@@ -838,6 +861,13 @@ main {
     align-items: center;
     justify-content: space-between;
     gap: 1em;
+    max-width: calc(100% - 64px);
+}
+
+#find-author-bar .author-content .author-username,
+#follow-requests-bar .request-content .author-username {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #find-author-bar .author-content .request,
@@ -1096,19 +1126,18 @@ body.has-popup-modal:before {
     color: var(--pastel-green);
 }
 
-
-#edit-profile-dialog.popup-modal .user-bg:hover,
+/* #edit-profile-dialog.popup-modal .user-bg:hover,
 #edit-profile-dialog.popup-modal .user-bg:focus  {
     cursor: pointer;
     opacity: 0.80;
-}
+} */    
 
 #edit-profile-dialog.popup-modal .edit-profile-image-container {
     position: relative;
     height: 100px;
     width: 100px;
-    margin-bottom: -28px;
-    transform: translateY(-50%);
+    margin-bottom: 16px;
+    /* transform: translateY(-50%); */
 }
 
 #edit-profile-dialog.popup-modal .profile-img {
