@@ -83,7 +83,9 @@ class PostSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         request: Request = self.context.get('request')
-        validated_data['author_id'] = Author.objects.get(user=request.user).id
+        validated_data['author_endpoint'] = request.build_absolute_uri(reverse('authorReqHandler', args=[request.user.author.id]))
+        author = Author.objects.get(user=request.user)
+        validated_data['author_data'] = json.dumps(AuthorSerializer(author).data)
         validated_data['id'] = self.initial_data.get('id', None) # not sure if the best way to do this
 
         return super().create(validated_data)
