@@ -838,6 +838,13 @@ main {
     align-items: center;
     justify-content: space-between;
     gap: 1em;
+    max-width: calc(100% - 64px);
+}
+
+#find-author-bar .author-content .author-username,
+#follow-requests-bar .request-content .author-username {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #find-author-bar .author-content .request,
