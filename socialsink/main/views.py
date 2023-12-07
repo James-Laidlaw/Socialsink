@@ -28,11 +28,15 @@ import re
 # Create your views here.
 @login_required
 def homepage(request):
+    # get author object from user
     author = Author.objects.get(user=request.user)
 
+    # get the author serializer
     author_serializer = AuthorSerializer(author, context={'request': request})
+    # get a dictionary of the author object
     serialized_author = author_serializer.data
 
+    # render the homepage with the given context
     return render(request=request,
                   template_name='main/home.html',
                   context={'user': request.user,
@@ -41,6 +45,7 @@ def homepage(request):
 
 
 def login(request):
+    # render the login page without any context
     return render(request=request,
                   template_name='main/login.html',
             
@@ -48,57 +53,74 @@ def login(request):
 
 
 def register(request):
+    # render the register page without any context
     return render(request=request,
                   template_name='main/register.html',
                   context={})
 
 
 def displayPost(request, id):
+    # get user from the request
     user = request.user
+    # only proceed if the user is authenticated
     if user.is_authenticated:
 
         author = Author.objects.get(user=user)
-        
+        # get the first post 
         post = Post.objects.filter(id=id).first()
         if post == None:
+            # no posts, redirect to homepage
             return redirect('/')
 
+        # assume post is not a friends only post
         permission = False
+        # get all the people author is following
         following = author.following.all()
         for f in following:
+            # if f is friends with author, permission is true
             if f.followee == post.author and f.friendship == True:
                 permission = True
 
+        # if post is public and not a friends only post, redirect to homepage
         if post.publicity == 1 and not permission:
             return redirect('/')
 
+        # check if author liked the post or not
         liked = author.likes.filter(post=post)
         if len(liked) == 0:
             liked = 0
         else:
             liked = 1
 
+        # creates a post serializer 
         post_serializer = PostSerializer(post, context={'request': request})
 
+        # render post.html with the given context (post data, like count, whether author liked it, and author)
         return render(request=request,
                       template_name='main/post.html',
                       context={'post': json.dumps(post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}),
                                'author': author})
         
+    # if the user is not authenticated, redirect them to the login page
     else:
         return redirect('/login/')
 
 
 def getAuthed(auth_header):
+    # if there is no auth header attached, respond with a 401
     if not len(auth_header):
         return Response({"Unauthorized."}, status=401)
     token_type, _, credentials = auth_header.partition(' ')
     try:
+        # split and decode from base 64 the username and password from 'credentials'
         username, password = base64.b64decode(credentials).decode().split(':')
+        # get the first node that matches the username and the password
         node = Node.objects.filter(username=username, password=password).first()
+        # if there is no such node, respond with a 401
         if node == None:
             return Response("Error decoding Authorization header", status=401)
-
+        
+        # if the node is socialsink (us), return self
         if node.username == 'socialsink':
             return 'self'
         else:
@@ -110,13 +132,17 @@ def getAuthed(auth_header):
 
 @api_view(['PUT'])
 def createAccount(request):
+    # get username, email, and password from the request
     username = request.data['username']
     email = request.data['email']
     password = request.data['password']
-
+    
+    # get the first server setting
     ss = ServerSettings.objects.first()
-
+    # get the user that matches up with the criteria obtained from the request
     user = User.objects.create_user(username=username, email=email, password=password)
+    
+    # create an author based on whether the server is setup to auto permit users or not
     if ss.auto_permit_users == True:
         author = Author(user=user, created_at=datetime.now(pytz.timezone('America/Edmonton')))
     else:
@@ -126,31 +152,41 @@ def createAccount(request):
     user.save()
 
     if ss.auto_permit_users == True:
+        # if auto permit is true, login the user
         auth_login(request, user)
     else:
+        # if not, respond with a 301
         return Response(status=301)
+    # respond with a 201
     return Response(status=201)
 
 
 @api_view(['POST'])
 def loginRequest(request):
+    # get the username and password from the request
     username = request.data['username']
     password = request.data['password']
 
+    # authenticate user with username and password provided
     user = authenticate(username=username, password=password)
-
+    # get the author from the user
     author = Author.objects.get(user=user)
     if author.is_permitted:
         if user != None:
+            # if the author is permitted and the authentication was successful,
+            # login the user and respond with a 201
             auth_login(request, user)
             return Response(status=201)
     else:
+        # if the author is not permitted, respond with a 301
         return Response(status=301)
 
+    # if the author is permitted but the authentication was not successful, respond with a 401
     return Response(status=401)
 
 @api_view(['GET'])
 def logoutRequest(request):
+    # logout the user and respond with 200
     auth_logout(request)
     return Response(status=200)
 
@@ -163,16 +199,20 @@ def deleteAccount(request):
     messages.info(request, "Delete-account request received.")
 
     user = request.user
+    # only proceed if the user is authenticated
     if user.is_authenticated:
         try:
+            # try to get the author and delete it
             author = Author.objects.get(user=user)
             author.delete()
             messages.success(request, "The user has been deleted")  
             return Response(status=200)
         except Author.DoesNotExist:
+            # if the user does not exist, respond with a 404
             messages.error(request, "User does not exist")    
             return Response(status=404)
         except Exception as e: 
+            # if a general exception occurs, respond with a 500
             return Response(status=500)
 
     else:
@@ -186,9 +226,11 @@ def getNodeHosts(request):
     '''
     user = request.user
     if user.is_authenticated:
+        # get all node objects
         nodes = Node.objects.all()
         data = []
         for node in nodes:
+            # only append node info if the node hostname is in one of the following
             if node.hostname not in ['super-coding-team', 'req1', 'req2']:
                 data.append([node.hostname, node.username, node.password])
         
@@ -204,18 +246,24 @@ def deleteInboxPost(request, author_id, post_id):
     '''
     user = request.user
     if user.is_authenticated:
+        # get the author and its serializer
         author = Author.objects.get(id=author_id)
-
         author_serializer = AuthorSerializer(author, context={'request': request})
+        # get a dictionary representation of the author data
         serialized_author = author_serializer.data
-
+        # get inbox items from the author
         items = Inbox.objects.filter(author_id=serialized_author['id'])
 
+        # url holds the built url
         url = request.build_absolute_uri()
+        # parts holds a list of the individual components of the url
         parts = url.split('/')
+        # url now holds a custom url using the information from `parts` and `author_id`
         url = f"{parts[0]}//{parts[2]}/authors/{author_id}/posts/{post_id}"
 
+        
         for item in items:
+            # if the item is a post and matches the url matches the pattern of the item endpoint, then delete the item
             if item.type == 'post' and re.match(rf"^{parts[0]}//{parts[2]}/authors/.*/posts/{post_id}$", item.endpoint):
                 item.delete()
         
@@ -226,16 +274,19 @@ def deleteInboxPost(request, author_id, post_id):
 @api_view(['PUT'])
 def updateUser(request, id):
     user = request.user
+    # only proceed if the user is authenticated and the id matches up with the provided id
     if user.is_authenticated and user.id == id:
-        
+        # get the user and author objects
         user_object = User.objects.get(id=id)
         author = Author.objects.get(user=user_object)
 
+        # get the profile pic, username, bio, and github information from the request
         request_profileImage = request.data["profileImage"]
         request_username = request.data["username"]
         request_bio = request.data["bio"]
         request_github = request.data["github"]
 
+        # update the users information as necessary
         if request_profileImage.startswith("https://imgur.com/") or request_profileImage.startswith("https://i.imgur.com/"):
             author.profileImage = request_profileImage
 
@@ -261,25 +312,32 @@ def updateUser(request, id):
 #get list of authors with pagination
 #/authors/
 def getAuthors(request):
+    # authenticate the user
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get authors request received")
+        # get the page number and page size from the request
+        # if they are not set, default those values to 1 and 50 respectfully
         pageNum = request.GET.get('page', 1)
         pageSize = request.GET.get('size', 50)
 
+        # get all the authors, ordered by their id
         authors = Author.objects.all().order_by('id')
 
+        # create page with pageSize number of authors
         paginatedAuthors = Paginator(authors, pageSize)
 
         #paginator crashes if page number is out of range
         try: 
+            # get the pageNum page of authors
             page = paginatedAuthors.page(pageNum)
         except:
             return Response(status=404)
 
-
+        # create an author serializer of the page of authors
         author_serializer = AuthorSerializer(page, many=True, context={'request': request})
-
+        
+        # create a date dictionary where items holds a dictionary of authors on the page we calculated
         data = {
             "type": "authors",
             "items": author_serializer.data
