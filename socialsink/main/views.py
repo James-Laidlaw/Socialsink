@@ -351,16 +351,22 @@ def getAuthors(request):
 #/authors/{AUTHOR_ID}/
 @api_view(['GET', 'POST'])
 def authorReqHandler(request, author_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
+        #redirect tot the getAuthor function
         if request.method == 'GET': 
             print("service: Get author request received")
             return getAuthor(request, author_id)
 
         if result == 'self':
+            # redirect to the update author function only if 
+            # the authentication returns self
             if request.method == 'POST':
                 print("service: Update author request received")
                 return updateAuthor(request, author_id)
+            
+        # if the method is post and if the result is other, return a 405
         return Response(status=405)
     return result
 
@@ -370,12 +376,15 @@ def getAuthor(request, author_id):
     if author_id == None:
         return Response(status=400)
     
+    # get author from given author id
     author = Author.objects.get(id=author_id)
 
+    # if there is no author associated with the id, return 404
     if author == None:
         return Response(status=404)
+    # create a serializer of the author
     author_serializer = AuthorSerializer(author, context={'request': request})
-
+    # create a dictionary of the author object
     serialized_author = author_serializer.data
     return Response(serialized_author, status=200)
 
@@ -385,6 +394,7 @@ def updateAuthor(request, author_id):
     if author_id == None:
         return Response(status=400)
 
+    # Get author object from id
     author = Author.objects.get(id=author_id)
 
     if author == None:
@@ -415,11 +425,14 @@ def getFollowers(request, author_id):
         print("service: Get followers request received")
         if author_id == None:
             return Response(status=400)
-
+        
+        # url holds a built url
         url = request.build_absolute_uri()
+        # shorten the url by 10 characters
         url = url[:len(url)-10]
 
         follower_authors = []
+        # get a list of followers from the url
         followers = Follower.objects.filter(followee_endpoint=url)
         for f in followers:
             follower_authors.append(f.follower_data)
@@ -432,8 +445,10 @@ def getFollowers(request, author_id):
 
 @api_view(['GET', 'POST'])
 def getFollowRequests(request, author_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self']:
+        # build url and shorten it by 19 characters
         url = request.build_absolute_uri()
         url = url[:len(url)-19]
 
@@ -441,6 +456,7 @@ def getFollowRequests(request, author_id):
             followRequests = Follower.objects.filter(followee_endpoint=url, accepted=False)
 
             data = []
+            # append data with follower data from the built url
             for fr in followRequests:
                 data.append(fr.follower_data)
 
@@ -451,16 +467,18 @@ def getFollowRequests(request, author_id):
 
             if request.data['mode'] == 'update-direct':
                 follower_endpoint = request.data['follower_endpoint']
-                
+                # get follow request from follower and followee endpoint
                 fr = Follower.objects.filter(followee_endpoint=url, follower_endpoint=follower_endpoint).first()
 
                 if fr == None:
                     return Response(status=404)
-
+                
+                # friend request has been accepted
                 if status == 'accept':
                     fr.accepted = True
-
+                    # get the first follower object with the following criteria
                     frReverse = Follower.objects.filter(followee_endpoint=follower_endpoint, follower_endpoint=url).first()
+                    # if there is a mutual following, then friendship is true
                     if frReverse != None and frReverse.accepted == True:
                         frReverse.friendship = True
                         fr.friendship = True
@@ -480,7 +498,7 @@ def getFollowRequests(request, author_id):
 
             elif request.data['mode'] == 'update-indirect':
                 followee_endpoint = request.data['follower_endpoint']
-                
+                # followee is obtained from the endpoint while follower is obtained from the url
                 fr = Follower.objects.filter(followee_endpoint=followee_endpoint, follower_endpoint=url).first()
 
                 if fr == None:
@@ -488,7 +506,7 @@ def getFollowRequests(request, author_id):
 
                 if status == 'accept':
                     fr.accepted = True
-
+                    # followee is obtained from the url while follower is obtained from the endpoint
                     frReverse = Follower.objects.filter(followee_endpoint=url, follower_endpoint=followee_endpoint).first()
                     if frReverse != None and frReverse.accepted == True:
                         frReverse.friendship = True
@@ -513,14 +531,18 @@ def getFollowRequests(request, author_id):
 #/authors/{AUTHOR_ID}/following
 @api_view(['GET'])
 def getFollowing(request, author_id):
+    # authenticate user request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
+        # build the url and shorten it by 10 characters
         url = request.build_absolute_uri()
         url = url[:len(url)-10] 
-
+        # get the following object where the follower_endpoint is obtained via the url
         following = Follower.objects.filter(follower_endpoint=url)
         data = {}
         for i, follow in enumerate(following):
+            # init the default status as 'follow' and change it according to the 
+            # below switch case
             status = 'follow'
             if follow.friendship == True:
                 status = 'friends'
@@ -528,6 +550,7 @@ def getFollowing(request, author_id):
                 status = 'following'
             elif follow.accepted == False and follow.dismissed == False:
                 status = 'requested'
+            # add the status and followee into data
             data[i] = {'status': status, 'followee': follow.followee_endpoint}
         return Response(data, status=200)
     return Response(status=401)
@@ -536,15 +559,19 @@ def getFollowing(request, author_id):
 #/authors/{AUTHOR_ID}/friends
 @api_view(['GET'])
 def getFriends(request, author_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
+        # build the url and shorten it by 8 characters
         url = request.build_absolute_uri()
         url = url[:len(url)-8] 
 
         data = []
+        # get the following object based on the url
         following = Follower.objects.filter(follower_endpoint=url)
         for follower in following:
             if follower.friendship == True:
+                # if friends with follower, add the endpoint to the list
                 data.append(follower.followee_endpoint)
 
         return Response(data, status=200)
@@ -555,30 +582,37 @@ def getFriends(request, author_id):
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
     print("service: Get follower-followee relationship details request received")
+    # authenticate the user's request
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', ''))
     if result in ['self', 'other']:
         if foreign_author_id == None or author_id == None:
             return Response(status=400)
         
+        # get followee from the author id
         followee = Author.objects.get(id=author_id)
 
         if followee == None:
             return Response(status=404)
         
         if request.method == 'GET':
+            # build the url, split it via '/', and then build a custom url
             url = request.build_absolute_uri()
             parts = url.split("/")
             url = f"{parts[0]}//{parts[2]}/{parts[3]}/"
 
+            # get the following object from the url/author_id endpoint
             following = Follower.objects.filter(followee_endpoint=url+author_id)
             for f in following:
+                # return true when a f that is a follower is met
                 if f"/{foreign_author_id}" in f.follower_endpoint and f.accepted == True:
                     return Response({'is_follower': True}, status=200)
             return Response({'is_follower': False}, status=200)
         
+        # no follower found
+        
         if result == 'self':
             if request.method == 'PUT':
-
+                # create a new follower object
                 follow = Follower(
                     follower_data = json.dumps(request.data['follower_data']),
                     follower_endpoint = request.data['follower_data']['id'],
@@ -593,7 +627,8 @@ def followerReqHandler(request, author_id, foreign_author_id):
                 )
 
                 follow.save()
-
+                
+                # create data that sends type, summary, actor, and object 
                 data = {
                     "type": 'Follow',
                     'summary': f"{request.data['follower_data']['displayName']} has requested to follow {request.data['followee_data']['displayName']}",
@@ -605,20 +640,24 @@ def followerReqHandler(request, author_id, foreign_author_id):
 
 
             elif request.method == 'DELETE':
+                # get follower object
                 f = Follower.objects.filter(
                     follower_endpoint = request.data['follower_endpoint'],
                     followee_endpoint = request.data['followee_endpoint']
                 ).first()
-
+                
+                # get the reverse follower object
                 fReverse = Follower.objects.filter(
                     follower_endpoint = request.data['followee_endpoint'],
                     followee_endpoint = request.data['follower_endpoint']
                 ).first()
 
+                # if the reverse does not exist, set friendship to false
                 if fReverse != None:
                     fReverse.friendship = False
                     fReverse.save()
-
+                
+                # if follower does not exist, delete it
                 if f != None:
                     f.delete()
 
