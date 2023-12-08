@@ -177,7 +177,6 @@
             `;
 
             // Get the container where you want to insert the new post
-            console.log(position)
             if (position === 'top') {
                 if (feedContainer.firstChild) {
                     feedContainer.insertBefore(postElement, feedContainer.firstChild)
@@ -673,7 +672,7 @@
                 url = `${postData['id']}likes/`
                 external = '21average'
             } else if (getHostFromUrl(`${postData['id']}/likes`) === 'https://super-coding-team-89a5aa34a95f.herokuapp.com/') {
-                url = `${postData['id']}likes/`
+                url = `${postData['id']}/likes`
                 commentsUrl = `${postData['id']}/comments`
                 external = 'supercodingteam'
             } else {
