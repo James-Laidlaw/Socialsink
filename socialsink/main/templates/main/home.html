@@ -678,7 +678,7 @@
                     request.withCredentials = true;
                     request.setRequestHeader(creds[0], creds[1]);
                 },
-                success: async function (response, textStatus, http) {
+                success: await async function (response, textStatus, http) {
                     liked = false
                     var likedlength = 0
                     if (external === '21average') {
@@ -808,6 +808,52 @@
         }
         initInbox();
 
+        async function getNewPosts() {
+            authorID = "{{ author.id }}"
+            creds = getAuth(window.location.href)
+            await $.ajax({
+                type: "GET",
+                url: `/authors/${authorID}/inbox`,
+                dataType: 'json',
+                data: {
+                    interval: 'yes'
+                },
+                headers: { "X-CSRFToken": '{{csrf_token}}' },
+                beforeSend: function (request) {
+                    request.withCredentials = true;
+                    request.setRequestHeader(creds[0], creds[1]);
+                },
+                success: async function (response, textStatus, http) {
+                    if (http.status === 200) {
+                        for (const post in response['items']) {
+                            if (response['items'][post]['type'] === 'post') {
+                                creds = getAuth(getHostFromUrl(`${response['items'][post]['endpoint']}`))
+                                await $.ajax({
+                                    type: "GET",
+                                    url: `${response['items'][post]['endpoint']}`,
+                                    headers: { "X-CSRFToken": '{{csrf_token}}' },
+                                    beforeSend: function (request) {
+                                        request.withCredentials = true;
+                                        request.setRequestHeader(creds[0], creds[1]);
+                                    },
+                                    success: async function (response, textStatus, http) {
+                                        await insertPostComplete(response)
+                                    },
+                                    error: function(error) {
+                                        console.error(error)
+                                    }
+                                })
+                            }
+                        }
+                    }
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            })
+        }
+        setInterval(getNewPosts, 2000);
+
         async function getAuthorData() {
             creds = getAuth(window.location.href)
             await $.ajax({
@@ -911,7 +957,7 @@
                     },
                     error: function (error) {
                         if (error.status === 404) {
-                            $(`#post-block-${postInfo[0]}`).remove()
+                            $(`#post-block-${index}`).remove()
                             postIDs = postIDs.filter(item => item[0] !== `${postInfo[0]}`);
 
                             deletePostFromInbox(postInfo[0])

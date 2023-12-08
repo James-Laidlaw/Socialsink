@@ -917,6 +917,8 @@ def inboxReqHandler(request, author_id):
             if request.method == 'GET':
                 pageNum = request.GET.get('page', 1)
                 pageSize = request.GET.get('size', 50)
+                interval = request.GET.get('interval', 'no')
+
                 author = Author.objects.filter(id=author_id).first()
 
                 if author == None:
@@ -928,7 +930,11 @@ def inboxReqHandler(request, author_id):
                 author_serializer = AuthorSerializer(author, context={'request': request})
                 author_url_id = author_serializer.data['id']
 
-                inbox_items = Inbox.objects.filter(author_id=author_url_id).order_by('-created_at')
+                if interval == 'yes':
+                    newTime = datetime.now(pytz.timezone('America/Edmonton')) - timedelta(seconds=2)
+                    inbox_items = Inbox.objects.filter(author_id=author_url_id, created_at__gt=newTime).order_by('-created_at')
+                else:
+                    inbox_items = Inbox.objects.filter(author_id=author_url_id).order_by('-created_at')
 
                 paginatedItems = Paginator(inbox_items, pageSize)
 
