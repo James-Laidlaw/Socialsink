@@ -671,25 +671,30 @@ def followerReqHandler(request, author_id, foreign_author_id):
 #TODO Friend / follow request (The spec is unclear on the path for this, so leaving it for later)
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def postReqHandler(request, author_id, post_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
             print("service: no post id, returning 400 ***********************************************")
             return Response(status=400)
         
+        # route to getPost
         if request.method == 'GET': 
             print("service: Get post request received")
             return getPost(request, post_id)
         
         if result == 'self':
+            # route to updatePost
             if request.method == 'POST':
                 print("service: Update post request received")
                 return updatePost(request, post_id)
 
+            # route to creating a post
             elif request.method == 'PUT':
                 print("service: Create specific post request received")
                 return createSpecificPost(request, author_id, post_id)
             
+            # route to deleting a post
             elif request.method == 'DELETE':
                 print("service: Delete post request received")
                 return deletePost(request, post_id)
@@ -701,14 +706,17 @@ def postReqHandler(request, author_id, post_id):
 
 
 def getPost(request, post_id):
+    # get first post with id = post_id
     found_post = Post.objects.filter(id=post_id).first()
     if found_post == None:
         return Response(status=404)
     post_serializer = PostSerializer(found_post, context={'request': request})
+    # respond with dictionary of post data
     return Response(post_serializer.data)
 
 
 def updatePost(request, post_id):
+    # get post with id = post_id
     post = Post.objects.get(id=post_id)
     if post is None:
         return Response(status=404)
@@ -719,6 +727,7 @@ def updatePost(request, post_id):
         return Response(status=401)
 
     try:
+        # update the post's information with info obtained from the request
         post.title = request.data.get('title', post.title)
         post.description = request.data.get('description', post.description)
         post.categories = request.data.get('categories', post.categories)
@@ -732,14 +741,17 @@ def updatePost(request, post_id):
 
 
 def deletePost(request, post_id):
+    # get post with id = post_id
     found_post = Post.objects.get(id=post_id)
     if found_post == None:
         return Response(status=404)
+    # delete the post
     found_post.delete()
     return Response(status=200)
 
 
 def createSpecificPost(request, author_id, post_id):
+    # get author with id = author_id
     author = Author.objects.get(id=author_id)
     if author == None:
         return Response(status=404)
@@ -770,14 +782,16 @@ def createSpecificPost(request, author_id, post_id):
 #not a great name, but it follows the spec
 @api_view(['GET', 'POST'])
 def postCreationReqHandler(request, author_id):
-    
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
+        # route to getAuthorPosts
         if request.method == 'GET':
             print("service: Get posts request received")
             return getAuthorPosts(request, author_id)
 
         if result == 'self':
+            # route to createPost only if result returned self
             if request.method == 'POST':
                 print("service: Create post request received")
                 return createPost(request, author_id)
@@ -787,11 +801,13 @@ def postCreationReqHandler(request, author_id):
 
 #like create specific post, but without the post_id
 def createPost(request, author_id):
+    # get first author with id=author_id
     author = Author.objects.filter(id=author_id).first()
     if author == None:
         return Response(status=404)
 
     author_serializer = AuthorSerializer(author, context={'request': request})
+    # get dict object of author serializer 
     serialized_author = author_serializer.data
     
     #check authorization
@@ -799,11 +815,14 @@ def createPost(request, author_id):
         print("unauthorized, returning 401")
         return Response(status=401)
     
+    # specify the default origin
     default_origin = f'http://{request.get_host()}/author/{author_id}'
     #try:
 
     source = request.data.get('source')
+    # if no source
     if source == '' or source == None:
+        # get the post information from the request
         title = request.data.get('title')
         description = request.data.get('description')
         categories = request.data.get('categories', '')
@@ -816,7 +835,10 @@ def createPost(request, author_id):
         if image:
             contentType = content.split(",")[0].split(":")[1]
 
+        # assume unlisted false
         unlisted = False
+        # publicity 0 is public
+        # publicity 1 is private
         if publicity == 'public':
             publicity = 0
         elif publicity == 'friends':
@@ -826,7 +848,8 @@ def createPost(request, author_id):
             unlisted = True
         else:
             publicity = -1 #Unknown publicity
-
+        
+        # create a new post based on the publicity
         post = Post(
                 author_data=json.dumps(serialized_author),
                 author_endpoint=serialized_author['id'].rstrip('/'),
@@ -842,7 +865,8 @@ def createPost(request, author_id):
             )
 
         post.save()
-
+        
+        # set the origin of the post
         post.origin = post.origin + f'/posts/{post.id}'
 
         post.save()
@@ -850,17 +874,22 @@ def createPost(request, author_id):
         post_serialized = PostSerializer(post, context={'request': request})
 
         data = json.dumps(post_serialized.data)
-
+        # return a json object of the post data
         return Response(data, status=201)
+    
+    # if source specified
     else:
+        # get id and post from request
         id = request.data.get('post_id')
 
         post = request.data['post']
 
+        # set publicity to 1 (private) if it is friends only, otherwise 0 (public)
         publicity = 0
         if post['visibility'] == 'FRIENDS':
             publicity = 1
 
+        # create a new post
         new_post = Post(
             author_data=json.dumps(serialized_author),
             author_endpoint=post['author']['id'], 
@@ -877,7 +906,8 @@ def createPost(request, author_id):
         )
 
         new_post.save()
-
+        
+        # add in the post's source
         source += f"/posts/{new_post.id}"
         new_post.source = source
 
@@ -886,52 +916,62 @@ def createPost(request, author_id):
         post_serialized = PostSerializer(new_post, context={'request': request})
 
         data = json.dumps(post_serialized.data)
-
+        # return a json form of the post data
         return Response(data, status=201)
     #except:
     #    return Response(status=400)
     
 #/authors/{AUTHOR_ID}/posts
 def getAuthorPosts(request, author_id):
+    # get pageNUm and pageSize from the request, 
+    # default to 1 and 50 respectfully
     pageNum = request.GET.get('page', 1)
     pageSize = request.GET.get('size', 50)
 
     if author_id == None:
         return Response(status=400)
     
+    # build the url and shorten it by 6 characters
     url = request.build_absolute_uri()
     url = url[:len(url)-6]
 
+    # get all the posts, sorted by creation date
     posts = Post.objects.filter(author_endpoint=url).order_by('created_at')
 
+    # get pageSize number of authors on a page
     paginatedPosts = Paginator(posts, pageSize)
 
     #paginator crashes if page number is out of range
     try: 
+        # get pageNum page
         page = paginatedPosts.page(pageNum)
     except:
         return Response(status=404)
 
+    # create a page of posts as a serializer 
     post_serializer = PostSerializer(page, many=True, context={'request': request})
 
     serialized_posts = post_serializer.data
-
+    # return the number of posts and the posts themselves 
     return Response({'count': len(serialized_posts), 'items': serialized_posts})
 
 
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/
 @api_view(['GET', 'POST'])
 def commentReqHandler(request, author_id, post_id):
+    # authenticate the user
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
             return Response(status=400)
         
+        # route to getComments
         if request.method == 'GET': 
             print("service: Get comments request received")
             return getComments(request, post_id)
         
         if result == 'self':
+            # route to createComment
             if request.method == 'POST':
                 print("service: Create comment request received")
                 return createComment(request, author_id, post_id)
@@ -941,33 +981,39 @@ def commentReqHandler(request, author_id, post_id):
     
 
 def getComments(request, post_id):
+    # get first post where id = post_id
     found_post = Post.objects.filter(id=post_id).first()
     if found_post == None:
         return Response(status=404)
     
+    # build the post endpoint url from the url generated by the reverse() function. 
     post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[found_post.author_endpoint.split('/')[-1], found_post.id]))
 
+    # get comments where the post endpoint = the one we created above, ordered by creation date
     comments = Comment.objects.filter(post_endpoint=post_endpoint).order_by('created_at')
     
     comment_serializer = CommentSerializer(comments, many=True, context={'request': request})
-
+    # create a dict object of the comments on the post
     serialized_comments = comment_serializer.data
     return Response(serialized_comments)
 
 
 def createComment(request, author_id, post_id):
+    # get author where id = author_id
     author = Author.objects.get(id=author_id)
     if author == None:
         return Response(status=404)
     
+    # get the first post where post=post_id
     found_post = Post.objects.filter(id=post_id).first()
     if found_post == None:
         return Response(status=404)
     #slot in post ID
-
+    # build the url and shorten it by 9 characters
     url = request.build_absolute_uri()
     url = url[:len(url)-9]
     
+    # create a comment based on the url
     comment = Comment(
         author_data=json.dumps(request.data['author']),
         post_endpoint=url,
@@ -978,14 +1024,15 @@ def createComment(request, author_id, post_id):
     comment.save()
 
     data = CommentSerializer(comment, context={'request': request}).data
-
+    # return dict of the comment
     return Response(data, status=200)
 
 @api_view(['POST'])
 def createCommentData(request):
+    # authenticate the user's request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result == 'self':
-
+        # create a comment object using information from the request
         comment = Comment(
             author_data=json.dumps(request.data['author']),
             post_endpoint=request.data['post'],
@@ -993,9 +1040,12 @@ def createCommentData(request):
             created_at=datetime.now(pytz.timezone('America/Edmonton'))
         )
 
+        # create a comment serializer 
         data = CommentSerializer(comment, context={'request': request}).data
         
+        
         if request.data['destination'] == 'there':
+            # change the value of data['id'] to the post data + 'comments/'
             data['id'] = request.data['post'] + 'comments/' 
 
         return Response(data, status=200)
@@ -1015,6 +1065,7 @@ def inboxReqHandler(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
 
+        # route to inboxPostHandler
         if request.method == 'POST':
             print("service: Inbox POST request received")
             return inboxPOSTHandler(request, author_id)
@@ -1022,45 +1073,59 @@ def inboxReqHandler(request, author_id):
         if result == 'self':
             if request.method == 'GET':
                 print("service: Inbox GET request received")
+                # get the page num and size from the request,
+                # defaulted to 1 and 50 respectfully
                 pageNum = request.GET.get('page', 1)
                 pageSize = request.GET.get('size', 50)
+                
+                # get the first author object where id = author_id
                 author = Author.objects.filter(id=author_id).first()
 
                 if author == None:
                     return Response(status=404)
                 
+                # if user is not authenticated or the user is not the author, respond with a 401
                 if not request.user.is_authenticated or request.user != author.user:
                     return Response(status=401)
-
+                
+                # create a serializer for the author 
                 author_serializer = AuthorSerializer(author, context={'request': request})
+                # store the id from the dict 
                 author_url_id = author_serializer.data['id']
-
+                # get the inbox items with the specified id, ordered by creation date
                 inbox_items = Inbox.objects.filter(author_id=author_url_id).order_by('-created_at')
-
+                # create pages of items with the number of items on each page equal to pageSize
                 paginatedItems = Paginator(inbox_items, pageSize)
 
                 #paginator crashes if page number is out of range
                 try: 
+                    # get pageNum page of items
                     page = paginatedItems.page(pageNum)
                 except:
                     return Response(status=404)
 
-
+                # create a serializer of the page of items
                 inbox_serializer = InboxSerializer(page, many=True, context={'request': request})
+                # create a dict of the items info
                 serialized_inbox_items = inbox_serializer.data
+                # create a data dict containing type, author, and items
                 serialized_inbox = {'type': 'inbox', "author": author_url_id, 'items': serialized_inbox_items}
                 return Response(serialized_inbox)
 
             elif request.method == 'DELETE':
                 print("service: Inbox DELETE request received")
+                # get first author where id = post_id
                 author = Author.objects.filter(id=author_id).first()
                 if author == None:
                     return Response(status=404)
                 
+                # create serializer and dict of the author
                 author_serializer = AuthorSerializer(author, context={'request': request})
                 serialized_author = author_serializer.data
 
+                # get the items where the author id = the id from the serializer, ordered by creation date 
                 inbox_items = Inbox.objects.filter(author_id=serialized_author.get('id')).order_by('created_at')
+                # delete these items from the inbox
                 inbox_items.delete()
                 return Response(status=200)
 
@@ -1069,10 +1134,13 @@ def inboxReqHandler(request, author_id):
     
 
 def inboxPOSTHandler(request, recieving_author_id):
+    # get data from the request
     data = request.data
     print(data)
     
     if data['type'].lower() == 'like':
+        # if the data type is like, create a like object, 
+        # using data obtained from the request
         like = Like(
             author_endpoint = data['author']['id'],
             author_data = json.dumps(data['author']),
@@ -1082,8 +1150,10 @@ def inboxPOSTHandler(request, recieving_author_id):
         print(data)
 
         if data['object'].split('/')[-2] == 'posts':
+            # if the data object is posts, add the object to the post endpoint
             like.post_endpoint = data['object']
         else:
+            # if the data object is comments, add the object to the comment endpoint
             like.comment_endpoint = data['object']
 
         like.save()
@@ -1092,10 +1162,13 @@ def inboxPOSTHandler(request, recieving_author_id):
     
 
     elif data['type'].lower() == 'post':
+        # get author objects where id is requested id
         author = Author.objects.get(id=recieving_author_id)
         author_serializer = AuthorSerializer(author, context={'request': request})
+        # create a dict object of the authors data
         serialized_author = author_serializer.data
 
+        # create an inbox object of posts by the author
         Inbox.objects.create(
             author_id=serialized_author['id'], 
             endpoint=data['id'],
@@ -1105,9 +1178,12 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
     
     elif data['type'].lower() == 'comment':
+        # get the id from the data and split it via '/'
         parts = data['id'].split('/')
+        # create a custom link using parta
         post_endpoint = f"{parts[0]}//{parts[2]}/{parts[3]}/{parts[4]}/{parts[5]}/{parts[6]}"
-
+        
+        # create a comment object 
         comment = Comment(
             author_data = json.dumps(data['author']),
             post_endpoint = post_endpoint,
@@ -1120,6 +1196,7 @@ def inboxPOSTHandler(request, recieving_author_id):
         return Response(status=200)
 
     elif data['type'].lower() == 'follow':
+        # create a follow object based on values obtained from request
         follow = Follower(
             follower_endpoint = data['actor']['id'],
             follower_host = data['actor']['host'],
@@ -1145,32 +1222,38 @@ def inboxPOSTHandler(request, recieving_author_id):
 @api_view(['GET', 'POST'])
 def getPostLikes(request, author_id, post_id):
     print("service: Get post likes request received")
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET':
             if post_id == None:
                 return Response(status=400)
             
+            # build the url and split it via '/'
             url = request.build_absolute_uri()
             parts = url.split('/')
+            # create a start and end urls
             start = f"{parts[0]}//{parts[2]}"
             end = f"{parts[5]}/{parts[6]}"
 
+            # get all like objects where the post endpoint begins with 'start' and ends with 'end'
             likes = Like.objects.filter(Q(post_endpoint__contains=start) & Q(post_endpoint__contains=end)).order_by('created_at')
             
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
-
+            # create a dict structure of the serializer
             serialized_likes = like_serializer.data
             return Response(serialized_likes)
 
         if result == 'self':
             if request.method == 'POST':
                 user = request.user
+                # authenticate user
                 if user.is_authenticated:
+                    # build the url and shorten it by 6 characters
                     url = request.build_absolute_uri()
                     parts = url.split('/')
                     url = url[:len(url)-6]
-
+                    # create a like object using data obtained from the request
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],
                         author_data=json.dumps(request.data['author_data']),
@@ -1178,10 +1261,11 @@ def getPostLikes(request, author_id, post_id):
                         summary=f"{user.username} like your post", 
                         created_at=datetime.now(pytz.timezone('America/Edmonton'))
                     )
-
+                    
                     if (request.data['destination'] == 'here'):
                         like.save()
 
+                    # create a serializer and then a data dict 
                     like_serializer = LikeSerializer(like, context={'request': request})
                     data = like_serializer.data
 
@@ -1213,26 +1297,31 @@ def getPostLikes(request, author_id, post_id):
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/comments/{COMMENT_ID}/likes/   
 @api_view(['GET', 'POST'])
 def getCommentLikes(request, author_id, post_id, comment_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get comment likes request received")
         if request.method == 'GET':
+            # build the url, split it, create a start and end of the url
             url = request.build_absolute_uri()
             parts = url.split('/')
             start = f"{parts[0]}//{parts[2]}"
             end = f"{parts[7]}/{parts[8]}"
 
+            # get all likes where the comment endpoint starts and ends with 'start' and 'end' respectfully
             likes = Like.objects.filter(Q(comment_endpoint__contains=start) & Q(comment_endpoint__contains=end)).order_by('created_at')
             like_serializer = LikeSerializer(likes, many=True, context={'request': request})
 
+            # get a dict of the likes
             serialized_likes = like_serializer.data
             return Response(serialized_likes, status=200)
 
         if result == 'self':
             if request.method == 'POST':
+                # authenticate user
                 user = request.user
                 if user.is_authenticated:
-
+                    # create a like object using the data from the request
                     like = Like(
                         author_endpoint=request.data['author_endpoint'],
                         author_data=json.dumps(request.data['author_data']),
@@ -1245,6 +1334,7 @@ def getCommentLikes(request, author_id, post_id, comment_id):
                         like.save()
 
                     like_serializer = LikeSerializer(like, context={'request': request})
+                    # create a data dict of the like object
                     data = like_serializer.data
 
                     return Response(data, status=201)
@@ -1256,22 +1346,28 @@ def getCommentLikes(request, author_id, post_id, comment_id):
 #/authors/{AUTHOR_ID}/liked
 @api_view(['GET'])
 def getAuthorLiked(request, author_id):
+    # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         print("service: Get author liked request received")
+        # ensure only get requests make it through
         if request.method != 'GET':
             return Response(status=405)
 
         if author_id == None:
             return Response(status=400)
         
+        # get first author object where id = author_id
         found_author = Author.objects.filter(id=author_id).first()
 
+        # if there is no such author, return 404
         if found_author == None:
             return Response(status=404)
         
+        # build the url, get all like objects based on this url, ordered by creation date
         author_url = request.build_absolute_uri(reverse('authorReqHandler', args=[found_author.id]))
         likes = Like.objects.filter(author_endpoint=author_url).order_by('created_at')
+        # create a serializer and return the data in the form of a dict
         like_serializer = LikeSerializer(likes, many=True, context={'request': request})
         serialized_likes = like_serializer.data
         return Response(serialized_likes)
