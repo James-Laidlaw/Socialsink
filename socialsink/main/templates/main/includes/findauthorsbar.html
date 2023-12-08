@@ -63,9 +63,7 @@
 
         authorElem.innerHTML = `<img src="${profileImage}" />
                                 <div class="author-content">
-                                    <div>
-                                        <p class="author-username">${followeeData['displayName']}</p>
-                                    </div>
+                                    <p class="author-username">${followeeData['displayName']}</p>
                                     <button type="button" id="follow-${elementID}" class="btn-follow ${action}" onclick="followAuthor(event, '${elementID}')">${text}</button>
                                 </div>`;
         return authorElem;

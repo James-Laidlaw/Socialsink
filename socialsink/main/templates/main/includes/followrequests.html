@@ -56,9 +56,7 @@
 
         follow_request.innerHTML = `<img src="${profileImage}" />
                                     <div class="request-content">
-                                        <div>
-                                            <p class="author-username">${fd['displayName']}</p>
-                                        </div>
+                                        <p class="author-username">${fd['displayName']}</p>
                                         <div class="flex-btn-wrap">
                                             <button type="button" id="accept-${id}" class="btn btn-accept" onclick="handleRequestOption(event, '${id}', 'accept', '${followerEndpoint}')"><i class="fa-regular fa-circle-check"></i></button>
                                             <button type="button" id="dismiss-${id}" class="btn btn-dismiss" onclick="handleRequestOption(event, '${id}', 'dismiss', '${followerEndpoint}')"><i class="fa-regular fa-circle-xmark"></i></button>
