@@ -58,32 +58,43 @@ def displayPost(request, id):
     if user.is_authenticated:
 
         author = Author.objects.get(user=user)
-        
-        post = Post.objects.filter(id=id).first()
+
+        post = Post.objects.get(id=id)
+        post_author = post.author_endpoint
+
         if post == None:
             return redirect('/')
 
-        permission = False
-        following = author.following.all()
-        for f in following:
-            if f.followee == post.author and f.friendship == True:
+        author_endpoint = request.build_absolute_uri(reverse('authorReqHandler', args=[author.id]))
+
+        if post_author != author_endpoint:
+            permission = False
+            following = Follower.objects.filter(follower_endpoint=author_endpoint, followee_endpoint=post_author).first()
+            if following and following.friendship == True:
                 permission = True
 
-        if post.publicity == 1 and not permission:
-            return redirect('/')
+            if post.publicity == 1 and not permission:
+                return redirect('/')
 
-        liked = author.likes.filter(post=post)
-        if len(liked) == 0:
-            liked = 0
-        else:
+        post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[post.author_endpoint.split('/')[-1], post.id]))
+        
+        liked = Like.objects.filter(author_endpoint=author_endpoint, post_endpoint=post_endpoint).first()
+        if liked:
             liked = 1
+        else:
+            liked = 0
 
         post_serializer = PostSerializer(post, context={'request': request})
 
         return render(request=request,
                       template_name='main/post.html',
-                      context={'post': json.dumps(post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}),
-                               'author': author})
+                      context={
+                        'post_endpoint': post_endpoint,
+                        'author': author,
+                        'author_endpoint': author_endpoint
+                      })
+                        #'post': json.dumps(post_serializer.data | {'like-count': len(), 'liked': liked}),
+                         #      'author': author, 'author_endpoint': post_author})
         
     else:
         return redirect('/login/')
@@ -263,7 +274,6 @@ def updateUser(request, id):
 def getAuthors(request):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get authors request received")
         pageNum = request.GET.get('page', 1)
         pageSize = request.GET.get('size', 50)
 
@@ -296,12 +306,10 @@ def authorReqHandler(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET': 
-            print("service: Get author request received")
             return getAuthor(request, author_id)
 
         if result == 'self':
             if request.method == 'POST':
-                print("service: Update author request received")
                 return updateAuthor(request, author_id)
         return Response(status=405)
     return result
@@ -334,8 +342,7 @@ def updateAuthor(request, author_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-     print("unauthorized, returning 401")
-     return Response(status=401)
+        return Response(status=401)
 
     author_serializer = AuthorSerializer(author, data=request.data, partial=True)
 
@@ -354,7 +361,6 @@ def getFollowers(request, author_id):
         #TODO this currently returns all followers rather than just the ones that are accepted
         #TODO this fails to return any followers where author_data is null, 
         # but a POST to authors/<str:author_id>/followers/requests has no way of writing author_data
-        print("service: Get followers request received")
         if author_id == None:
             return Response(status=400)
 
@@ -496,7 +502,6 @@ def getFriends(request, author_id):
 #/authors/{AUTHOR_ID}/followers/{FOREIGN_AUTHOR_ID}/
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
-    print("service: Get follower-followee relationship details request received")
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', ''))
     if result in ['self', 'other']:
         if foreign_author_id == None or author_id == None:
@@ -577,24 +582,19 @@ def postReqHandler(request, author_id, post_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
-            print("service: no post id, returning 400 ***********************************************")
             return Response(status=400)
         
         if request.method == 'GET': 
-            print("service: Get post request received")
             return getPost(request, post_id)
         
         if result == 'self':
             if request.method == 'POST':
-                print("service: Update post request received")
                 return updatePost(request, post_id)
 
             elif request.method == 'PUT':
-                print("service: Create specific post request received")
                 return createSpecificPost(request, author_id, post_id)
             
             elif request.method == 'DELETE':
-                print("service: Delete post request received")
                 return deletePost(request, post_id)
 
             else:
@@ -618,7 +618,6 @@ def updatePost(request, post_id):
     
     #check authorization
     if not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
 
     try:
@@ -630,7 +629,6 @@ def updatePost(request, post_id):
 
         return Response(status=200)
     except Exception as e:
-        print(e)
         return Response(status=400)
 
 
@@ -649,7 +647,6 @@ def createSpecificPost(request, author_id, post_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
 
 
@@ -677,12 +674,10 @@ def postCreationReqHandler(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET':
-            print("service: Get posts request received")
             return getAuthorPosts(request, author_id)
 
         if result == 'self':
             if request.method == 'POST':
-                print("service: Create post request received")
                 return createPost(request, author_id)
         return Response(status=405)
     return result
@@ -699,7 +694,6 @@ def createPost(request, author_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
     
     default_origin = f'http://{request.get_host()}/author/{author_id}'
@@ -831,12 +825,10 @@ def commentReqHandler(request, author_id, post_id):
             return Response(status=400)
         
         if request.method == 'GET': 
-            print("service: Get comments request received")
             return getComments(request, post_id)
         
         if result == 'self':
             if request.method == 'POST':
-                print("service: Create comment request received")
                 return createComment(request, author_id, post_id)
 
         return Response(status=405)
@@ -919,12 +911,10 @@ def inboxReqHandler(request, author_id):
     if result in ['self', 'other']:
 
         if request.method == 'POST':
-            print("service: Inbox POST request received")
             return inboxPOSTHandler(request, author_id)
 
         if result == 'self':
             if request.method == 'GET':
-                print("service: Inbox GET request received")
                 pageNum = request.GET.get('page', 1)
                 pageSize = request.GET.get('size', 50)
                 author = Author.objects.filter(id=author_id).first()
@@ -955,7 +945,6 @@ def inboxReqHandler(request, author_id):
                 return Response(serialized_inbox)
 
             elif request.method == 'DELETE':
-                print("service: Inbox DELETE request received")
                 author = Author.objects.filter(id=author_id).first()
                 if author == None:
                     return Response(status=404)
@@ -973,7 +962,6 @@ def inboxReqHandler(request, author_id):
 
 def inboxPOSTHandler(request, recieving_author_id):
     data = request.data
-    print(data)
     
     if data['type'].lower() == 'like':
         like = Like(
@@ -981,8 +969,6 @@ def inboxPOSTHandler(request, recieving_author_id):
             author_data = json.dumps(data['author']),
             summary = data['summary']
         )
-
-        print(data)
 
         if data['object'].split('/')[-2] == 'posts':
             like.post_endpoint = data['object']
@@ -1047,7 +1033,6 @@ def inboxPOSTHandler(request, recieving_author_id):
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/likes
 @api_view(['GET', 'POST'])
 def getPostLikes(request, author_id, post_id):
-    print("service: Get post likes request received")
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if request.method == 'GET':
@@ -1118,7 +1103,6 @@ def getPostLikes(request, author_id, post_id):
 def getCommentLikes(request, author_id, post_id, comment_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get comment likes request received")
         if request.method == 'GET':
             url = request.build_absolute_uri()
             parts = url.split('/')
@@ -1161,7 +1145,6 @@ def getCommentLikes(request, author_id, post_id, comment_id):
 def getAuthorLiked(request, author_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get author liked request received")
         if request.method != 'GET':
             return Response(status=405)
 
