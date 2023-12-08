@@ -66,40 +66,39 @@ def displayPost(request, id):
     if user.is_authenticated:
 
         author = Author.objects.get(user=user)
-        # get the first post 
-        post = Post.objects.filter(id=id).first()
+        
+        # get the first post
+        post = Post.objects.get(id=id)
+        post_author = post.author_endpoint
+
         if post == None:
             # no posts, redirect to homepage
             return redirect('/')
+          
+        author_endpoint = request.build_absolute_uri(reverse('authorReqHandler', args=[author.id]))
 
-        # assume post is not a friends only post
-        permission = False
-        # get all the people author is following
-        following = author.following.all()
-        for f in following:
-            # if f is friends with author, permission is true
-            if f.followee == post.author and f.friendship == True:
+        if post_author != author_endpoint:
+            # assume post is not a friends only post
+            permission = False
+            following = Follower.objects.filter(follower_endpoint=author_endpoint, followee_endpoint=post_author).first()
+             # if f is friends with author, permission is true
+            if following and following.friendship == True:
                 permission = True
+                
+            # if post is public and not a friends only post, redirect to homepage
+            if post.publicity == 1 and not permission:
+                return redirect('/')
 
-        # if post is public and not a friends only post, redirect to homepage
-        if post.publicity == 1 and not permission:
-            return redirect('/')
-
-        # check if author liked the post or not
-        liked = author.likes.filter(post=post)
-        if len(liked) == 0:
-            liked = 0
-        else:
-            liked = 1
-
-        # creates a post serializer 
-        post_serializer = PostSerializer(post, context={'request': request})
+        post_endpoint = request.build_absolute_uri(reverse('postReqHandler', args=[post.author_endpoint.split('/')[-1], post.id]))
 
         # render post.html with the given context (post data, like count, whether author liked it, and author)
         return render(request=request,
                       template_name='main/post.html',
-                      context={'post': json.dumps(post_serializer.data | {'like-count': len(post.likes.all()), 'liked': liked}),
-                               'author': author})
+                      context={
+                        'post_endpoint': post_endpoint,
+                        'author': author,
+                        'author_endpoint': author_endpoint
+                      })
         
     # if the user is not authenticated, redirect them to the login page
     else:
@@ -315,7 +314,7 @@ def getAuthors(request):
     # authenticate the user
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get authors request received")
+      
         # get the page number and page size from the request
         # if they are not set, default those values to 1 and 50 respectfully
         pageNum = request.GET.get('page', 1)
@@ -356,14 +355,12 @@ def authorReqHandler(request, author_id):
     if result in ['self', 'other']:
         #redirect tot the getAuthor function
         if request.method == 'GET': 
-            print("service: Get author request received")
             return getAuthor(request, author_id)
 
         if result == 'self':
             # redirect to the update author function only if 
             # the authentication returns self
             if request.method == 'POST':
-                print("service: Update author request received")
                 return updateAuthor(request, author_id)
             
         # if the method is post and if the result is other, return a 405
@@ -402,8 +399,7 @@ def updateAuthor(request, author_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-     print("unauthorized, returning 401")
-     return Response(status=401)
+        return Response(status=401)
 
     author_serializer = AuthorSerializer(author, data=request.data, partial=True)
 
@@ -422,7 +418,6 @@ def getFollowers(request, author_id):
         #TODO this currently returns all followers rather than just the ones that are accepted
         #TODO this fails to return any followers where author_data is null, 
         # but a POST to authors/<str:author_id>/followers/requests has no way of writing author_data
-        print("service: Get followers request received")
         if author_id == None:
             return Response(status=400)
         
@@ -581,7 +576,6 @@ def getFriends(request, author_id):
 #/authors/{AUTHOR_ID}/followers/{FOREIGN_AUTHOR_ID}/
 @api_view(['GET', 'PUT', 'DELETE'])
 def followerReqHandler(request, author_id, foreign_author_id):
-    print("service: Get follower-followee relationship details request received")
     # authenticate the user's request
     result = getAuthed(request.META.get('HTTP_AUTHORIZATION', ''))
     if result in ['self', 'other']:
@@ -675,28 +669,23 @@ def postReqHandler(request, author_id, post_id):
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
         if post_id == None:
-            print("service: no post id, returning 400 ***********************************************")
             return Response(status=400)
         
         # route to getPost
         if request.method == 'GET': 
-            print("service: Get post request received")
             return getPost(request, post_id)
         
         if result == 'self':
             # route to updatePost
             if request.method == 'POST':
-                print("service: Update post request received")
                 return updatePost(request, post_id)
 
             # route to creating a post
             elif request.method == 'PUT':
-                print("service: Create specific post request received")
                 return createSpecificPost(request, author_id, post_id)
             
             # route to deleting a post
             elif request.method == 'DELETE':
-                print("service: Delete post request received")
                 return deletePost(request, post_id)
 
             else:
@@ -723,7 +712,6 @@ def updatePost(request, post_id):
     
     #check authorization
     if not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
 
     try:
@@ -736,7 +724,6 @@ def updatePost(request, post_id):
 
         return Response(status=200)
     except Exception as e:
-        print(e)
         return Response(status=400)
 
 
@@ -758,7 +745,6 @@ def createSpecificPost(request, author_id, post_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
 
 
@@ -787,13 +773,11 @@ def postCreationReqHandler(request, author_id):
     if result in ['self', 'other']:
         # route to getAuthorPosts
         if request.method == 'GET':
-            print("service: Get posts request received")
             return getAuthorPosts(request, author_id)
 
         if result == 'self':
             # route to createPost only if result returned self
             if request.method == 'POST':
-                print("service: Create post request received")
                 return createPost(request, author_id)
         return Response(status=405)
     return result
@@ -812,7 +796,6 @@ def createPost(request, author_id):
     
     #check authorization
     if author.user != request.user or not request.user.is_authenticated:
-        print("unauthorized, returning 401")
         return Response(status=401)
     
     # specify the default origin
@@ -967,13 +950,11 @@ def commentReqHandler(request, author_id, post_id):
         
         # route to getComments
         if request.method == 'GET': 
-            print("service: Get comments request received")
             return getComments(request, post_id)
         
         if result == 'self':
             # route to createComment
             if request.method == 'POST':
-                print("service: Create comment request received")
                 return createComment(request, author_id, post_id)
 
         return Response(status=405)
@@ -1067,12 +1048,10 @@ def inboxReqHandler(request, author_id):
 
         # route to inboxPostHandler
         if request.method == 'POST':
-            print("service: Inbox POST request received")
             return inboxPOSTHandler(request, author_id)
 
         if result == 'self':
             if request.method == 'GET':
-                print("service: Inbox GET request received")
                 # get the page num and size from the request,
                 # defaulted to 1 and 50 respectfully
                 pageNum = request.GET.get('page', 1)
@@ -1113,7 +1092,6 @@ def inboxReqHandler(request, author_id):
                 return Response(serialized_inbox)
 
             elif request.method == 'DELETE':
-                print("service: Inbox DELETE request received")
                 # get first author where id = post_id
                 author = Author.objects.filter(id=author_id).first()
                 if author == None:
@@ -1136,7 +1114,6 @@ def inboxReqHandler(request, author_id):
 def inboxPOSTHandler(request, recieving_author_id):
     # get data from the request
     data = request.data
-    print(data)
     
     if data['type'].lower() == 'like':
         # if the data type is like, create a like object, 
@@ -1146,8 +1123,6 @@ def inboxPOSTHandler(request, recieving_author_id):
             author_data = json.dumps(data['author']),
             summary = data['summary']
         )
-
-        print(data)
 
         if data['object'].split('/')[-2] == 'posts':
             # if the data object is posts, add the object to the post endpoint
@@ -1221,7 +1196,6 @@ def inboxPOSTHandler(request, recieving_author_id):
 #/authors/{AUTHOR_ID}/posts/{POST_ID}/likes
 @api_view(['GET', 'POST'])
 def getPostLikes(request, author_id, post_id):
-    print("service: Get post likes request received")
     # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
@@ -1300,7 +1274,6 @@ def getCommentLikes(request, author_id, post_id, comment_id):
     # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get comment likes request received")
         if request.method == 'GET':
             # build the url, split it, create a start and end of the url
             url = request.build_absolute_uri()
@@ -1349,7 +1322,6 @@ def getAuthorLiked(request, author_id):
     # authenticate the users request
     result = getAuthed(request.META['HTTP_AUTHORIZATION'])
     if result in ['self', 'other']:
-        print("service: Get author liked request received")
         # ensure only get requests make it through
         if request.method != 'GET':
             return Response(status=405)

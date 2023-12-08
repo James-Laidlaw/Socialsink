@@ -34,7 +34,6 @@
     <!-- Includes the popup modals, like confirm delete and confirm share post -->
     {% include 'main/includes/popupmodals.html' %}
     <!-- --------------------------------------------------------------------- -->
-
     <script>
         const feedContainer = document.getElementById("post-container");
         var oldPostsRetrieved = false
@@ -89,7 +88,7 @@
             }
 
             if (post['unlisted'] === true) {
-                unlisted = `<a href="/posts/${id}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${postIDs[id][0]}</p></a>`
+                unlisted = `<a href="/posts/${postIDs[id][0]}" style="color: #0D6EFD;"><p>URI for post - ${window.location.href}posts/${postIDs[id][0]}</p></a>`
             } else {
                 unlisted = ``
             }
@@ -117,6 +116,8 @@
             
             if (post['contentType'] === 'image/jpeg;base64' || post['contentType'] === 'image/png;base64') {
                 content = `<p id="post-content-${id}"><img id="image-preview" src="${post['content']}" alt="img"></p>`
+            } else if (post['contentType'] === 'text/markdown') {
+                content = `<md-block id="post-content-${id}">${post['content']}</md-block>`
             } else {
                 content = `<p id="post-content-${id}">${post['content']}</p>`
             }
@@ -662,6 +663,10 @@
             if (getHostFromUrl(`${postData['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                 url = `${postData['id']}likes/`
                 external = '21average'
+            } else if (getHostFromUrl(`${postData['id']}/likes`) === 'https://super-coding-team-89a5aa34a95f.herokuapp.com/') {
+                url = `${postData['id']}likes/`
+                commentsUrl = `${postData['id']}/comments`
+                external = 'supercodingteam'
             } else {
                 url = `${postData['id']}/likes`
             }
@@ -674,8 +679,6 @@
                     request.setRequestHeader(creds[0], creds[1]);
                 },
                 success: async function (response, textStatus, http) {
-                    console.log("EXTERNAL", external)
-                    console.log(response)
                     liked = false
                     var likedlength = 0
                     if (external === '21average') {
@@ -694,10 +697,30 @@
                         likedlength = response.length
                     }
                     pid = await addPost(postData, likedlength, liked)
-                    if (postData['commentsSrc'] && postData['commentsSrc'].length > 0) {
-                        comments = postData['commentsSrc']
-                        for (const comment in comments) {
-                            await placeComment(pid, comments[comment])
+                    if (external === 'supercodingteam') {
+                        await $.ajax({
+                            type: "GET",
+                            url: commentsUrl,
+                            beforeSend: function (request) {
+                                request.withCredentials = true;
+                                request.setRequestHeader(creds[0], creds[1]);
+                            },
+                            success: async function (response, textStatus, http) {
+                                comments = response['comments']
+                                for (const comment in comments) {
+                                    await placeComment(pid, comments[comment])
+                                }
+                            },
+                            error: function(error) {
+                                console.error(error)
+                            }
+                        })
+                    } else {
+                        if (postData['commentsSrc'] && postData['commentsSrc'].length > 0) {
+                            comments = postData['commentsSrc']
+                            for (const comment in comments) {
+                                await placeComment(pid, comments[comment])
+                            }
                         }
                     }
                 },
@@ -837,7 +860,6 @@
                         document.getElementById(`like-button-${postID}`).disabled = true
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
                         if (destination === 'there') {
-                            console.log(response)
                             creds = getAuth(getHostFromUrl(`${postAuthor}/inbox`))
                             if (getHostFromUrl(`${postAuthor}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                                 url = `${postAuthor}inbox/`
@@ -861,31 +883,6 @@
                                 }
                             })
                         }
-                    }
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            })
-        }
-
-        // THIS FUNCTION IS NO LONGER USED
-        // USE IF WE DECIDE TO UNLIKE POSTS IN THE FUTURE
-        function unlikePost(postID, authorID, postAuthor, endpoint) {
-            creds = getAuth(window.location.href)
-            $.ajax({
-                type: "DELETE",
-                url: `/authors/${"{{author.id}}"}/posts/${postIDs[postID][0]}/likes`,
-                headers: { "X-CSRFToken": '{{csrf_token}}' },
-                beforeSend: function (request) {
-                    request.withCredentials = true;
-                    request.setRequestHeader(creds[0], creds[1]);
-                },
-                success: function (response, textStatus, http) {
-                    if (http.status === 200) {
-                        $(`#like-button-${postID}`).removeClass('liked')
-                        document.getElementById(`like-button-${postID}`).setAttribute('onclick', `likePost(${postID}, ${authorID}, '${postAuthor}', '${endpoint}')`)
-                        updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
                     }
                 },
                 error: function (error) {
@@ -1030,6 +1027,8 @@
 
                 if (response['contentType'] === 'image/jpeg;base64' || response['contentType'] === 'image/png;base64') {
                     $(`#image-previews`).attr('src', response['content'])
+                } else if (response['contentType'] === 'text/markdown') {
+                    content = `<md-block id="post-content-${id}">${response['content']}</md-block>`
                 } else {
                     $(`#post-content-${index}`).text(response['content'])
                 }
