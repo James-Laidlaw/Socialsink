@@ -71,7 +71,7 @@
             }
         }
 
-        function addPost(post, likeCount, likedPost) {
+        function addPost(post, likeCount, likedPost, position) {
             authorId = post['author']['id'].split('/').at(-1)
             postIDs.push([post['id'].split('/').at(-1), authorId, post['id']])
             id = postNum
@@ -177,7 +177,16 @@
             `;
 
             // Get the container where you want to insert the new post
-            feedContainer.appendChild(postElement)
+            console.log(position)
+            if (position === 'top') {
+                if (feedContainer.firstChild) {
+                    feedContainer.insertBefore(postElement, feedContainer.firstChild)
+                } else {
+                    feedContainer.appendChild(postElement)
+                }
+            } else {
+                feedContainer.appendChild(postElement)
+            }
 
             postNum = postNum + 1
 
@@ -657,7 +666,7 @@
             })
         }
 
-        async function insertPostComplete(postData) {
+        async function insertPostComplete(postData, position) {
             creds = getAuth(getHostFromUrl(`${postData['id']}/likes`))
             var external = false
             if (getHostFromUrl(`${postData['id']}/likes`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
@@ -696,7 +705,7 @@
                         }
                         likedlength = response.length
                     }
-                    pid = await addPost(postData, likedlength, liked)
+                    pid = await addPost(postData, likedlength, liked, position)
                     if (external === 'supercodingteam') {
                         await $.ajax({
                             type: "GET",
@@ -790,7 +799,7 @@
                                         request.setRequestHeader(creds[0], creds[1]);
                                     },
                                     success: async function (response, textStatus, http) {
-                                        await insertPostComplete(response)
+                                        await insertPostComplete(response, 'bottom')
                                     },
                                     error: function(error) {
                                         console.error(error)
@@ -837,7 +846,7 @@
                                         request.setRequestHeader(creds[0], creds[1]);
                                     },
                                     success: async function (response, textStatus, http) {
-                                        await insertPostComplete(response)
+                                        await insertPostComplete(response, 'top')
                                     },
                                     error: function(error) {
                                         console.error(error)
