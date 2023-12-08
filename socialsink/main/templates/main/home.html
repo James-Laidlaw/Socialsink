@@ -860,7 +860,6 @@
                         document.getElementById(`like-button-${postID}`).disabled = true
                         updatePostData([[`${postIDs[postID][0]}`, `${authorID}`, endpoint]])
                         if (destination === 'there') {
-                            console.log(response)
                             creds = getAuth(getHostFromUrl(`${postAuthor}/inbox`))
                             if (getHostFromUrl(`${postAuthor}/inbox`) === 'https://cmput-average-21-b54788720538.herokuapp.com/') {
                                 url = `${postAuthor}inbox/`
