@@ -88,21 +88,33 @@ Requirements
 - [ ] As an author, posts I create can be private to another author
 - [ ] As an author I should be able to browse the public posts of everyone
 
-TOTAL: 43\
-Done: 40\
-Not Done: 3\
-Percentage: 93%\
+TOTAL: 43  
 
-GROUP CONNECTIONS \
-Example user for our app\
-https://socialsync-404-project-6469dd163e44.herokuapp.com\
-username: food\
-password: 123\
+Done: 40  
+
+Not Done: 3  
+
+Percentage: 93%  
 
 
-https://frontend-21-average-f45e3b82895c.herokuapp.com/homePage\
-username: jayz\
-password: Password123_\
+GROUP CONNECTIONS  
+
+Example user for our app  
+
+https://socialsync-404-project-6469dd163e44.herokuapp.com  
+
+username: food  
+
+password: 123  
+
+
+
+https://frontend-21-average-f45e3b82895c.herokuapp.com/homePage  
+
+username: jayz  
+
+password: Password123_  
+
 
 What we can do with them:
 	- Send posts to them
@@ -120,9 +132,12 @@ What we cant do with them:
 		- This means we cant like their posts or comment
 	- They are unable to like our posts
 
-https://super-coding-team-89a5aa34a95f.herokuapp.com/\
-username: antman\
-password: Password123_\
+https://super-coding-team-89a5aa34a95f.herokuapp.com/  
+
+username: antman  
+
+password: Password123_  
+
 
 What we can do with them:
 	- Send and receive posts
